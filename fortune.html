@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>fortune.html - 占い</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .question {
+      margin-bottom: 40px;
+    }
+    .question h2 {
+      margin-bottom: 24px;
+      font-size: 1.8em;
+    }
+    .options-ring {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .option {
+      width: 80%;
+      max-width: 360px;
+      height: auto;
+      padding: 12px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.25);
+      border: 2px solid #fff;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      word-wrap: break-word;
+    }
+    .option:hover {
+      background: #fff;
+      color: #000;
+    }
+    #nextBtn {
+      margin: 24px auto 0 auto;
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 16px;
+      border: none;
+      background: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+      display: block;
+    }
+    #nextBtn:disabled {
+      background: #aaa;
+      color: #444;
+      cursor: not-allowed;
+    }
+    #nextBtn:hover:enabled {
+      background: #ff70c1;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="question" id="quiz"></div>
+  <button id="nextBtn" onclick="nextQuestion()">▶</button>
+
+  <script>
+    const questions = [
+      {
+        text: "好きな時間帯は？",
+        options: ["朝", "昼", "夕方", "夜", "深夜"]
+      },
+      {
+        text: "友達に言われたい言葉は？",
+        options: ["かっこいい！", "やさしいね", "おもしろい！", "がんばってるね", "センスある！"]
+      },
+      {
+        text: "よくする行動は？",
+        options: ["すぐ動く", "みんなを気づかう", "場をなごませる", "マイペース", "新しいことが好き"]
+      },
+      {
+        text: "どの動物が好き？",
+        options: ["ライオン", "イルカ", "サル", "ネコ", "フクロウ"]
+      },
+      {
+        text: "大事にしたいことは？",
+        options: ["リーダーシップ", "思いやり", "ユーモア", "自由", "知識"]
+      }
+    ];
+
+    let current = 0;
+    let score = { cool: 0, kind: 0, funny: 0, free: 0 };
+
+    function renderQuestion() {
+      const q = questions[current];
+      let html = `<h2>${q.text}</h2><div class="options-ring">`;
+      q.options.forEach((opt, i) => {
+        html += `<button class="option" onclick="selectOption(${i})">${opt}</button>`;
+      });
+      html += `</div>`;
+      document.getElementById("quiz").innerHTML = html;
+    }
+
+    function selectOption(index) {
+      switch (index) {
+        case 0: score.cool++; break;
+        case 1: score.kind++; break;
+        case 2: score.funny++; break;
+        case 3: score.free++; break;
+        default: score.cool++;
+      }
+      document.getElementById("nextBtn").disabled = false;
+    }
+
+    function nextQuestion() {
+      current++;
+      if (current < questions.length) {
+        renderQuestion();
+        document.getElementById("nextBtn").disabled = true;
+      } else {
+        let resultType = "funny";
+        if (score.cool >= score.kind && score.cool >= score.funny && score.cool >= score.free) {
+          resultType = "cool";
+        } else if (score.kind >= score.cool && score.kind >= score.funny && score.kind >= score.free) {
+          resultType = "kind";
+        } else if (score.funny >= score.cool && score.funny >= score.kind && score.funny >= score.free) {
+          resultType = "funny";
+        } else {
+          resultType = "free";
+        }
+
+        localStorage.setItem("whoai_type", resultType);
+        window.location.href = "appearance.html";
+      }
+    }
+
+    renderQuestion();
+    document.getElementById("nextBtn").disabled = true;
+  </script>
+</body>
+</html>

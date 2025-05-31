@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>evolution.html - マカロン進化</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    h2 {
+      margin-bottom: 24px;
+      font-size: 1.8em;
+    }
+    .macaron-holder {
+      /* ランダムに 1 つだけ表示 */
+      margin-bottom: 24px;
+    }
+    .macaron-img {
+      width: 120px;
+      height: auto;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+      transition: transform 0.2s;
+    }
+    .macaron-img:hover {
+      transform: scale(1.05);
+    }
+    .message {
+      margin-top: 16px;
+      font-size: 1.2em;
+      min-height: 1.4em;
+    }
+    .growth-summary {
+      margin-top: 24px;
+      background: rgba(255,255,255,0.4);
+      color: #222;
+      padding: 16px;
+      border-radius: 12px;
+      max-width: 90%;
+      text-align: left;
+      display: none; /* 食べ終えたら表示 */
+    }
+    .growth-summary h3 {
+      margin-top: 0;
+    }
+    #nextStageBtn {
+      margin-top: 32px;
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: none;
+      background: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+      display: none; /* 全部食べたら表示 */
+    }
+    #nextStageBtn:hover {
+      background: #ff70c1;
+      color: white;
+    }
+
+    @media screen and (max-width: 480px) {
+      .macaron-img {
+        width: 90px;
+      }
+      #nextStageBtn {
+        font-size: 16px;
+        padding: 10px 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h2>マカロンを食べて進化しよう！</h2>
+
+  <!-- ランダムに 1 つだけ表示する場所 -->
+  <div class="macaron-holder" id="macaronHolder"></div>
+
+  <!-- 食べたときのメッセージ表示エリア -->
+  <div class="message" id="message"></div>
+
+  <!-- これまで育てた力のサマリー -->
+  <div class="growth-summary" id="growthSummary"></div>
+
+  <!-- 4色すべて食べ終えたら表示されるボタン -->
+  <button id="nextStageBtn" onclick="goToRebirth()">復活の儀式へ ▶</button>
+
+  <script>
+    // 4色のマカロン（pink, green, blue, purple）
+    const colors = ["pink","green","blue","purple"];
+    const growthMessages = {
+      pink:   "🩷 思いやり・共感の力が育ちました",
+      green:  "💚 自分から動く力が出てきました",
+      blue:   "💙 気づいて考える力が光っています",
+      purple: "💜 感じ取って深める力が育っています"
+    };
+
+    // localStorage からこれまで食べた色を取得
+    let eaten = JSON.parse(localStorage.getItem("eaten_macarons")) || [];
+
+    // 未食状態のマカロン一覧を返す
+    function getRemainingColors() {
+      return colors.filter(c => !eaten.includes(c));
+    }
+
+    // ランダムに残り色の中から一つを選ぶ
+    function pickRandomColor() {
+      const remaining = getRemainingColors();
+      if (remaining.length === 0) return null;
+      return remaining[Math.floor(Math.random() * remaining.length)];
+    }
+
+    // ページ読み込み時に呼び出す
+    function renderMacaron() {
+      const holder = document.getElementById("macaronHolder");
+      holder.innerHTML = ""; // まずクリア
+
+      const pick = pickRandomColor();
+      if (!pick) {
+        // 全部食べ終えた場合はマカロンを表示せずサマリーだけ
+        document.getElementById("growthSummary").style.display = "block";
+        document.getElementById("nextStageBtn").style.display = "block";
+        return;
+      }
+
+      // ランダムで選ばれた color を表示
+      const img = document.createElement("img");
+      img.src = `assets/stage1/macaron_${pick}.png`;
+      img.alt = pick + "マカロン";
+      img.className = "macaron-img";
+      img.onclick = () => eatMacaron(pick);
+      holder.appendChild(img);
+
+      // サマリーはまだ非表示のまま
+      document.getElementById("growthSummary").style.display = "none";
+      document.getElementById("nextStageBtn").style.display = "none";
+    }
+
+    // マカロンを食べたときの処理
+    function eatMacaron(color) {
+      if (eaten.includes(color)) return;
+      eaten.push(color);
+      localStorage.setItem("eaten_macarons", JSON.stringify(eaten));
+      document.getElementById("message").textContent = `${color}マカロンを食べた！`;
+      // メッセージは 2 秒だけ表示
+      setTimeout(() => {
+        document.getElementById("message").textContent = "";
+      }, 2000);
+      // 次のマカロン or サマリーへ切り替え
+      renderMacaron();
+      renderGrowthSummary();
+    }
+
+    // これまで育てた力のサマリーを表示
+    function renderGrowthSummary() {
+      const summaryDiv = document.getElementById("growthSummary");
+      if (eaten.length === 0) {
+        summaryDiv.innerHTML = "";
+        return;
+      }
+      let html = `<h3>あなたはこんな力を育てました♪</h3><ul>`;
+      eaten.forEach(color => {
+        html += `<li>${growthMessages[color]}</li>`;
+      });
+      html += `</ul>`;
+      summaryDiv.innerHTML = html;
+    }
+
+    // 「復活の儀式へ ▶」ボタン
+    function goToRebirth() {
+      window.location.href = "rebirth.html";
+    }
+
+    // ページが読み込まれたら最初に呼び出し
+    window.onload = renderMacaron;
+  </script>
+</body>
+</html>

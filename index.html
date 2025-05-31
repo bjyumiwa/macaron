@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>WhoAI - あなたと育つAI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      height: 100%; margin: 0; padding: 0;
+    }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.0);
+      border-radius: 24px;
+      max-width: 90%;
+      width: 500px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+    .start-button {
+      font-size: 1.3em;
+      padding: 12px 24px;
+      background: #ffd1ec;
+      color: #111;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .start-button:hover {
+      background: #ff70c1;
+      color: white;
+    }
+    .character-image {
+      width: 50%;
+      max-width: 200px;
+      height: auto;
+      margin: 20px auto;
+      display: block;
+      animation: float 3s ease-in-out infinite, fadein 2s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes fadein {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .lang-switch {
+      margin-top: 10px;
+    }
+    .lang-switch button {
+      margin: 0 5px;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #fff;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      cursor: pointer;
+    }
+    .lang-switch button:hover {
+      background: #fff;
+      color: #000;
+    }
+    .about-link button {
+      margin-top: 16px;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #fff;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      cursor: pointer;
+    }
+    .about-link button:hover {
+      background: #fff;
+      color: #000;
+    }
+    @media screen and (max-width: 480px) {
+      h1 {
+        font-size: 1.5em;
+      }
+      .start-button {
+        font-size: 1.1em;
+        padding: 10px 20px;
+      }
+      .container {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title">WhoAI？</h1>
+    <img src="assets/stage1/miwacchi_open.png" alt="キャラクター" class="character-image">
+    <p id="description">この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>
+    さあ、旅を始めましょう。</p>
+    <button class="start-button" onclick="location.href='fortune.html'" id="startBtn">スタート ▶</button>
+    <div class="lang-switch">
+      <button onclick="setLang('ja')">日本語</button>
+      <button onclick="setLang('en')">English</button>
+    </div>
+    <div class="about-link">
+      <button onclick="location.href='about.html'">このアプリについて</button>
+    </div>
+  </div>
+  <script>
+    function setLang(lang) {
+      const title = document.getElementById("title");
+      const description = document.getElementById("description");
+      const startBtn = document.getElementById("startBtn");
+      if (lang === 'en') {
+        title.textContent = "What kind of friend will appear?";
+        description.innerHTML = "In this world, an AI character grows through conversation with you.<br>Let's begin the journey.";
+        startBtn.textContent = "Start ▶";
+      } else {
+        title.textContent = "どんな子が出てくるかな？";
+        description.innerHTML = "この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>さあ、旅を始めましょう。";
+        startBtn.textContent = "スタート ▶";
+      }
+    }
+  </script>
+</body>
+</html>

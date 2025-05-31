@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>naming.html - 名前をつける</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    h2 {
+      font-size: 1.8em;
+      margin-bottom: 20px;
+    }
+    .input-area {
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: none;
+      width: 80%;
+      max-width: 300px;
+    }
+    #confirmBtn {
+      margin-top: 24px;
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: none;
+      background: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+    }
+    #confirmBtn:hover {
+      background: #ff90d2;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h2>この子に名前をつけてください</h2>
+  <div class="input-area">
+    <input type="text" id="nameInput" placeholder="名前を入力してください">
+  </div>
+  <button id="confirmBtn" onclick="saveName()">OK ▶</button>
+
+  <script>
+    function saveName() {
+      const name = document.getElementById("nameInput").value.trim();
+      if (name === "") {
+        alert("名前を入力してください。");
+        return;
+      }
+      localStorage.setItem("whoai_name", name);
+      location.href = "conversation.html";
+    }
+  </script>
+</body>
+</html>

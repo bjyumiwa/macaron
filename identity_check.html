@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>研究参加の同意確認</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 16px;
+      max-width: 400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 1.8em;
+      margin-bottom: 24px;
+    }
+    p {
+      font-size: 1.1em;
+      margin-bottom: 32px;
+      line-height: 1.4;
+    }
+    button {
+      background: #ffd1ec;
+      color: #111;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      margin: 0 10px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background: #ff70c1;
+      color: white;
+    }
+    .btn-group {
+      display: flex;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>研究参加のお願い</h1>
+    <p>本研究に参加していただけますか？<br>
+       参加いただいた情報は匿名で安全に管理されます。</p>
+    <div class="btn-group">
+      <button onclick="goToForm()">はい、参加します</button>
+      <button onclick="goBack()">いいえ</button>
+    </div>
+  </div>
+
+  <script>
+    function goToForm() {
+      // ここにGoogleフォームのURLを入れてください
+      window.location.href = "https://forms.gle/hFXUZL8dWhVWGAUL7";
+    }
+
+    function goBack() {
+      // トップページなどに戻す場合はこちらを変更してください
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

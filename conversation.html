@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>conversation.html - 会話・成長</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    #characterName {
+      font-size: 1.5em;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    #conversationLog {
+      width: 90%;
+      max-width: 600px;
+      height: 300px;
+      background: rgba(0, 0, 0, 0.0);
+      overflow-y: auto;
+      padding: 12px;
+      border-radius: 12px;
+      text-align: left;
+      margin-bottom: 16px;
+      font-size: 1.1em;
+      line-height: 1.4em;
+    }
+    #userInput {
+      width: 90%;
+      max-width: 600px;
+      height: 60px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+    button {
+      font-size: 16px;
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      background-color: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #ff70c1;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="characterName"></div>
+  <div id="conversationLog"></div>
+  <textarea id="userInput" placeholder="ここに話しかけてください..."></textarea><br />
+  <button onclick="sendMessage()">送信 ▶</button>
+
+  <script>
+    const conversationLog = document.getElementById("conversationLog");
+    const userInput = document.getElementById("userInput");
+    const characterNameElem = document.getElementById("characterName");
+
+    const characterName = localStorage.getItem("whoai_name") || "";
+    characterNameElem.textContent = `あなたのAI: ${characterName}`;
+
+    // 会話履歴（画面表示用）とAPI用会話履歴
+    let chatHistory = [];
+
+    // 最初に自己紹介メッセージをAPIへ送る準備フラグ
+    let introduced = false;
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      appendMessage("あなた", text);
+      userInput.value = "";
+      userInput.disabled = true;
+
+      // 最初の一回目は自己紹介を含めてAPIに送る
+      let messages = [];
+
+      if (!introduced) {
+        const systemContent = `
+あなたは「${characterName}」という名前の育成AIキャラクターです。
+会話の最初に「僕は${characterName}だよ。よろしくね♪」と自己紹介してください。
+優しく親しみやすい口調で、一行以内に簡潔に答えてください。
+ユーザーの話に共感しながら返答してください。
+ユーザーが使った言語（日本語、英語、中国語、韓国語）を判別し、その言語で自然な話し方をしてください。
+        `.trim();
+
+        messages.push({ role: "system", content: systemContent });
+        introduced = true;
+      } else {
+        // 継続会話は過去履歴も活かすため会話履歴を送る
+        messages = [...chatHistory];
+      }
+
+      messages.push({ role: "user", content: text });
+
+      try {
+        const response = await fetch("/api/talk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, characterName }),
+        });
+        const data = await response.json();
+        const reply = data.reply || "ごめんなさい、うまく返答できませんでした。";
+
+        appendMessage(characterName, reply);
+        speakText(reply);
+        userInput.disabled = false;
+        userInput.focus();
+
+        // APIに送る会話履歴に追加
+        chatHistory.push({ role: "user", content: text });
+        chatHistory.push({ role: "assistant", content: reply });
+      } catch (e) {
+        appendMessage("エラー", "通信エラーが発生しました。しばらくしてからもう一度試してください。");
+        userInput.disabled = false;
+        userInput.focus();
+      }
+    }
+
+    function appendMessage(speaker, text) {
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${speaker}:</strong> ${text}`;
+      conversationLog.appendChild(div);
+      conversationLog.scrollTop = conversationLog.scrollHeight;
+    }
+
+    function speakText(text) {
+      if (!window.speechSynthesis) return;
+
+      // 言語判別（日本語・英語・中国語・韓国語対応）
+      let lang = "ja-JP";
+      if (/[\u0600-\u06FF]/.test(text)) lang = "ar-SA";
+      else if (/[\u3040-\u30FF]/.test(text)) lang = "ja-JP";
+      else if (/[\u4E00-\u9FFF]/.test(text)) lang = "zh-CN";
+      else if (/[\uAC00-\uD7AF]/.test(text)) lang = "ko-KR";
+      else lang = "en-US";
+
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.pitch = 1.2;
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
+  </script>
+</body>
+</html>

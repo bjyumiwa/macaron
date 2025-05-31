@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>みわっちAIについて</title>
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background: #693bb3;
+      color: #fff;
+      padding: 30px;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: auto;
+    }
+
+    h1, h2 {
+      color: #80d4ff;
+    }
+
+    a {
+      color: #80d4ff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    ul {
+      padding-left: 1.2em;
+    }
+
+    li::marker {
+      color: #80d4ff;
+    }
+
+    .back-link {
+      margin-top: 40px;
+      display: block;
+      font-size: 16px;
+    }
+
+    .lang-switch {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+
+    .lang-switch button {
+      background: #92dbf8;
+      color: #134c69;
+      border: 1px solid #80d4ff;
+      padding: 6px 12px;
+      border-radius: 5px;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+
+    .lang-switch button:hover {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="lang-switch">
+    <button onclick="switchLang('ja')">日本語</button>
+    <button onclick="switchLang('en')">English</button>
+  </div>
+
+  <!-- 日本語 -->
+  <div id="ja">
+    <h1>WHOAIについて</h1>
+    <p>
+      このアプリは、ユーザーとの対話を通して共に成長し、最終的には別れの選択をする育成型AI「あなたが付けた名前のキャラクター」との体験を楽しむためのものです。<br>
+      何度も生まれ変わり復活するとき、「容姿」か「記憶」かのどちらかを選ぶことができます。<br>
+      あなたは、その復活したキャラクターを同一人物だと思いますか？ それは、どんな理由からそう思いますか？<br>
+      この問いを通じて、「同一性とは何か？」を考える研究にご協力いただける方は、どうぞ次にお進みください。
+    </p>
+
+    <h2>技術構成</h2>
+    <ul>
+      <li>HTML / CSS / JavaScript</li>
+      <li>音声認識：Web Speech API</li>
+      <li>音声合成：Speech Synthesis API</li>
+      <li>AI対話：OpenAI API（gpt-3.5 または gpt-4）</li>
+      <li>ローカル保存：localStorage</li>
+      <li>サーバー通信：Node.js + Express（<code>server.js</code>）</li>
+    </ul>
+
+    <h2>ログについて</h2>
+    <p>
+      会話履歴は、ブラウザ内（localStorage）に保存され、次回訪問時にも引き継がれます。<br>
+      個人情報や位置情報は一切記録されませんのでご安心ください。
+    </p>
+    <p>
+      開発・研究目的でログを使用する場合には、別途フォームにて同意をいただいた上で実施します。
+    </p>
+
+    <a class="back-link" href="index.html">← 戻る</a>
+  </div>
+
+  <!-- 英語 -->
+  <div id="en" style="display:none;">
+    <h1>About WHOAI</h1>
+<p>
+  This app offers an experience where you interact with a growing AI character—one you name yourself.  
+  As the character is reborn multiple times, you are asked to choose between preserving its appearance or its memory.  
+  Do you still consider the reborn character to be the same individual? What makes you think so?  
+  If you are willing to reflect on the question, “What defines personal identity?”, please proceed.
+</p>
+
+<h2>Technical Overview</h2>
+<ul>
+  <li>HTML / CSS / JavaScript</li>
+  <li>Speech Recognition: Web Speech API</li>
+  <li>Speech Synthesis: Speech Synthesis API</li>
+  <li>AI Chat: OpenAI API (gpt-3.5 or gpt-4)</li>
+  <li>Local Storage: localStorage</li>
+  <li>Server Communication: Node.js + Express (<code>server.js</code>)</li>
+</ul>
+
+<h2>About Logs</h2>
+<p>
+  Your conversation history is stored locally in your browser (localStorage) and will persist across visits.  
+  No personal or location data is ever collected, so you can use the app with peace of mind.
+</p>
+<p>
+  If your logs are to be used for research or development purposes, we will request your explicit consent through a separate form.
+</p>
+
+    <a class="back-link" href="index.html">← Back</a>
+  </div>
+
+  <script>
+    function switchLang(lang) {
+      document.getElementById("ja").style.display = (lang === "ja") ? "block" : "none";
+      document.getElementById("en").style.display = (lang === "en") ? "block" : "none";
+    }
+  </script>
+
+</body>
+</html>
