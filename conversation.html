@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
+      background-image: url("assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -20,16 +20,22 @@
       justify-content: flex-start;
       align-items: center;
     }
+    #characterImg {
+      width: 180px;
+      margin-bottom: 12px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px #fff;
+    }
     #characterName {
       font-size: 1.5em;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       font-weight: bold;
     }
     #conversationLog {
       width: 90%;
       max-width: 600px;
       height: 300px;
-      background: rgba(0, 0, 0, 0.0);
+      background: rgba(0, 0, 0, 0.3);
       overflow-y: auto;
       padding: 12px;
       border-radius: 12px;
@@ -64,39 +70,31 @@
     }
     #macaronImg {
       width: 120px;
-      margin-top: 24px;
-      cursor: pointer;
+      margin-top: 20px;
       display: none;
-      transition: transform 0.3s ease;
-    }
-    #macaronImg:hover {
-      transform: scale(1.1);
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
+  <img id="characterImg" src="" alt="キャラクター">
   <div id="characterName"></div>
   <div id="conversationLog"></div>
   <textarea id="userInput" placeholder="ここに話しかけてください..."></textarea><br />
   <button id="sendBtn" onclick="sendMessage()">送信 ▶</button>
-
-  <img
-    id="macaronImg"
-    src="public/assets/stage1/macaron_purple.png"
-    alt="マカロン"
-    title="マカロンを食べて次の成長へ"
-    onclick="goToNextStage()"
-  />
+  <img id="macaronImg" src="assets/stage1/macaron_pink.png" alt="マカロン" title="マカロンを食べて進化！" onclick="goToEvolution()" />
 
   <script>
+    const characterName = localStorage.getItem("whoai_name") || "ノン";
+    const characterType = localStorage.getItem("whoai_type") || "pink";
+
+    document.getElementById("characterName").textContent = `あなたのAI: ${characterName}`;
+    document.getElementById("characterImg").src = `assets/stage1/tane_${characterType}.png`;
+
     const conversationLog = document.getElementById("conversationLog");
     const userInput = document.getElementById("userInput");
-    const characterNameElem = document.getElementById("characterName");
-    const macaronImg = document.getElementById("macaronImg");
     const sendBtn = document.getElementById("sendBtn");
-
-    const characterName = localStorage.getItem("whoai_name") || "まめっち";
-    characterNameElem.textContent = `あなたのAI: ${characterName}`;
+    const macaronImg = document.getElementById("macaronImg");
 
     let chatHistory = [];
     let introduced = false;
@@ -112,6 +110,7 @@
       sendBtn.disabled = true;
 
       let messages = [];
+
       if (!introduced) {
         const systemContent = `
 あなたは「${characterName}」という名前の育成AIキャラクターです。
@@ -171,12 +170,13 @@
     function speakText(text) {
       if (!window.speechSynthesis) return;
       let lang = "ja-JP";
-      if (/[\u0600-\u06FF]/.test(text)) lang = "ar-SA";
-      else if (/[\u3040-\u30FF]/.test(text)) lang = "ja-JP";
-      else if (/[\u4E00-\u9FFF]/.test(text)) lang = "zh-CN";
-      else if (/[\uAC00-\uD7AF]/.test(text)) lang = "ko-KR";
+      if (/[؀-ۿ]/.test(text)) lang = "ar-SA";
+      else if (/[぀-ヿ]/.test(text)) lang = "ja-JP";
+      else if (/[一-鿿]/.test(text)) lang = "zh-CN";
+      else if (/[가-힯]/.test(text)) lang = "ko-KR";
       else lang = "en-US";
 
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
       utterance.pitch = 1.2;
@@ -184,7 +184,7 @@
       window.speechSynthesis.speak(utterance);
     }
 
-    function goToNextStage() {
+    function goToEvolution() {
       window.location.href = "evolution.html";
     }
   </script>
