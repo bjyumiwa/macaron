@@ -133,9 +133,8 @@
   <button id="nextBtn" onclick="goToNext()">次へ ▶</button>
 
   <script>
-    // localStorageからキャラタイプと名前を取得
+    // localStorageからキャラタイプを取得
     const type = localStorage.getItem("whoai_type") || "funny";
-    const savedName = localStorage.getItem("whoai_name") || "";
 
     // キャラ情報
     const characters = {
@@ -172,13 +171,9 @@
     document.getElementById("characterImg").alt = c.defaultName;
     document.getElementById("characterDesc").textContent = c.desc;
 
-    // 名前入力欄に保存済みの名前があればセット
-    if(savedName) {
-      document.getElementById("nameInput").value = savedName;
-    } else {
-      document.getElementById("nameInput").value = "";
-      document.getElementById("nameInput").placeholder = `例）${c.defaultName}`;
-    }
+    // 名前入力欄は毎回空欄にセットし、例だけ表示
+    document.getElementById("nameInput").value = "";
+    document.getElementById("nameInput").placeholder = `例）${c.defaultName}`;
 
     // 次へ進むボタンの処理
     function goToNext() {
