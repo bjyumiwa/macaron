@@ -13,7 +13,7 @@
     }
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("assets/stage1/space_background.png");
+      background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -145,7 +145,7 @@
 
       // ランダムで選ばれた color を表示
       const img = document.createElement("img");
-      img.src = `assets/stage1/macaron_${pick}.png`;
+      img.src = `public/assets/stage1/macaron_${pick}.png`;
       img.alt = pick + "マカロン";
       img.className = "macaron-img";
       img.onclick = () => eatMacaron(pick);
