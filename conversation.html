@@ -62,27 +62,46 @@
       background-color: #ff70c1;
       color: white;
     }
+    #macaronImg {
+      width: 120px;
+      margin-top: 24px;
+      cursor: pointer;
+      display: none; /* 最初は非表示 */
+      transition: transform 0.3s ease;
+    }
+    #macaronImg:hover {
+      transform: scale(1.1);
+    }
   </style>
 </head>
 <body>
   <div id="characterName"></div>
   <div id="conversationLog"></div>
   <textarea id="userInput" placeholder="ここに話しかけてください..."></textarea><br />
-  <button onclick="sendMessage()">送信 ▶</button>
+  <button id="sendBtn" onclick="sendMessage()">送信 ▶</button>
+
+  <!-- マカロン画像。クリックで次の成長画面へ -->
+  <img
+    id="macaronImg"
+    src="public/assets/stage1/macaron_purple.png"
+    alt="マカロン"
+    title="マカロンを食べて次の成長へ"
+    onclick="goToNextStage()"
+  />
 
   <script>
     const conversationLog = document.getElementById("conversationLog");
     const userInput = document.getElementById("userInput");
     const characterNameElem = document.getElementById("characterName");
+    const macaronImg = document.getElementById("macaronImg");
+    const sendBtn = document.getElementById("sendBtn");
 
     const characterName = localStorage.getItem("whoai_name") || "";
     characterNameElem.textContent = `あなたのAI: ${characterName}`;
 
-    // 会話履歴（画面表示用）とAPI用会話履歴
     let chatHistory = [];
-
-    // 最初に自己紹介メッセージをAPIへ送る準備フラグ
     let introduced = false;
+    let conversationCount = 0; // 会話回数カウント
 
     async function sendMessage() {
       const text = userInput.value.trim();
@@ -91,8 +110,8 @@
       appendMessage("あなた", text);
       userInput.value = "";
       userInput.disabled = true;
+      sendBtn.disabled = true;
 
-      // 最初の一回目は自己紹介を含めてAPIに送る
       let messages = [];
 
       if (!introduced) {
@@ -107,7 +126,6 @@
         messages.push({ role: "system", content: systemContent });
         introduced = true;
       } else {
-        // 継続会話は過去履歴も活かすため会話履歴を送る
         messages = [...chatHistory];
       }
 
@@ -124,15 +142,25 @@
 
         appendMessage(characterName, reply);
         speakText(reply);
+
         userInput.disabled = false;
+        sendBtn.disabled = false;
         userInput.focus();
 
-        // APIに送る会話履歴に追加
         chatHistory.push({ role: "user", content: text });
         chatHistory.push({ role: "assistant", content: reply });
+
+        conversationCount++;
+        if (conversationCount >= 3) {
+          // 3回会話したら入力欄とボタンを無効化し、マカロン表示
+          userInput.disabled = true;
+          sendBtn.disabled = true;
+          macaronImg.style.display = "block";
+        }
       } catch (e) {
         appendMessage("エラー", "通信エラーが発生しました。しばらくしてからもう一度試してください。");
         userInput.disabled = false;
+        sendBtn.disabled = false;
         userInput.focus();
       }
     }
@@ -147,7 +175,6 @@
     function speakText(text) {
       if (!window.speechSynthesis) return;
 
-      // 言語判別（日本語・英語・中国語・韓国語対応）
       let lang = "ja-JP";
       if (/[\u0600-\u06FF]/.test(text)) lang = "ar-SA";
       else if (/[\u3040-\u30FF]/.test(text)) lang = "ja-JP";
@@ -161,6 +188,10 @@
       utterance.pitch = 1.2;
       utterance.rate = 1.0;
       window.speechSynthesis.speak(utterance);
+    }
+
+    function goToNextStage() {
+      window.location.href = "evolution.html";
     }
   </script>
 </body>
