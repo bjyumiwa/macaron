@@ -113,6 +113,7 @@
       });
       html += `</div>`;
       document.getElementById("quiz").innerHTML = html;
+      document.getElementById("nextBtn").disabled = true;  // ボタンは選択後に活性化
     }
 
     function selectOption(index) {
@@ -130,7 +131,6 @@
       current++;
       if (current < questions.length) {
         renderQuestion();
-        document.getElementById("nextBtn").disabled = true;
       } else {
         let resultType = "funny";
         if (score.cool >= score.kind && score.cool >= score.funny && score.cool >= score.free) {
@@ -143,13 +143,15 @@
           resultType = "free";
         }
 
+        // 結果タイプをlocalStorageに保存
         localStorage.setItem("whoai_type", resultType);
+
+        // 次ページへ遷移
         window.location.href = "appearance.html";
       }
     }
 
     renderQuestion();
-    document.getElementById("nextBtn").disabled = true;
   </script>
 </body>
 </html>
