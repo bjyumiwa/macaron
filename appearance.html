@@ -49,13 +49,8 @@
     }
 
     @keyframes float {
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-12px);
-      }
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
     }
 
     .description {
@@ -138,31 +133,32 @@
   <button id="nextBtn" onclick="goToNext()">次へ ▶</button>
 
   <script>
-    // 取得したキャラタイプ
+    // localStorageからキャラタイプと名前を取得
     const type = localStorage.getItem("whoai_type") || "funny";
+    const savedName = localStorage.getItem("whoai_name") || "";
 
     // キャラ情報
     const characters = {
       cool: {
-        name: "ピンぷく",
+        defaultName: "ピンぷく",
         img: "public/assets/stage1/tane_pink.png",
         desc:
           "ピンぷくは冷静沈着で、リーダーシップにあふれたぷく族です。何事にも真っ直ぐに取り組み、みんなから一目置かれています。"
       },
       kind: {
-        name: "ぶるぷく",
+        defaultName: "ぶるぷく",
         img: "public/assets/stage1/tane_blue.png",
         desc:
           "ぶるぷくは優しくて、誰かを思いやる気持ちを忘れないぷく族です。困っている仲間をそっと助けてくれる存在です。"
       },
       funny: {
-        name: "ぐりぷく",
+        defaultName: "ぐりぷく",
         img: "public/assets/stage1/tane_green.png",
         desc:
           "ぐりぷくはユーモアたっぷりで、みんなを笑顔にするのが得意です。ちょっと不思議な動きをすることも？"
       },
       free: {
-        name: "ぱーぷく",
+        defaultName: "ぱーぷく",
         img: "public/assets/stage1/tane_purple.png",
         desc:
           "ぱーぷくは自由奔放。いつも新しいことにチャレンジして、世界を旅しています。少しマイペースだけど魅力的。"
@@ -173,8 +169,16 @@
 
     // キャラ画像と説明をセット
     document.getElementById("characterImg").src = c.img;
-    document.getElementById("characterImg").alt = c.name;
+    document.getElementById("characterImg").alt = c.defaultName;
     document.getElementById("characterDesc").textContent = c.desc;
+
+    // 名前入力欄に保存済みの名前があればセット
+    if(savedName) {
+      document.getElementById("nameInput").value = savedName;
+    } else {
+      document.getElementById("nameInput").value = "";
+      document.getElementById("nameInput").placeholder = `例）${c.defaultName}`;
+    }
 
     // 次へ進むボタンの処理
     function goToNext() {
@@ -183,7 +187,9 @@
         alert("名前を入力してください");
         return;
       }
+      // 入力された名前をlocalStorageに保存
       localStorage.setItem("whoai_name", nameInput);
+      // 会話ページへ遷移
       location.href = "conversation.html";
     }
   </script>
