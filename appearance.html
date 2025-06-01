@@ -127,7 +127,7 @@
   <input
     type="text"
     id="nameInput"
-    placeholder="この子の新しい名前を入力してください"
+    placeholder="名前を付けてね。例）ぐりぷく"
     aria-label="名前入力"
   />
   <button id="nextBtn" onclick="goToNext()">次へ ▶</button>
@@ -173,7 +173,7 @@
 
     // 名前入力欄は毎回空欄にセットし、例だけ表示
     document.getElementById("nameInput").value = "";
-    document.getElementById("nameInput").placeholder = `例）${c.defaultName}`;
+    document.getElementById("nameInput").placeholder = `名前を付けてね。例）${c.defaultName}`;
 
     // 次へ進むボタンの処理
     function goToNext() {
