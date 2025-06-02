@@ -1,4 +1,344 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>conversation.html - 会話・成長</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* 上部に「AI名 ＋ キャラ画像 ＋ モード切替」エリア */
+    #headerArea {
+      width: 90%;
+      max-width: 600px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    #headerLeft {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #characterIcon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    #charName {
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+    #modeToggleLabel {
+      font-size: 0.9em;
+    }
+
+    /* チャット表示エリア */
+    #chatArea {
+      width: 90%;
+      max-width: 600px;
+      background: rgba(0,0,0,0.4);
+      padding: 12px;
+      border-radius: 12px;
+      overflow-y: auto;
+      max-height: 400px;
+      margin-bottom: 12px;
+    }
+    .message {
+      margin: 8px 0;
+      line-height: 1.4em;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .user {
+      text-align: right;
+      color: #ffd1ec;
+      align-self: flex-end;
+    }
+    .ai {
+      text-align: left;
+      color: #a3e0ff;
+      align-self: flex-start;
+    }
+
+    /* 入力エリア */
+    #inputArea {
+      width: 90%;
+      max-width: 600px;
+      display: flex;
+      margin-bottom: 16px;
+      gap: 8px;
+    }
+    #userInput {
+      flex-grow: 1;
+      height: 60px;
+      border-radius: 8px;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      resize: none;
+    }
+    #sendBtn {
+      padding: 10px 20px;
+      border-radius: 999px;
+      border: none;
+      background: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    #sendBtn:hover {
+      background: #ff70c1;
+      color: white;
+    }
+
+    /* マカロン表示（オフライン 3 回会話終了時） */
+    #macaronImg {
+      display: none;
+      margin-top: 16px;
+      width: 100px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    #macaronImg:hover {
+      transform: scale(1.05);
+    }
+    /* 「会話切り替え」チェックボックス */
+    #modeToggle {
+      accent-color: #ffd1ec;
+      transform: scale(1.2);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- ====== ヘッダー領域：AI名＋アイコン＋オンライン/オフライン切替 ====== -->
+  <div id="headerArea">
+    <div id="headerLeft">
+      <img id="characterIcon" src="" alt="キャラ">
+      <span id="charName">ノン</span>
+    </div>
+    <label id="modeToggleLabel">
+      <input type="checkbox" id="modeToggle" checked>
+      オフラインモード
+    </label>
+  </div>
+
+  <!-- ====== チャット表示エリア ====== -->
+  <div id="chatArea"></div>
+
+  <!-- ====== 入力エリア ====== -->
+  <div id="inputArea">
+    <textarea id="userInput" placeholder="ここに話しかけてください..."></textarea>
+    <button id="sendBtn">送信 ▶</button>
+  </div>
+
+  <!-- ====== オフライン会話 3 回後 or API オンライン会話時には、マカロンを表示 ====== -->
+  <img id="macaronImg" src="" alt="マカロン" title="マカロンを食べて進化！" onclick="goToNextStage()">
+
+  <script>
+    // ————————————————————————————————————————————————————
+    // 1) 画面ロード時に「名前 + タイプ」を localStorage から取得し、表示
+    // ————————————————————————————————————————————————————
+    const charName = localStorage.getItem("whoai_name") || "ノン";
+    const charType = localStorage.getItem("whoai_type") || "pink";
+    // キャラアイコンのマップ（種キャラタイプに応じて change）
+    const iconMap = {
+      pink:   "public/assets/stage1/tane_pink.png",
+      green:  "public/assets/stage1/tane_green.png",
+      blue:   "public/assets/stage1/tane_blue.png",
+      purple: "public/assets/stage1/tane_purple.png"
+    };
+
+    // DOM 要素をキャッシュ
+    const charNameElem    = document.getElementById("charName");
+    const charIconElem    = document.getElementById("characterIcon");
+    const chatArea        = document.getElementById("chatArea");
+    const userInput       = document.getElementById("userInput");
+    const sendBtn         = document.getElementById("sendBtn");
+    const modeToggle      = document.getElementById("modeToggle");
+    const macaronImg      = document.getElementById("macaronImg");
+
+    // 表示をセット
+    charNameElem.textContent = charName;
+    charIconElem.src         = iconMap[charType] || iconMap.pink;
+    charIconElem.alt         = `${charName} のアイコン`;
+
+    // ————————————————————————————————————————————————————
+    // 2) 「オフライン（サンプル 3 回チャット） / オンライン（API チャット）」切り替え
+    //    ・modeToggle.checked === true → “オフラインモード” （local サンプルを使う）
+    //    ・modeToggle.checked === false → “オンラインモード” （APIエンドポイントを叩く）
+    // ————————————————————————————————————————————————————
+    // オンラインモード時の API エンドポイント名
+    const API_ENDPOINT = "/api/talk";
+
+    // ————————————————————————————————————————————————————
+    // 3) 「オフラインサンプルチャット」のサンプル 3 セット
+    //    charType（pink/green/blue/purple） に応じて、各々サンプル会話を 3 文ずつ用意
+    //    例：localSamples["pink"] = [ [Q1, A1], [Q2, A2], [Q3, A3] ]
+    // ————————————————————————————————————————————————————
+    const localSamples = {
+      pink: [
+        ["こんにちは！今日はどう？",             "こんにちは！あなたに会えてうれしいよ♪"],
+        ["何をすると楽しい？",                 "一緒にお絵かきするのが好きだよ♪"],
+        ["悩んだ時は？",                       "まずは深呼吸して、心を落ち着けてみてね♪"]
+      ],
+      green: [
+        ["元気？",                            "もちろん！これからも頑張るよ♪"],
+        ["最近挑戦したことは？",               "新しい曲を練習してみたよ♪"],
+        ["次の目標は？",                       "もっと遠くまで走ってみたいな♪"]
+      ],
+      blue: [
+        ["最近何を考えてる？",                  "空の青さがなぜできるかずっと考えてるよ。"],
+        ["好きな本は？",                       "星の図鑑を読むとワクワクするんだ♪"],
+        ["孤独を感じたら？",                   "好きな音楽を聴いて心を休めるよ♪"]
+      ],
+      purple: [
+        ["どんな音楽が好き？",                  "宇宙の音みたいな不思議なメロディが好き♪"],
+        ["夢中になることは？",                  "いつも新しいアイデアを探してるよ♪"],
+        ["疲れたらどうする？",                  "あえて何もしない時間を作るよ♪"]
+      ]
+    };
+
+    // 現在のオフラインサンプルを選択
+    let offlineCount = 0;  // オフラインで何回やり取りしたかカウント
+    const currentSamples = localSamples[charType] || localSamples.pink;
+
+    // ————————————————————————————————————————————————————
+    // 4) チャット画面に「ユーザー」「AI」の吹き出しメッセージを追加する関数
+    //    who = "user" または "ai"
+    //    text = 表示する文字列
+    // ————————————————————————————————————————————————————
+    function appendMessage(who, text) {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = "message " + who;
+      msgDiv.textContent = text;
+      chatArea.appendChild(msgDiv);
+      // チャットを自動スクロール
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    // ————————————————————————————————————————————————————
+    // 5) 「送信 ▶」 ボタン押下時
+    //    ・モードが “オフライン” なら localSamples を使う
+    //    ・モードが “オンライン” なら API を呼び出す
+    // ————————————————————————————————————————————————————
+    sendBtn.addEventListener("click", () => {
+      const userText = userInput.value.trim();
+      if (!userText) return;  // 空入力は無視
+
+      appendMessage("user", userText);
+      userInput.value = "";
+      userInput.disabled = true;
+      sendBtn.disabled = true;
+
+      if (modeToggle.checked) {
+        // ———————— オフラインモード ————————
+        // localSamples から順番に回答を返す（最大 3 回想定）
+        if (offlineCount < currentSamples.length) {
+          setTimeout(() => {
+            const aiReply = currentSamples[offlineCount][1];
+            appendMessage("ai", aiReply);
+            offlineCount++;
+
+            // ３回返したらマカロンを表示
+            if (offlineCount >= 3) {
+              showMacaron();
+            } else {
+              // 次の入力を可能にする
+              userInput.disabled = false;
+              sendBtn.disabled = false;
+              userInput.focus();
+            }
+          }, 800);
+        } else {
+          // 3 回以上やり取り済み → もう入力不可
+          // （必要ならここで警告などを出す）
+        }
+      } else {
+        // ———————— オンラインモード ————————
+        // /api/talk に POST して AI の応答を取得
+        const payload = {
+          message: userText,
+          characterName: charName
+        };
+        fetch(API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+          const reply = data.reply || "すみません、うまく答えられませんでした。";
+          appendMessage("ai", reply);
+          // オンラインモードの場合は回数制限しないので、すぐに再度入力可能
+          userInput.disabled = false;
+          sendBtn.disabled = false;
+          userInput.focus();
+        })
+        .catch(err => {
+          appendMessage("ai", "通信エラーが発生しました。しばらくしてから試してください。");
+          userInput.disabled = false;
+          sendBtn.disabled = false;
+          userInput.focus();
+        });
+      }
+    });
+
+    // ————————————————————————————————————————————————————
+    // 6) 「マカロンを表示する」関数
+    //    ・3 回オフラインやり取りが終わると showMacaron() が呼ばれ、
+    //      マカロンの画像をランダムに選んで表示する
+    // ————————————————————————————————————————————————————
+    function showMacaron() {
+      // 4 色のマカロンの候補配列
+      const macaronColors = ["pink","green","blue","purple"];
+      // ランダムに 1 色をピック
+      const randomColor = macaronColors[Math.floor(Math.random() * macaronColors.length)];
+      // 画像パスをセット
+      macaronImg.src = `public/assets/stage1/macaron_${randomColor}.png`;
+      macaronImg.alt = `${randomColor}マカロン`;
+      // クリックで evolution.html に進むときに「どの色を食べたか」や localStorage に記録したい場合
+      // ここでキーをセットしておけば、evolution.html が読み込まれたときに対応した顔を出せる
+      localStorage.setItem(randomColor + "_open", "true");
+      // マカロン表示
+      macaronImg.style.display = "block";
+    }
+
+    // ————————————————————————————————————————————————————
+    // 7) マカロンをクリックすると次の「進化結果ページ」へ遷移
+    //    └ evolution.html あるいは別の URL を指定
+    // ————————————————————————————————————————————————————
+    function goToNextStage() {
+      window.location.href = "evolution.html";
+    }
+
+    // ページを開いた直後でも、すでにオフラインモードで 3 回以上やり取り済みなら
+    // 最初からマカロンを出しておくこともできます（例：リロードしたときなど）。
+    // ここではシンプルにページ読み込み時にはチャットだけ表示するので特に処理なし。
+
+    // 最後に、初回フォーカスを入力欄へ
+    userInput.focus();
+  </script>
+</body>
+</html>
+
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
