@@ -17,13 +17,14 @@
       text-align: center;
     }
     #characterIcon {
-      width: 60px;
+      width: 100px;
       vertical-align: middle;
+      margin-right: 10px;
     }
     #chatArea {
       width: 90%;
       max-width: 600px;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.2);
       padding: 16px;
       border-radius: 12px;
       margin: 16px auto;
@@ -166,7 +167,7 @@
       const selected = colors[Math.floor(Math.random() * colors.length)];
       localStorage.setItem("selected_macaron", selected);
       const macaronImg = document.getElementById("macaronImg");
-      macaronImg.src = `ssets/stage1/macaron_${selected}.png`;
+      macaronImg.src = `assets/stage1/macaron_${selected}.png`;
       macaronImg.style.display = "block";
     }
 
@@ -174,6 +175,7 @@
       window.location.href = "evolution.html";
     }
 
+    // モード切替ボタン
     window.onload = () => {
       mode = getQueryMode();
       fetch("/api/status").then(r => {
