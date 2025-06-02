@@ -143,21 +143,31 @@
       appendMessage("user", input);
 
       if (mode === "sample") {
-        setTimeout(() => {
-          appendMessage("ai", chatSamples[characterType][count][1]);
+        const responses = chatSamples[characterType];
+        if (responses && responses[count]) {
+          const reply = responses[count][1];
+          setTimeout(() => {
+            appendMessage("ai", reply);
+            count++;
+            if (count === 3) showMacaron();
+          }, 600);
+        } else {
+          appendMessage("ai", "うーん、うまく答えられないけど考えてみるね。");
+        }
+      } else {
+        try {
+          const res = await fetch("/api/talk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: input })
+          });
+          const data = await res.json();
+          appendMessage("ai", data.reply || "（うまく返答が得られませんでした）");
           count++;
           if (count === 3) showMacaron();
-        }, 600);
-      } else {
-        const res = await fetch("/api/talk", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input })
-        });
-        const data = await res.json();
-        appendMessage("ai", data.reply);
-        count++;
-        if (count === 3) showMacaron();
+        } catch (e) {
+          appendMessage("ai", "APIとの通信に失敗しました。");
+        }
       }
       document.getElementById("userInput").value = "";
     };
@@ -175,7 +185,6 @@
       window.location.href = "evolution.html";
     }
 
-    // モード切替ボタン
     window.onload = () => {
       mode = getQueryMode();
       fetch("/api/status").then(r => {
