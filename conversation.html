@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("assets/stage1/space_background.png");
+      background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -89,10 +89,10 @@
     const characterName = localStorage.getItem("whoai_name") || "なまえ";
     const characterType = localStorage.getItem("whoai_type") || "pink";
     const iconMap = {
-      pink: "assets/stage1/tane_pink.png",
-      green: "assets/stage1/tane_green.png",
-      blue: "assets/stage1/tane_blue.png",
-      purple: "assets/stage1/tane_purple.png"
+      pink: "public/assets/stage1/tane_pink.png",
+      green: "public/assets/stage1/tane_green.png",
+      blue: "public/assets/stage1/tane_blue.png",
+      purple: "public/assets/stage1/tane_purple.png"
     };
     document.getElementById("charName").textContent = characterName;
     document.getElementById("characterIcon").src = iconMap[characterType];
@@ -166,7 +166,7 @@
       const selected = colors[Math.floor(Math.random() * colors.length)];
       localStorage.setItem("selected_macaron", selected);
       const macaronImg = document.getElementById("macaronImg");
-      macaronImg.src = `assets/stage1/macaron_${selected}.png`;
+      macaronImg.src = `apublic/ssets/stage1/macaron_${selected}.png`;
       macaronImg.style.display = "block";
     }
 
