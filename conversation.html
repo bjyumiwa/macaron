@@ -1,44 +1,190 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>進化結果</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>会話と成長 - conversation.html</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background-color: #111;
-      color: #fff;
-      text-align: center;
       font-family: "Noto Sans JP", sans-serif;
+      background-image: url("assets/bg_moonlight.jpg");
+      background-size: cover;
+      color: white;
       margin: 0;
-      padding: 40px 20px;
+      padding: 20px;
+      text-align: center;
     }
-    img {
-      width: 180px;
-      transition: transform 0.3s;
+    #characterIcon {
+      width: 60px;
+      vertical-align: middle;
+    }
+    #chatArea {
+      width: 90%;
+      max-width: 600px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 16px;
+      border-radius: 12px;
+      margin: 16px auto;
+      height: 300px;
+      overflow-y: auto;
+    }
+    .message {
+      margin: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 80%;
+      display: inline-block;
+      clear: both;
+    }
+    .user {
+      background-color: #ffd1ec;
+      color: #000;
+      float: right;
+    }
+    .ai {
+      background-color: #a3e0ff;
+      color: #000;
+      float: left;
+    }
+    #userInput {
+      width: 80%;
+      height: 50px;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    #sendBtn, #toggleBtn {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 999px;
+      border: none;
+      background: #ffd1ec;
+      color: #000;
+      cursor: pointer;
+    }
+    #macaronImg {
+      width: 120px;
+      display: none;
+      margin: 20px auto;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h2>あなたのAIが進化しました！</h2>
-  <img id="characterImage" src="" alt="進化したキャラクター" />
+  <h2>
+    <img id="characterIcon" src="" alt="キャラ"> 
+    <span id="charName">なまえ</span> と会話中
+  </h2>
+  <div id="chatArea"></div>
+  <textarea id="userInput" placeholder="話しかけてみよう..."></textarea><br>
+  <button id="sendBtn">送信 ▶</button>
+  <button id="toggleBtn" style="display:none">APIモードに切り替え</button>
+  <img id="macaronImg" src="" alt="マカロン" onclick="goToNext()">
 
   <script>
-    const characterImage = document.getElementById("characterImage");
+    const characterName = localStorage.getItem("whoai_name") || "なまえ";
+    const characterType = localStorage.getItem("whoai_type") || "pink";
+    const iconMap = {
+      pink: "assets/stage1/tane_pink.png",
+      green: "assets/stage1/tane_green.png",
+      blue: "assets/stage1/tane_blue.png",
+      purple: "assets/stage1/tane_purple.png"
+    };
+    document.getElementById("charName").textContent = characterName;
+    document.getElementById("characterIcon").src = iconMap[characterType];
 
-    // (1) localStorage に「pink_open」というキーがセットされていれば進化表示
-    if (localStorage.getItem("pink_open")) {
-      // (2) まずは閉じた顔を出す
-      characterImage.src = "assets/stage1/pink_closed.png";
+    const chatSamples = {
+      pink: [
+        ["こんにちは！元気？", "うん、あなたに会えてうれしいよ♪"],
+        ["好きな食べ物は？", "もちろんマカロンだよ♪"],
+        ["困った時どうする？", "まずは深呼吸して、やさしく考えるよ♪"]
+      ],
+      green: [
+        ["今日の目標は？", "前に進むこと、挑戦することだよ！"],
+        ["最近ハマってることは？", "植物を育てることかな♪"],
+        ["夢はなに？", "空を飛んで、世界を旅することだよ！"]
+      ],
+      blue: [
+        ["最近考えてることは？", "人ってどうして涙を流すのかなってこと。"],
+        ["気になることある？", "空の色がなぜ青いのか、考え続けてるよ。"],
+        ["好きなことは？", "静かな時間と、優しい言葉が好きだよ。"]
+      ],
+      purple: [
+        ["音楽は好き？", "大好きだよ♪特に星の音を聴くのが好き♪"],
+        ["どんな時うれしい？", "心が通じ合った時かな♪"],
+        ["最近の発見は？", "自分の内側にも宇宙があるって気づいたよ♪"]
+      ]
+    };
 
-      // (3) 2秒後に開いた顔に切り替える
-      setTimeout(() => {
-        characterImage.src = "assets/stage1/pink_open.png";
-      }, 2000);
-    } else {
-      // もし「pink_open」が無ければとりあえずデフォルト画像
-      characterImage.src = "assets/stage1/default.png";
+    let count = 0;
+    let mode = "sample";
+
+    function getQueryMode() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get("mode") || "sample";
     }
+
+    function appendMessage(who, text) {
+      const div = document.createElement("div");
+      div.className = `message ${who}`;
+      div.textContent = text;
+      document.getElementById("chatArea").appendChild(div);
+      document.getElementById("chatArea").scrollTop = document.getElementById("chatArea").scrollHeight;
+    }
+
+    document.getElementById("sendBtn").onclick = async () => {
+      const input = document.getElementById("userInput").value.trim();
+      if (!input || count >= 3) return;
+      appendMessage("user", input);
+
+      if (mode === "sample") {
+        setTimeout(() => {
+          appendMessage("ai", chatSamples[characterType][count][1]);
+          count++;
+          if (count === 3) showMacaron();
+        }, 600);
+      } else {
+        const res = await fetch("/api/talk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input })
+        });
+        const data = await res.json();
+        appendMessage("ai", data.reply);
+        count++;
+        if (count === 3) showMacaron();
+      }
+      document.getElementById("userInput").value = "";
+    };
+
+    function showMacaron() {
+      const colors = ["pink", "green", "blue", "purple"];
+      const selected = colors[Math.floor(Math.random() * colors.length)];
+      localStorage.setItem("selected_macaron", selected);
+      const macaronImg = document.getElementById("macaronImg");
+      macaronImg.src = `assets/stage1/macaron_${selected}.png`;
+      macaronImg.style.display = "block";
+    }
+
+    function goToNext() {
+      window.location.href = "evolution.html";
+    }
+
+    // モード切替ボタン
+    window.onload = () => {
+      mode = getQueryMode();
+      fetch("/api/status").then(r => {
+        if (r.ok) {
+          document.getElementById("toggleBtn").style.display = "inline-block";
+          document.getElementById("toggleBtn").onclick = () => {
+            mode = (mode === "sample") ? "api" : "sample";
+            alert(`モードを ${mode} に切り替えました`);
+          };
+        }
+      });
+    };
   </script>
 </body>
 </html>
