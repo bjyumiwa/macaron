@@ -135,6 +135,7 @@
   <script>
     // localStorageからキャラタイプを取得
     const type = localStorage.getItem("whoai_type") || "funny";
+　　const lang = localStorage.getItem("lang") || "ja";
 
     // キャラ情報
     const characters = {
@@ -167,13 +168,15 @@
     const c = characters[type] || characters.funny;
 
     // キャラ画像と説明をセット
-    document.getElementById("characterImg").src = c.img;
-    document.getElementById("characterImg").alt = c.defaultName;
-    document.getElementById("characterDesc").textContent = c.desc;
+    document.getElementById("characterDesc").textContent = lang === "en" ? c.desc_en : c.desc_ja;
+　　document.getElementById("nameInput").placeholder = lang === "en" ? `Give a name. e.g. ${c.defaultName}` : `名前を付けてね。例）${c.defaultName}`;
+　　document.getElementById("nextBtn").textContent = lang === "en" ? "Next ▶" : "次へ ▶";
 
-    // 名前入力欄は毎回空欄にセットし、例だけ表示
-    document.getElementById("nameInput").value = "";
-    document.getElementById("nameInput").placeholder = `名前を付けてね。例）${c.defaultName}`;
+  // 名前入力欄は毎回空欄にセットし、プレースホルダーも言語で切り替え
+document.getElementById("nameInput").value = "";
+document.getElementById("nameInput").placeholder = lang === "en"
+  ? `Give a name. e.g. ${c.defaultName}`
+  : `名前を付けてね。例）${c.defaultName}`;
 
     // 次へ進むボタンの処理
     function goToNext() {
