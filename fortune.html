@@ -173,16 +173,19 @@
           resultType = "free";
         }
 
-       // 結果タイプをlocalStorageに保存
-localStorage.setItem("whoai_type", resultType);
+          // 結果タイプをlocalStorageに保存
+    localStorage.setItem("whoai_type", resultType);
 
-// 少し待ってから遷移
-setTimeout(() => {
-  window.location.href = "appearance.html";
-}, 200); // ← 200ミリ秒後に遷移
+    // 少し待ってから遷移
+    setTimeout(() => {
+      window.location.href = "appearance.html";
+    }, 200); // ← 200ミリ秒後に遷移
+  }
 
-renderQuestion();
+  // ✅ 最初の質問を表示
+  renderQuestion();
 
-  </script>
+</script>
+
 </body>
 </html>
