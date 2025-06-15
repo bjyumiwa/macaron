@@ -173,13 +173,14 @@
           resultType = "free";
         }
 
-        // 結果タイプをlocalStorageに保存
-        localStorage.setItem("whoai_type", resultType);
+       // 結果タイプをlocalStorageに保存
+localStorage.setItem("whoai_type", resultType);
 
-        // 次ページへ遷移
-        window.location.href = "appearance.html";
-      }
-    }
+// 少し待ってから遷移
+setTimeout(() => {
+  window.location.href = "appearance.html";
+}, 200); // ← 200ミリ秒後に遷移
+
 
     renderQuestion();
   </script>
