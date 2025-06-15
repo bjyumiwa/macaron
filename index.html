@@ -123,19 +123,21 @@
   </div>
   <script>
     function setLang(lang) {
-      const title = document.getElementById("title");
-      const description = document.getElementById("description");
-      const startBtn = document.getElementById("startBtn");
-      if (lang === 'en') {
-        title.textContent = "What kind of friend will appear?";
-        description.innerHTML = "In this world, an AI character grows through conversation with you.<br>Let's begin the journey.";
-        startBtn.textContent = "Start ▶";
-      } else {
-        title.textContent = "どんな子が出てくるかな？";
-        description.innerHTML = "この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>さあ、旅を始めましょう。";
-        startBtn.textContent = "スタート ▶";
-      }
-    }
+  localStorage.setItem("lang", lang);  // ← ここを追加
+  const title = document.getElementById("title");
+  const description = document.getElementById("description");
+  const startBtn = document.getElementById("startBtn");
+  if (lang === 'en') {
+    title.textContent = "What kind of friend will appear?";
+    description.innerHTML = "In this world, an AI character grows through conversation with you.<br>Let's begin the journey.";
+    startBtn.textContent = "Start ▶";
+  } else {
+    title.textContent = "どんな子が出てくるかな？";
+    description.innerHTML = "この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>さあ、旅を始めましょう。";
+    startBtn.textContent = "スタート ▶";
+  }
+}
+
   </script>
 </body>
 </html>
