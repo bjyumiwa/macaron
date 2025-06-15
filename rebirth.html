@@ -68,6 +68,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>命の終わり…そして復活</h1>
@@ -80,10 +81,46 @@
       <button onclick="chooseMemory()">記憶を引き継ぐ</button>
       <button onclick="chooseAppearance()">容姿を引き継ぐ</button>
     </div>
-    <img id="drink" src="public/assets/stage1/drink_item.png" alt="復活のドリンク" title="復活のドリンク - クリックでアンケートへ" style="display:none;" onclick="goToSurvey()" />
+    <img id="drink" src="public/assets/stage1/drink_item.png" alt="復活のドリンク" title="復活のドリンク - クリックでアンケートへ" onclick="goToSurvey()" />
   </div>
 
   <script>
+    // 初期設定：言語を取得
+    document.addEventListener("DOMContentLoaded", () => {
+      const lang = localStorage.getItem("lang") || "ja";
+
+      // タイトルの書き換え
+      document.title = lang === "en"
+        ? "Rebirth Ceremony"
+        : "命の終わりと復活儀式";
+
+      // 見出し
+      document.querySelector("h1").textContent = 
+        lang === "en" ? "End of Life... and Rebirth" : "命の終わり…そして復活";
+
+      // 本文
+      document.querySelector("p").innerHTML = lang === "en"
+        ? `The character who has walked with you has reached the end of its journey,<br>
+           and now seeks to be reborn.<br>
+           Which will you pass on?`
+        : `あなたと一緒に歩んできたキャラクターは一度「命を終え」、<br>
+           今、再び生まれ変わろうとしています。<br>
+           どちらを引き継いで復活しますか？`;
+
+      // ボタンの表示テキスト
+      document.querySelectorAll("button")[0].textContent =
+        lang === "en" ? "Inherit Memory" : "記憶を引き継ぐ";
+
+      document.querySelectorAll("button")[1].textContent =
+        lang === "en" ? "Inherit Appearance" : "容姿を引き継ぐ";
+
+      // ドリンクのタイトル（マウスホバー時）
+      document.getElementById("drink").title = lang === "en"
+        ? "Revival Drink - Click to take the survey"
+        : "復活のドリンク - クリックでアンケートへ";
+    });
+
+    // ボタン処理
     function chooseMemory() {
       localStorage.setItem("rebirth_choice", "memory");
       location.href = "naming.html";
@@ -97,11 +134,6 @@
     function goToSurvey() {
       location.href = "identity_check.html";
     }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const drink = document.getElementById("drink");
-      drink.style.display = "block";
-    });
   </script>
 </body>
 </html>
