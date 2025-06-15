@@ -79,7 +79,30 @@
   <button id="nextBtn" onclick="nextQuestion()">▶</button>
 
   <script>
-    const questions = [
+       const lang = localStorage.getItem("lang") || "ja";
+
+    const questions = lang === "en" ? [
+      {
+        text: "What time of day do you prefer?",
+        options: ["Morning", "Noon", "Evening", "Night", "Midnight"]
+      },
+      {
+        text: "What compliment would you like from a friend?",
+        options: ["You're cool!", "You're kind", "You're funny!", "You're trying hard", "You're stylish!"]
+      },
+      {
+        text: "Which behavior fits you best?",
+        options: ["Act quickly", "Care for others", "Lighten the mood", "Go at your own pace", "Love new things"]
+      },
+      {
+        text: "Which animal do you like?",
+        options: ["Lion", "Dolphin", "Monkey", "Cat", "Owl"]
+      },
+      {
+        text: "What do you value most?",
+        options: ["Leadership", "Compassion", "Humor", "Freedom", "Knowledge"]
+      }
+    ] : [
       {
         text: "好きな時間帯は？",
         options: ["朝", "昼", "夕方", "夜", "深夜"]
@@ -101,6 +124,7 @@
         options: ["リーダーシップ", "思いやり", "ユーモア", "自由", "知識"]
       }
     ];
+
 
     let current = 0;
     let score = { cool: 0, kind: 0, funny: 0, free: 0 };
