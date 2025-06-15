@@ -129,16 +129,22 @@
     let current = 0;
     let score = { cool: 0, kind: 0, funny: 0, free: 0 };
 
-    function renderQuestion() {
-      const q = questions[current];
-      let html = `<h2>${q.text}</h2><div class="options-ring">`;
-      q.options.forEach((opt, i) => {
-        html += `<button class="option" onclick="selectOption(${i})">${opt}</button>`;
-      });
-      html += `</div>`;
-      document.getElementById("quiz").innerHTML = html;
-      document.getElementById("nextBtn").disabled = true;  // ボタンは選択後に活性化
-    }
+   function renderQuestion() {
+  const q = questions[current];
+  let html = `<h2>${q.text}</h2><div class="options-ring">`;
+  q.options.forEach((opt, i) => {
+    html += `<button class="option" onclick="selectOption(${i})">${opt}</button>`;
+  });
+  html += `</div>`;
+  document.getElementById("quiz").innerHTML = html;
+
+  // ✅ ここが修正済み
+  document.getElementById("nextBtn").textContent = lang === "en" ? "Next ▶" : "▶";
+
+  document.getElementById("nextBtn").disabled = true;
+}
+
+
 
     function selectOption(index) {
       switch (index) {
