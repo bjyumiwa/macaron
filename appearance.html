@@ -176,14 +176,7 @@
   document.getElementById("nextBtn").textContent =
     lang === "en" ? "Next ▶" : "次へ ▶";
 </script>
-
-
-  // 名前入力欄は毎回空欄にセットし、プレースホルダーも言語で切り替え
-document.getElementById("nameInput").value = "";
-document.getElementById("nameInput").placeholder = lang === "en"
-  ? `Give a name. e.g. ${c.defaultName}`
-  : `名前を付けてね。例）${c.defaultName}`;
-
+ 
     // 次へ進むボタンの処理
     function goToNext() {
       const nameInput = document.getElementById("nameInput").value.trim();
