@@ -19,6 +19,7 @@
       flex-direction: column;
       justify-content: center;
     }
+
     .container {
       background: rgba(0, 0, 0, 0.7);
       border-radius: 16px;
@@ -26,15 +27,18 @@
       margin: 0 auto;
       padding: 24px;
     }
+
     h1 {
       font-size: 1.8em;
       margin-bottom: 24px;
     }
+
     p {
       font-size: 1.1em;
       margin-bottom: 32px;
       line-height: 1.4;
     }
+
     button {
       background: #ffd1ec;
       color: #111;
@@ -46,10 +50,12 @@
       cursor: pointer;
       transition: background-color 0.3s ease;
     }
+
     button:hover {
       background: #ff70c1;
       color: white;
     }
+
     .btn-group {
       display: flex;
       justify-content: center;
@@ -68,13 +74,33 @@
   </div>
 
   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const lang = localStorage.getItem("lang") || "ja";
+
+      // タイトル（ブラウザタブ）変更
+      document.title = lang === "en" ? "Consent to Participate in Research" : "研究参加の同意確認";
+
+      // 見出しと説明文
+      document.querySelector("h1").textContent =
+        lang === "en" ? "Consent to Participate" : "研究参加のお願い";
+
+      document.querySelector("p").innerHTML = lang === "en"
+        ? "Would you like to participate in this study?<br>Your information will be kept anonymous and secure."
+        : "本研究に参加していただけますか？<br>参加いただいた情報は匿名で安全に管理されます。";
+
+      // ボタンテキスト
+      const buttons = document.querySelectorAll("button");
+      buttons[0].textContent = lang === "en" ? "Yes, I agree" : "はい、参加します";
+      buttons[1].textContent = lang === "en" ? "No" : "いいえ";
+    });
+
     function goToForm() {
-      // ここにGoogleフォームのURLを入れてください
+      // 実際のGoogleフォームURLをここに入れてください
       window.location.href = "https://forms.gle/hFXUZL8dWhVWGAUL7";
     }
 
     function goBack() {
-      // トップページなどに戻す場合はこちらを変更してください
+      // 拒否した場合の戻り先（トップページ等）
       window.location.href = "index.html";
     }
   </script>
