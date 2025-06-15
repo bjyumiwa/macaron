@@ -136,8 +136,12 @@
 
   <script>
     // localStorageからキャラタイプを取得
-    const type = localStorage.getItem("whoai_type") || "funny";
-　　const lang = localStorage.getItem("lang") || "ja";
+    const lang = localStorage.getItem("lang") || "ja";
+const type = localStorage.getItem("whoai_type") || "funny";
+
+alert("type: " + type);
+alert("lang: " + lang);
+alert("desc: " + characters[type]?.desc_ja);  // or desc_en
 
     // キャラ情報
     const characters = {
