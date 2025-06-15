@@ -126,16 +126,39 @@
   <button id="nextStageBtn" onclick="goToRebirth()">復活の儀式へ ▶</button>
 
   <script>
-    // ======    定数定義エリア    ======
-    // 4 色のマカロンのキー（pink, green, blue, purple）
-    const colors = ["pink", "green", "blue", "purple"];
-    // 選ばれた色ごとに出す「育ちメッセージ」
-    const growthMessages = {
-      pink:   "🩷 思いやり・共感の力が育ちました",
-      green:  "💚 自分から動く力が出てきました",
-      blue:   "💙 気づいて考える力が光っています",
-      purple: "💜 感じ取って深める力が育っています"
-    };
+   // lang を取得した直後、定数定義エリアの上のほう
+const lang = localStorage.getItem("lang") || "ja";
+    
+ // 🌍 タイトルの言語切り替え
+document.title = lang === "en"
+  ? "evolution.html - Macaron Evolution"
+  : "evolution.html - マカロン進化";   
+
+// 🎯 colorNames はここに追加！
+const colorNames = {
+  pink:   lang === "en" ? "pink"   : "ピンク",
+  green:  lang === "en" ? "green"  : "グリーン",
+  blue:   lang === "en" ? "blue"   : "ブルー",
+  purple: lang === "en" ? "purple" : "パープル"
+};
+
+// その下に定義されている growthMessages などが続きます
+const growthMessages = {
+  pink:   lang === "en" ? "🩷 You nurtured empathy and compassion." : "🩷 思いやり・共感の力が育ちました",
+  green:  lang === "en" ? "💚 You developed initiative and action." : "💚 自分から動く力が出てきました",
+  blue:   lang === "en" ? "💙 Your thinking and awareness grew."    : "💙 気づいて考える力が光っています",
+  purple: lang === "en" ? "💜 You deepened your sensitivity and insight." : "💜 感じ取って深める力が育っています"
+};
+
+
+document.querySelector("h2").textContent = lang === "en"
+  ? "Feed the macaron to evolve!"
+  : "マカロンを食べて進化しよう！";
+
+document.getElementById("nextStageBtn").textContent = lang === "en"
+  ? "To the Ritual of Rebirth ▶"
+  : "復活の儀式へ ▶";
+
 
     // ======    ローカルストレージから「すでに食べたマカロン」を取得    ======
     // （初回は空の配列となる）
@@ -191,11 +214,17 @@
       }
 
       // マカロン画像を生成し、クリックで食べる処理を割り当てる
-      const img = document.createElement("img");
-      img.src = `public/assets/stage1/macaron_${pick}.png`; // たとえば "macaron_pink.png" など
-      img.alt = pick + "マカロン";
-      img.className = "macaron-img";
-      img.onclick = () => eatMacaron(pick);
+     // ▼この部分に追加してください！
+　　const img = document.createElement("img");
+　　img.src = `public/assets/stage1/macaron_${pick}.png`;
+
+　　img.alt = lang === "en"
+　  ? `${colorNames[pick]} macaron`
+　  : `${colorNames[pick]}マカロン`; // ✅ ← ここに入れる！
+
+img.className = "macaron-img";
+img.onclick = () => eatMacaron(pick);
+
 
       holder.appendChild(img);
 
@@ -217,7 +246,10 @@
 
       // 「○○マカロンを食べた！」と一瞬だけ表示
       const msgDiv = document.getElementById("message");
-      msgDiv.textContent = `${color}マカロンを食べた！`;
+     msgDiv.textContent = lang === "en"
+  ? `You ate the ${colorNames[color]} macaron!`
+  : `${colorNames[color]}マカロンを食べた！`;
+
       setTimeout(() => {
         msgDiv.textContent = "";
       }, 2000);
@@ -236,7 +268,8 @@
         summaryDiv.innerHTML = "";
         return;
       }
-      let html = `<h3>あなたはこんな力を育てました♪</h3><ul>`;
+     let html = `<h3>${lang === "en" ? "You have nurtured these qualities:" : "あなたはこんな力を育てました♪"}</h3><ul>`;
+
       eaten.forEach(color => {
         html += `<li>${growthMessages[color]}</li>`;
       });
