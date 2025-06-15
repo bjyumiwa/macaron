@@ -169,9 +169,10 @@
 
 
     const c = characters[type] || characters.funny;
-
-    // キャラ画像と説明をセット
-   // キャラ画像と説明をセット
+// 🟡 ここにデバッグ用の確認
+alert(`type: ${type}`);
+alert(`desc_ja: ${c.desc_ja}`);
+    
 document.getElementById("characterImg").src = c.img;
 document.getElementById("characterDesc").textContent = lang === "en" ? c.desc_en : c.desc_ja;
 document.getElementById("nameInput").placeholder = lang === "en"
