@@ -239,17 +239,27 @@ document.querySelector("h2 span").textContent =
     }
 
     window.onload = () => {
-      mode = getQueryMode();
-      fetch("/api/status").then(r => {
-        if (r.ok) {
-          document.getElementById("toggleBtn").style.display = "inline-block";
-          document.getElementById("toggleBtn").onclick = () => {
-            mode = (mode === "sample") ? "api" : "sample";
-            alert(`モードを ${mode} に切り替えました`);
-          };
-        }
-      });
-    };
+  mode = getQueryMode();
+
+  // キャラクター画像をセット
+  const characterImg = document.getElementById("characterImg");
+  characterImg.src = iconMap[characterType];
+
+  // 名前の反映（例：h2などがあればそこに表示）
+  // document.getElementById("characterName").textContent = characterName;
+
+  // APIボタンの表示切り替え
+  fetch("/api/status").then(r => {
+    if (r.ok) {
+      document.getElementById("toggleBtn").style.display = "inline-block";
+      document.getElementById("toggleBtn").onclick = () => {
+        mode = (mode === "sample") ? "api" : "sample";
+        alert(`モードを ${mode} に切り替えました`);
+      };
+    }
+  });
+};
+
   </script>
 </body>
 </html>
