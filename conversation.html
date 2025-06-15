@@ -87,6 +87,7 @@
   <img id="macaronImg" src="" alt="マカロン" onclick="goToNext()">
 
   <script>
+    const lang = localStorage.getItem("lang") || "ja";
     const characterName = localStorage.getItem("whoai_name") || "なまえ";
     const characterType = localStorage.getItem("whoai_type") || "pink";
     const iconMap = {
@@ -95,31 +96,71 @@
       blue: "assets/stage1/tane_blue.png",
       purple: "assets/stage1/tane_purple.png"
     };
-    document.getElementById("charName").textContent = characterName;
-    document.getElementById("characterIcon").src = iconMap[characterType];
+    document.getElementById("userInput").placeholder = lang === "en"
+  ? "Try talking to your character..."
+  : "話しかけてみよう...";
+
+document.getElementById("sendBtn").textContent =
+  lang === "en" ? "Send ▶" : "送信 ▶";
+
+document.getElementById("toggleBtn").textContent =
+  lang === "en" ? "Switch to API Mode" : "APIモードに切り替え";
+
+alert(
+  lang === "en"
+    ? `Switched to ${mode} mode.`
+    : `モードを ${mode} に切り替えました`
+);
+
+document.querySelector("h2 span").textContent =
+  lang === "en"
+    ? `${characterName} is listening`
+    : `${characterName} と会話中`;
+
+
 
     const chatSamples = {
-      pink: [
-        ["こんにちは！元気？", "うん、あなたに会えてうれしいよ♪"],
-        ["好きな食べ物は？", "もちろんマカロンだよ♪"],
-        ["困った時どうする？", "まずは深呼吸して、やさしく考えるよ♪"]
-      ],
-      green: [
-        ["今日の目標は？", "前に進むこと、挑戦することだよ！"],
-        ["最近ハマってることは？", "植物を育てることかな♪"],
-        ["夢はなに？", "空を飛んで、世界を旅することだよ！"]
-      ],
-      blue: [
-        ["最近考えてることは？", "人ってどうして涙を流すのかなってこと。"],
-        ["気になることある？", "空の色がなぜ青いのか、考え続けてるよ。"],
-        ["好きなことは？", "静かな時間と、優しい言葉が好きだよ。"]
-      ],
-      purple: [
-        ["音楽は好き？", "大好きだよ♪特に星の音を聴くのが好き♪"],
-        ["どんな時うれしい？", "心が通じ合った時かな♪"],
-        ["最近の発見は？", "自分の内側にも宇宙があるって気づいたよ♪"]
-      ]
-    };
+  pink: lang === "en" ? [
+    ["Hi! How are you?", "I'm happy to see you!"],
+    ["What's your favorite food?", "Macarons, of course!"],
+    ["What do you do when you're in trouble?", "I breathe deeply and think kindly."]
+  ] : [
+    ["こんにちは！元気？", "うん、あなたに会えてうれしいよ♪"],
+    ["好きな食べ物は？", "もちろんマカロンだよ♪"],
+    ["困った時どうする？", "まずは深呼吸して、やさしく考えるよ♪"]
+  ],
+
+  green: lang === "en" ? [
+    ["What's your goal today?", "To move forward and challenge myself!"],
+    ["What are you into lately?", "I've been growing plants lately♪"],
+    ["What's your dream?", "To fly in the sky and travel the world!"]
+  ] : [
+    ["今日の目標は？", "前に進むこと、挑戦することだよ！"],
+    ["最近ハマってることは？", "植物を育てることかな♪"],
+    ["夢はなに？", "空を飛んで、世界を旅することだよ！"]
+  ],
+
+  blue: lang === "en" ? [
+    ["What are you thinking about recently?", "Why do people cry, I've been wondering."],
+    ["Is there anything that interests you?", "Why is the sky blue? I keep thinking about it."],
+    ["What do you like?", "Quiet time and gentle words."]
+  ] : [
+    ["最近考えてることは？", "人ってどうして涙を流すのかなってこと。"],
+    ["気になることある？", "空の色がなぜ青いのか、考え続けてるよ。"],
+    ["好きなことは？", "静かな時間と、優しい言葉が好きだよ。"]
+  ],
+
+  purple: lang === "en" ? [
+    ["Do you like music?", "I love it! Especially the sound of the stars."],
+    ["When do you feel happy?", "When I feel a true connection with someone♪"],
+    ["What did you discover recently?", "I realized the universe is inside me too."]
+  ] : [
+    ["音楽は好き？", "大好きだよ♪特に星の音を聴くのが好き♪"],
+    ["どんな時うれしい？", "心が通じ合った時かな♪"],
+    ["最近の発見は？", "自分の内側にも宇宙があるって気づいたよ♪"]
+  ]
+};
+
 
     let count = 0;
     let mode = "sample";
