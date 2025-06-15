@@ -172,7 +172,7 @@
 
     // キャラ画像と説明をセット
     document.getElementById("characterImg").src = c.img;
-    document.getElementById("characterDesc").textContent = lang === "en" ? c.desc_en : c.desc_ja;
+   document.getElementById("characterDesc").textContent = c.desc;
 　　document.getElementById("nameInput").placeholder = lang === "en" ? `Give a name. e.g. ${c.defaultName}` : `名前を付けてね。例）${c.defaultName}`;
 　　document.getElementById("nextBtn").textContent = lang === "en" ? "Next ▶" : "次へ ▶";
 
