@@ -135,54 +135,47 @@
   <button id="nextBtn" onclick="goToNext()">次へ ▶</button>
 
   <script>
-    // localStorageからキャラタイプを取得
-    const lang = localStorage.getItem("lang") || "ja";
-const type = localStorage.getItem("whoai_type") || "funny";
+  const type = localStorage.getItem("whoai_type") || "funny";
+  const lang = localStorage.getItem("lang") || "ja";
 
-alert("type: " + type);
-alert("lang: " + lang);
-alert("desc: " + characters[type]?.desc_ja);  // or desc_en
+  // ✅ characters は先に定義！
+  const characters = {
+    cool: {
+      defaultName: "ピンぷく",
+      img: "public/assets/stage1/tane_pink.png",
+      desc_ja: "ピンぷくは冷静沈着で、リーダーシップにあふれたぷく族です。",
+      desc_en: "Pinpuku is calm and has strong leadership."
+    },
+    kind: {
+      defaultName: "ぶるぷく",
+      img: "public/assets/stage1/tane_blue.png",
+      desc_ja: "ぶるぷくは優しくて、誰かを思いやる気持ちを忘れないぷく族です。",
+      desc_en: "Blurpuku is kind and caring."
+    },
+    funny: {
+      defaultName: "ぐりぷく",
+      img: "public/assets/stage1/tane_green.png",
+      desc_ja: "ぐりぷくはユーモアたっぷりで、みんなを笑顔にするのが得意です。",
+      desc_en: "Guripuku is full of humor."
+    },
+    free: {
+      defaultName: "ぱーぷく",
+      img: "public/assets/stage1/tane_purple.png",
+      desc_ja: "ぱーぷくは自由奔放で新しいことが大好き。",
+      desc_en: "Pāpuku is free-spirited and loves new things."
+    }
+  };
 
-    // キャラ情報
-    const characters = {
-  cool: {
-    defaultName: "ピンぷく",
-    img: "public/assets/stage1/tane_pink.png",
-    desc_ja: "ピンぷくは冷静沈着で、リーダーシップにあふれたぷく族です。何事にも真っ直ぐに取り組み、みんなから一目置かれています。",
-    desc_en: "Pinpuku is calm and has strong leadership. Always serious and respected by everyone."
-  },
-  kind: {
-    defaultName: "ぶるぷく",
-    img: "public/assets/stage1/tane_blue.png",
-    desc_ja: "ぶるぷくは優しくて、誰かを思いやる気持ちを忘れないぷく族です。困っている仲間をそっと助けてくれる存在です。",
-    desc_en: "Blurpuku is kind and caring. They gently help friends in need."
-  },
-  funny: {
-    defaultName: "ぐりぷく",
-    img: "public/assets/stage1/tane_green.png",
-    desc_ja: "ぐりぷくはユーモアたっぷりで、みんなを笑顔にするのが得意です。ちょっと不思議な動きをすることも？",
-    desc_en: "Guripuku is full of humor and loves to make people smile. Sometimes moves a bit mysteriously?"
-  },
-  free: {
-    defaultName: "ぱーぷく",
-    img: "public/assets/stage1/tane_purple.png",
-    desc_ja: "ぱーぷくは自由奔放。いつも新しいことにチャレンジして、世界を旅しています。少しマイペースだけど魅力的。",
-    desc_en: "Pāpuku is free-spirited, always exploring new things. A bit self-paced, but charming."
-  }
-};
+  // ✅ ここで使う（定義の後！）
+  const c = characters[type] || characters.funny;
 
-
-    const c = characters[type] || characters.funny;
-// 🟡 ここにデバッグ用の確認
-alert(`type: ${type}`);
-alert(`desc_ja: ${c.desc_ja}`);
-    
-document.getElementById("characterImg").src = c.img;
-document.getElementById("characterDesc").textContent = lang === "en" ? c.desc_en : c.desc_ja;
-document.getElementById("nameInput").placeholder = lang === "en"
-  ? `Give a name. e.g. ${c.defaultName}`
-  : `名前を付けてね。例）${c.defaultName}`;
-document.getElementById("nextBtn").textContent = lang === "en" ? "Next ▶" : "次へ ▶";
+  document.getElementById("characterImg").src = c.img;
+  document.getElementById("characterDesc").textContent = lang === "en" ? c.desc_en : c.desc_ja;
+  document.getElementById("nameInput").placeholder =
+    lang === "en" ? `Give a name. e.g. ${c.defaultName}` : `名前を付けてね。例）${c.defaultName}`;
+  document.getElementById("nextBtn").textContent =
+    lang === "en" ? "Next ▶" : "次へ ▶";
+</script>
 
 
   // 名前入力欄は毎回空欄にセットし、プレースホルダーも言語で切り替え
