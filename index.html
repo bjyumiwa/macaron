@@ -10,7 +10,7 @@
     }
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
+      background-image: url("assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -109,7 +109,7 @@
 <body>
   <div class="container">
     <h1 id="title">WhoAI？</h1>
-    <img src="public/assets/stage1/miwacchi_open.png" alt="キャラクター" class="character-image">
+    <img src="assets/stage1/miwacchi_open.png" alt="キャラクター" class="character-image">
     <p id="description">この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>
     さあ、旅を始めましょう。</p>
     <button class="start-button" onclick="location.href='fortune.html'" id="startBtn">スタート ▶</button>
@@ -121,48 +121,21 @@
       <button onclick="location.href='about.html'">このアプリについて</button>
     </div>
   </div>
-  <div style="margin-top: 20px;">
-  <button id="debugBtn">🛠 メンテナンスモード</button>
-</div>
-
   <script>
-
-  function setLang(lang) {
-    localStorage.setItem("lang", lang);
-    const title = document.getElementById("title");
-    const description = document.getElementById("description");
-    const startBtn = document.getElementById("startBtn");
-    if (lang === 'en') {
-      title.textContent = "What kind of friend will appear?";
-      description.innerHTML = "In this world, an AI character grows through conversation with you.<br>Let's begin the journey.";
-      startBtn.textContent = "Start ▶";
-    } else {
-      title.textContent = "どんな子が出てくるかな？";
-      description.innerHTML = "この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>さあ、旅を始めましょう。";
-      startBtn.textContent = "スタート ▶";
+    function setLang(lang) {
+      const title = document.getElementById("title");
+      const description = document.getElementById("description");
+      const startBtn = document.getElementById("startBtn");
+      if (lang === 'en') {
+        title.textContent = "What kind of friend will appear?";
+        description.innerHTML = "In this world, an AI character grows through conversation with you.<br>Let's begin the journey.";
+        startBtn.textContent = "Start ▶";
+      } else {
+        title.textContent = "どんな友達が出てくるかな？";
+        description.innerHTML = "この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>さあ、旅を始めましょう。";
+        startBtn.textContent = "スタート ▶";
+      }
     }
-  }
-
-  // 言語初期化
-  const savedLang = localStorage.getItem("lang") || "ja";
-  setLang(savedLang);
-
-  // 🛠 メンテナンスモード処理
-  document.addEventListener("DOMContentLoaded", () => {
-    const debugBtn = document.getElementById("debugBtn");
-    if (debugBtn) {
-      debugBtn.addEventListener("click", () => {
-        localStorage.setItem("whoai_name", "デバッグ用キャラ");
-        localStorage.setItem("whoai_type", "pink");
-        localStorage.setItem("eaten_macarons", JSON.stringify(["pink", "green", "blue", "purple"]));
-        localStorage.setItem("rebirth_choice", "memory");
-        location.href = "ending.html"; // ここを ending.html に変えてもOK
-      });
-    }
-  });
-</script>
-
-
-
+  </script>
 </body>
 </html>
