@@ -2,180 +2,112 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>conversation.html - 会話・成長</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>conversation.html - 会話</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
+      background-color: #000;
+      color: white;
+      padding: 20px;
+      text-align: center;
       background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
     }
-
-    #characterImage {
-      width: 160px;
-      height: 160px;
-      object-fit: contain;
-      margin: 16px 0;
+    #characterImg {
+      width: 140px;
+      margin-bottom: 12px;
     }
-
-    #characterName {
-      font-size: 1.5em;
-      margin-bottom: 8px;
-      font-weight: bold;
-    }
-
-    #conversationLog {
-      width: 90%;
-      max-width: 600px;
-      height: 300px;
-      background: rgba(0, 0, 0, 0.0);
-      overflow-y: auto;
-      padding: 12px;
+    #chatArea {
+      background: rgba(255,255,255,0.1);
+      padding: 16px;
+      margin-top: 16px;
       border-radius: 12px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 300px;
+      overflow-y: auto;
       text-align: left;
-      margin-bottom: 16px;
-      font-size: 1.1em;
-      line-height: 1.4em;
     }
-
-    #userInput {
-      width: 90%;
-      max-width: 600px;
-      height: 60px;
+    .message {
+      margin-bottom: 12px;
+    }
+    .user { color: #ffd1ec; }
+    .ai { color: #80dfff; }
+    #inputArea {
+      margin-top: 20px;
+    }
+    #messageInput {
+      width: 70%;
+      padding: 10px;
       font-size: 16px;
       border-radius: 8px;
       border: none;
-      padding: 10px;
-      margin-bottom: 12px;
     }
-
-    button {
-      font-size: 16px;
+    #sendBtn {
       padding: 10px 20px;
-      border-radius: 999px;
+      font-size: 16px;
+      margin-left: 8px;
+      background: #ffd1ec;
       border: none;
-      background-color: #ffd1ec;
-      color: #111;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    button:hover {
-      background-color: #ff70c1;
-      color: white;
     }
   </style>
 </head>
 <body>
-  <img id="characterImage" src="" alt="キャラクター画像">
-  <div id="characterName"></div>
-  <div id="conversationLog"></div>
-  <textarea id="userInput" placeholder="ここに話しかけてください..."></textarea><br />
-  <button onclick="sendMessage()">送信 ▶</button>
+  <h2 id="characterName"></h2>
+  <img id="characterImg" src="" alt="キャラクター" />
+  <div id="chatArea"></div>
+  <div id="inputArea">
+    <input type="text" id="messageInput" placeholder="話しかけてみよう！" />
+    <button id="sendBtn" onclick="sendMessage()">送信</button>
+  </div>
 
   <script>
-    const conversationLog = document.getElementById("conversationLog");
-    const userInput = document.getElementById("userInput");
-const characterNameElem = document.getElementById("characterName");
-const characterImageElem = document.getElementById("characterImage");
+    const name = localStorage.getItem("whoai_name") || "ともだち";
+    const img = localStorage.getItem("characterImage") || "public/assets/stage1/tane_green.png";
+    const chatArea = document.getElementById("chatArea");
+    const maxTurns = 3;
+    let turnCount = 0;
 
-const characterName = localStorage.getItem("whoai_name") || "";
-const characterImagePath = localStorage.getItem("characterImage");
+    document.getElementById("characterName").textContent = `${name} と話そう`;
+    document.getElementById("characterImg").src = img;
 
-characterNameElem.textContent = `あなたのAI: ${characterName}`;
-
-if (characterImagePath && characterImageElem) {
-  characterImageElem.src = characterImagePath;
-}
-
-
-    let chatHistory = [];
-    let introduced = false;
+    function addMessage(sender, text) {
+      const div = document.createElement("div");
+      div.className = "message " + (sender === "user" ? "user" : "ai");
+      div.textContent = `${sender === "user" ? "あなた" : name}：${text}`;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
 
     async function sendMessage() {
-      const text = userInput.value.trim();
-      if (!text) return;
+      const input = document.getElementById("messageInput");
+      const message = input.value.trim();
+      if (!message) return;
+      addMessage("user", message);
+      input.value = "";
+      turnCount++;
 
-      appendMessage("あなた", text);
-      userInput.value = "";
-      userInput.disabled = true;
+      const res = await fetch("/api/talk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message })
+      });
 
-      let messages = [];
+      const data = await res.json();
+      addMessage("ai", data.reply);
 
-      if (!introduced) {
-        const systemContent = `
-あなたは「${characterName}」という名前の育成AIキャラクターです。
-会話の最初に「僕は${characterName}だよ。よろしくね♪」と自己紹介してください。
-優しく親しみやすい口調で、一行以内に簡潔に答えてください。
-ユーザーの話に共感しながら返答してください。
-ユーザーが使った言語（日本語、英語、中国語、韓国語）を判別し、その言語で自然な話し方をしてください。
-        `.trim();
-
-        messages.push({ role: "system", content: systemContent });
-        introduced = true;
-      } else {
-        messages = [...chatHistory];
+      // 3ターン終わったら進化へ
+      if (turnCount >= maxTurns) {
+        setTimeout(() => {
+          window.location.href = "evolution.html";
+        }, 2000);
       }
-
-      messages.push({ role: "user", content: text });
-
-      try {
-        const response = await fetch("/api/talk", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, characterName }),
-        });
-
-        const data = await response.json();
-        const reply = data.reply || "ごめんなさい、うまく返答できませんでした。";
-
-        appendMessage(characterName, reply);
-        speakText(reply);
-        userInput.disabled = false;
-        userInput.focus();
-
-        chatHistory.push({ role: "user", content: text });
-        chatHistory.push({ role: "assistant", content: reply });
-      } catch (e) {
-        appendMessage("エラー", "通信エラーが発生しました。しばらくしてからもう一度試してください。");
-        userInput.disabled = false;
-        userInput.focus();
-      }
-    }
-
-    function appendMessage(speaker, text) {
-      const div = document.createElement("div");
-      div.innerHTML = `<strong>${speaker}:</strong> ${text}`;
-      conversationLog.appendChild(div);
-      conversationLog.scrollTop = conversationLog.scrollHeight;
-    }
-
-    function speakText(text) {
-      if (!window.speechSynthesis) return;
-
-      let lang = "ja-JP";
-      if (/[\u0600-\u06FF]/.test(text)) lang = "ar-SA";
-      else if (/[\u3040-\u30FF]/.test(text)) lang = "ja-JP";
-      else if (/[\u4E00-\u9FFF]/.test(text)) lang = "zh-CN";
-      else if (/[\uAC00-\uD7AF]/.test(text)) lang = "ko-KR";
-      else lang = "en-US";
-
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.pitch = 1.2;
-      utterance.rate = 1.0;
-      window.speechSynthesis.speak(utterance);
     }
   </script>
 </body>
