@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("assets/stage1/space_background.png");
+      background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -151,13 +151,13 @@
         // キャラクター画像パスをタイプに応じて保存
         let imagePath = "";
         if (resultType === "cool") {
-          imagePath = "assets/characters/cool.png";
+          imagePath = "public/assets/characters/cool.png";
         } else if (resultType === "kind") {
-          imagePath = "assets/characters/kind.png";
+          imagePath = "public/assets/characters/kind.png";
         } else if (resultType === "funny") {
-          imagePath = "assets/characters/funny.png";
+          imagePath = "public/assets/characters/funny.png";
         } else {
-          imagePath = "assets/characters/free.png";
+          imagePath = "public/assets/characters/free.png";
         }
 
         // localStorage に保存
