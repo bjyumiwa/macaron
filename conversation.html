@@ -1,265 +1,182 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>会話と成長 - conversation.html</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>conversation.html - 会話・成長</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
+      background-image: url("assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
       color: white;
-      margin: 0;
-      padding: 20px;
       text-align: center;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
     }
-    #characterIcon {
-      width: 100px;
-      vertical-align: middle;
-      margin-right: 10px;
+
+    #characterImage {
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+      margin: 16px 0;
     }
-    #chatArea {
+
+    #characterName {
+      font-size: 1.5em;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    #conversationLog {
       width: 90%;
       max-width: 600px;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 16px;
-      border-radius: 12px;
-      margin: 16px auto;
       height: 300px;
+      background: rgba(0, 0, 0, 0.0);
       overflow-y: auto;
+      padding: 12px;
+      border-radius: 12px;
+      text-align: left;
+      margin-bottom: 16px;
+      font-size: 1.1em;
+      line-height: 1.4em;
     }
-    .message {
-      margin: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      max-width: 80%;
-      display: inline-block;
-      clear: both;
-    }
-    .user {
-      background-color: #ffd1ec;
-      color: #000;
-      float: right;
-    }
-    .ai {
-      background-color: #a3e0ff;
-      color: #000;
-      float: left;
-    }
+
     #userInput {
-      width: 80%;
-      height: 50px;
-      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      height: 60px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
       padding: 10px;
-      font-size: 16px;
-      margin-top: 10px;
+      margin-bottom: 12px;
     }
-    #sendBtn, #toggleBtn {
-      margin: 10px;
-      padding: 10px 20px;
+
+    button {
       font-size: 16px;
+      padding: 10px 20px;
       border-radius: 999px;
       border: none;
-      background: #ffd1ec;
-      color: #000;
+      background-color: #ffd1ec;
+      color: #111;
       cursor: pointer;
+      transition: background-color 0.3s;
     }
-    #macaronImg {
-      width: 120px;
-      display: none;
-      margin: 20px auto;
-      cursor: pointer;
-    }
-    #characterImg {
-  width: 180px;
-  max-width: 80vw;
-  height: auto;
-  margin: 20px auto;
-  display: block;
-  border-radius: 16px;
-  animation: float 4s ease-in-out infinite;
-}
 
+    button:hover {
+      background-color: #ff70c1;
+      color: white;
+    }
   </style>
 </head>
 <body>
-  <div id="characterArea">
-  <img id="characterImg" src="" alt="キャラクター" />
-
-
-  </div>
-
-  <textarea id="userInput" placeholder="話しかけてみよう..."></textarea><br>
-  <button id="sendBtn">送信 ▶</button>
-  <button id="toggleBtn" style="display:none">APIモードに切り替え</button>
-  <img id="macaronImg" src="" alt="マカロン" onclick="goToNext()">
+  <img id="characterImage" src="" alt="キャラクター画像">
+  <div id="characterName"></div>
+  <div id="conversationLog"></div>
+  <textarea id="userInput" placeholder="ここに話しかけてください..."></textarea><br />
+  <button onclick="sendMessage()">送信 ▶</button>
 
   <script>
-    const lang = localStorage.getItem("lang") || "ja";
-    const characterName = localStorage.getItem("whoai_name") || "なまえ";
-    const characterType = localStorage.getItem("whoai_type") || "pink";
-    const iconMap = {
-  pink: "/macaron/public/assets/stage1/tane_pink.png",
-  green: "/macaron/public/assets/stage1/tane_green.png",
-  blue: "/macaron/public/assets/stage1/tane_blue.png",
-  purple: "/macaron/public/assets/stage1/tane_purple.png"
-};
-document.getElementById("characterImg").src = iconMap[characterType];
+    const conversationLog = document.getElementById("conversationLog");
+    const userInput = document.getElementById("userInput");
+const characterNameElem = document.getElementById("characterName");
+const characterImageElem = document.getElementById("characterImage");
 
-  ? "Try talking to your character..."
-  : "話しかけてみよう...";
+const characterName = localStorage.getItem("whoai_name") || "";
+const characterImagePath = localStorage.getItem("characterImage");
 
-document.getElementById("sendBtn").textContent =
-  lang === "en" ? "Send ▶" : "送信 ▶";
+characterNameElem.textContent = `あなたのAI: ${characterName}`;
 
-document.getElementById("toggleBtn").textContent =
-  lang === "en" ? "Switch to API Mode" : "APIモードに切り替え";
-
-alert(
-  lang === "en"
-    ? `Switched to ${mode} mode.`
-    : `モードを ${mode} に切り替えました`
-);
-
-document.querySelector("h2 span").textContent =
-  lang === "en"
-    ? `${characterName} is listening`
-    : `${characterName} と会話中`;
+if (characterImagePath && characterImageElem) {
+  characterImageElem.src = characterImagePath;
+}
 
 
+    let chatHistory = [];
+    let introduced = false;
 
-    const chatSamples = {
-  pink: lang === "en" ? [
-    ["Hi! How are you?", "I'm happy to see you!"],
-    ["What's your favorite food?", "Macarons, of course!"],
-    ["What do you do when you're in trouble?", "I breathe deeply and think kindly."]
-  ] : [
-    ["こんにちは！元気？", "うん、あなたに会えてうれしいよ♪"],
-    ["好きな食べ物は？", "もちろんマカロンだよ♪"],
-    ["困った時どうする？", "まずは深呼吸して、やさしく考えるよ♪"]
-  ],
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
 
-  green: lang === "en" ? [
-    ["What's your goal today?", "To move forward and challenge myself!"],
-    ["What are you into lately?", "I've been growing plants lately♪"],
-    ["What's your dream?", "To fly in the sky and travel the world!"]
-  ] : [
-    ["今日の目標は？", "前に進むこと、挑戦することだよ！"],
-    ["最近ハマってることは？", "植物を育てることかな♪"],
-    ["夢はなに？", "空を飛んで、世界を旅することだよ！"]
-  ],
+      appendMessage("あなた", text);
+      userInput.value = "";
+      userInput.disabled = true;
 
-  blue: lang === "en" ? [
-    ["What are you thinking about recently?", "Why do people cry, I've been wondering."],
-    ["Is there anything that interests you?", "Why is the sky blue? I keep thinking about it."],
-    ["What do you like?", "Quiet time and gentle words."]
-  ] : [
-    ["最近考えてることは？", "人ってどうして涙を流すのかなってこと。"],
-    ["気になることある？", "空の色がなぜ青いのか、考え続けてるよ。"],
-    ["好きなことは？", "静かな時間と、優しい言葉が好きだよ。"]
-  ],
+      let messages = [];
 
-  purple: lang === "en" ? [
-    ["Do you like music?", "I love it! Especially the sound of the stars."],
-    ["When do you feel happy?", "When I feel a true connection with someone♪"],
-    ["What did you discover recently?", "I realized the universe is inside me too."]
-  ] : [
-    ["音楽は好き？", "大好きだよ♪特に星の音を聴くのが好き♪"],
-    ["どんな時うれしい？", "心が通じ合った時かな♪"],
-    ["最近の発見は？", "自分の内側にも宇宙があるって気づいたよ♪"]
-  ]
-};
+      if (!introduced) {
+        const systemContent = `
+あなたは「${characterName}」という名前の育成AIキャラクターです。
+会話の最初に「僕は${characterName}だよ。よろしくね♪」と自己紹介してください。
+優しく親しみやすい口調で、一行以内に簡潔に答えてください。
+ユーザーの話に共感しながら返答してください。
+ユーザーが使った言語（日本語、英語、中国語、韓国語）を判別し、その言語で自然な話し方をしてください。
+        `.trim();
 
-
-    let count = 0;
-    let mode = "sample";
-
-    function getQueryMode() {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get("mode") || "sample";
-    }
-
-    function appendMessage(who, text) {
-      const div = document.createElement("div");
-      div.className = `message ${who}`;
-      div.textContent = text;
-      document.getElementById("chatArea").appendChild(div);
-      document.getElementById("chatArea").scrollTop = document.getElementById("chatArea").scrollHeight;
-    }
-
-    document.getElementById("sendBtn").onclick = async () => {
-      const input = document.getElementById("userInput").value.trim();
-      if (!input || count >= 3) return;
-      appendMessage("user", input);
-
-      if (mode === "sample") {
-        const responses = chatSamples[characterType];
-        if (responses && responses[count]) {
-          const reply = responses[count][1];
-          setTimeout(() => {
-            appendMessage("ai", reply);
-            count++;
-            if (count === 3) showMacaron();
-          }, 600);
-        } else {
-          appendMessage("ai", "うーん、うまく答えられないけど考えてみるね。");
-        }
+        messages.push({ role: "system", content: systemContent });
+        introduced = true;
       } else {
-        try {
-          const res = await fetch("/api/talk", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: input })
-          });
-          const data = await res.json();
-          appendMessage("ai", data.reply || "（うまく返答が得られませんでした）");
-          count++;
-          if (count === 3) showMacaron();
-        } catch (e) {
-          appendMessage("ai", "APIとの通信に失敗しました。");
-        }
+        messages = [...chatHistory];
       }
-      document.getElementById("userInput").value = "";
-    };
 
-    function showMacaron() {
-      const colors = ["pink", "green", "blue", "purple"];
-      const selected = colors[Math.floor(Math.random() * colors.length)];
-      localStorage.setItem("selected_macaron", selected);
-      const macaronImg = document.getElementById("macaronImg");
-      macaronImg.src = `assets/stage1/macaron_${selected}.png`;
-      macaronImg.style.display = "block";
+      messages.push({ role: "user", content: text });
+
+      try {
+        const response = await fetch("/api/talk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, characterName }),
+        });
+
+        const data = await response.json();
+        const reply = data.reply || "ごめんなさい、うまく返答できませんでした。";
+
+        appendMessage(characterName, reply);
+        speakText(reply);
+        userInput.disabled = false;
+        userInput.focus();
+
+        chatHistory.push({ role: "user", content: text });
+        chatHistory.push({ role: "assistant", content: reply });
+      } catch (e) {
+        appendMessage("エラー", "通信エラーが発生しました。しばらくしてからもう一度試してください。");
+        userInput.disabled = false;
+        userInput.focus();
+      }
     }
 
-    function goToNext() {
-      window.location.href = "evolution.html";
+    function appendMessage(speaker, text) {
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${speaker}:</strong> ${text}`;
+      conversationLog.appendChild(div);
+      conversationLog.scrollTop = conversationLog.scrollHeight;
     }
 
-    window.onload = () => {
-  mode = getQueryMode();
+    function speakText(text) {
+      if (!window.speechSynthesis) return;
 
-  // キャラクター画像をセット
-  const characterImg = document.getElementById("characterImg");
-  characterImg.src = iconMap[characterType];
+      let lang = "ja-JP";
+      if (/[\u0600-\u06FF]/.test(text)) lang = "ar-SA";
+      else if (/[\u3040-\u30FF]/.test(text)) lang = "ja-JP";
+      else if (/[\u4E00-\u9FFF]/.test(text)) lang = "zh-CN";
+      else if (/[\uAC00-\uD7AF]/.test(text)) lang = "ko-KR";
+      else lang = "en-US";
 
-  // 名前の反映（例：h2などがあればそこに表示）
-  // document.getElementById("characterName").textContent = characterName;
-
-  // APIボタンの表示切り替え
-  fetch("/api/status").then(r => {
-    if (r.ok) {
-      document.getElementById("toggleBtn").style.display = "inline-block";
-      document.getElementById("toggleBtn").onclick = () => {
-        mode = (mode === "sample") ? "api" : "sample";
-        alert(`モードを ${mode} に切り替えました`);
-      };
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.pitch = 1.2;
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
     }
-  });
-};
-
   </script>
 </body>
 </html>
