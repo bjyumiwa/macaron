@@ -1,10 +1,5 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.status(405).end(); // ← POSTじゃないリクエストは拒否
-    return;
-  }
-
-  const body = req.body;
+export default async function handler(request) {
+  const body = await request.json();
 
   const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -19,5 +14,8 @@ export default async function handler(req, res) {
   });
 
   const data = await openaiRes.json();
-  res.status(200).json({ reply: data.choices[0].message.content });
+  return new Response(JSON.stringify({ reply: data.choices[0].message.content }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" }
+  });
 }
