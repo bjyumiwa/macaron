@@ -61,10 +61,10 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .lang-switch {
+    .lang-switch, .about-link {
       margin-top: 10px;
     }
-    .lang-switch button {
+    .lang-switch button, .about-link button {
       margin: 0 5px;
       padding: 6px 12px;
       font-size: 14px;
@@ -74,23 +74,38 @@
       color: #fff;
       cursor: pointer;
     }
-    .lang-switch button:hover {
+    .lang-switch button:hover, .about-link button:hover {
       background: #fff;
       color: #000;
     }
-    .about-link button {
-      margin-top: 16px;
-      padding: 6px 12px;
-      font-size: 14px;
-      border-radius: 8px;
-      border: 1px solid #fff;
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
+    .chat-box {
+      margin-top: 20px;
+    }
+    .chat-box input {
+      padding: 10px;
+      width: 70%;
+      border-radius: 10px;
+      border: none;
+      font-size: 1em;
+    }
+    .chat-box button {
+      padding: 10px;
+      border-radius: 10px;
+      background-color: #ffd1ec;
+      border: none;
+      font-size: 1em;
+      margin-left: 8px;
       cursor: pointer;
     }
-    .about-link button:hover {
-      background: #fff;
-      color: #000;
+    .chat-box button:hover {
+      background-color: #ff70c1;
+      color: white;
+    }
+    #response {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background-color: rgba(255,255,255,0.2);
     }
     @media screen and (max-width: 480px) {
       h1 {
@@ -113,6 +128,13 @@
     <p id="description">この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>
     さあ、旅を始めましょう。</p>
     <button class="start-button" onclick="location.href='fortune.html'" id="startBtn">スタート ▶</button>
+
+    <div class="chat-box">
+      <input id="userInput" placeholder="マカロンAIに話しかけてみよう！" />
+      <button onclick="talkToMacaron()">送信</button>
+      <div id="response"></div>
+    </div>
+
     <div class="lang-switch">
       <button onclick="setLang('ja')">日本語</button>
       <button onclick="setLang('en')">English</button>
@@ -121,6 +143,7 @@
       <button onclick="location.href='about.html'">このアプリについて</button>
     </div>
   </div>
+
   <script>
     function setLang(lang) {
       const title = document.getElementById("title");
@@ -135,6 +158,27 @@
         description.innerHTML = "この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>さあ、旅を始めましょう。";
         startBtn.textContent = "スタート ▶";
       }
+    }
+
+    function talkToMacaron() {
+      const message = document.getElementById("userInput").value;
+      const responseBox = document.getElementById("response");
+
+      fetch("https://macaron-x5d8.vercel.app/api/talk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ message: message })
+      })
+      .then(res => res.json())
+      .then(data => {
+        responseBox.innerText = data.reply || "マカロンAI：うまく返事できなかったよ";
+      })
+      .catch(error => {
+        console.error(error);
+        responseBox.innerText = "エラーが発生しました。もう一度お試しください。";
+      });
     }
   </script>
 </body>
