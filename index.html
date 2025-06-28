@@ -148,6 +148,32 @@
   </div>
 
   <script>
+    // APIのURL設定
+    const API_URL = 'https://macaron-x5d8.vercel.app/api/talk';
+
+    // メッセージ送信関数
+    async function sendMessage(message) {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: message })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.response || data.reply || 'AIからの返答を取得できませんでした';
+      } catch (error) {
+        console.error('エラー:', error);
+        return 'エラーが発生しました。もう一度ためしてね。';
+      }
+    }
+
     function setLang(lang) {
       const title = document.getElementById("title");
       const description = document.getElementById("description");
@@ -163,7 +189,7 @@
       }
     }
 
-    function talkToMacaron() {
+    async function talkToMacaron() {
       const message = document.getElementById("userInput").value.trim();
       const responseArea = document.getElementById("responseArea");
 
@@ -178,16 +204,21 @@
       userBubble.textContent = "あなた: " + message;
       responseArea.appendChild(userBubble);
 
-      fetch("https://macaron-x5d8.vercel.app/api/talk", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ message: message })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const reply = data.reply || "マカロンAI：うまく返事できなかったよ";
+      // 入力フィールドをクリア
+      document.getElementById("userInput").value = "";
+
+      // ローディング表示
+      const loadingBubble = document.createElement("div");
+      loadingBubble.className = "bubble ai";
+      loadingBubble.textContent = "マカロンAI: 考え中...";
+      responseArea.appendChild(loadingBubble);
+
+      try {
+        // 新しいsendMessage関数を使用
+        const reply = await sendMessage(message);
+
+        // ローディング表示を削除
+        responseArea.removeChild(loadingBubble);
 
         // AIの吹き出し
         const aiBubble = document.createElement("div");
@@ -199,8 +230,11 @@
         const utterance = new SpeechSynthesisUtterance(reply);
         utterance.lang = "ja-JP";
         window.speechSynthesis.speak(utterance);
-      })
-      .catch(error => {
+
+      } catch (error) {
+        // ローディング表示を削除
+        responseArea.removeChild(loadingBubble);
+
         console.error(error);
         const errorBubble = document.createElement("div");
         errorBubble.className = "bubble ai";
@@ -211,10 +245,21 @@
         const utterance = new SpeechSynthesisUtterance("エラーが発生しました。もう一度ためしてね。");
         utterance.lang = "ja-JP";
         window.speechSynthesis.speak(utterance);
-      });
+      }
 
-      document.getElementById("userInput").value = "";
+      // 最新のメッセージまでスクロール
+      responseArea.scrollTop = responseArea.scrollHeight;
     }
+
+    // Enterキーでメッセージ送信
+    document.addEventListener('DOMContentLoaded', function() {
+      const userInput = document.getElementById('userInput');
+      userInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+          talkToMacaron();
+        }
+      });
+    });
   </script>
 </body>
 </html>
