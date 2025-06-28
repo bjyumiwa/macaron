@@ -61,23 +61,6 @@
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .lang-switch, .about-link {
-      margin-top: 10px;
-    }
-    .lang-switch button, .about-link button {
-      margin: 0 5px;
-      padding: 6px 12px;
-      font-size: 14px;
-      border-radius: 8px;
-      border: 1px solid #fff;
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-      cursor: pointer;
-    }
-    .lang-switch button:hover, .about-link button:hover {
-      background: #fff;
-      color: #000;
-    }
     .chat-box {
       margin-top: 20px;
     }
@@ -101,11 +84,28 @@
       background-color: #ff70c1;
       color: white;
     }
-    #response {
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 10px;
-      background-color: rgba(255,255,255,0.2);
+    .bubble {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      border-radius: 15px;
+      padding: 10px 15px;
+      margin: 8px 0;
+      text-align: left;
+      max-width: 80%;
+    }
+    .bubble.user {
+      background: rgba(255,209,236,0.6);
+      align-self: flex-end;
+    }
+    .bubble.ai {
+      background: rgba(200,200,255,0.4);
+      align-self: flex-start;
+    }
+    #responseArea {
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
     }
     @media screen and (max-width: 480px) {
       h1 {
@@ -125,15 +125,18 @@
   <div class="container">
     <h1 id="title">WhoAI？</h1>
     <img src="public/assets/stage1/miwacchi_open.png" alt="キャラクター" class="character-image">
-    <p id="description">この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>
-    さあ、旅を始めましょう。</p>
+    <p id="description">
+      この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>
+      さあ、旅を始めましょう。
+    </p>
     <button class="start-button" onclick="location.href='fortune.html'" id="startBtn">スタート ▶</button>
 
     <div class="chat-box">
       <input id="userInput" placeholder="マカロンAIに話しかけてみよう！" />
       <button onclick="talkToMacaron()">送信</button>
-      <div id="response"></div>
     </div>
+
+    <div id="responseArea"></div>
 
     <div class="lang-switch">
       <button onclick="setLang('ja')">日本語</button>
@@ -161,8 +164,19 @@
     }
 
     function talkToMacaron() {
-      const message = document.getElementById("userInput").value;
-      const responseBox = document.getElementById("response");
+      const message = document.getElementById("userInput").value.trim();
+      const responseArea = document.getElementById("responseArea");
+
+      if (!message) {
+        alert("何か入力してね！");
+        return;
+      }
+
+      // ユーザーの吹き出し
+      const userBubble = document.createElement("div");
+      userBubble.className = "bubble user";
+      userBubble.textContent = "あなた: " + message;
+      responseArea.appendChild(userBubble);
 
       fetch("https://macaron-x5d8.vercel.app/api/talk", {
         method: "POST",
@@ -173,12 +187,33 @@
       })
       .then(res => res.json())
       .then(data => {
-        responseBox.innerText = data.reply || "マカロンAI：うまく返事できなかったよ";
+        const reply = data.reply || "マカロンAI：うまく返事できなかったよ";
+
+        // AIの吹き出し
+        const aiBubble = document.createElement("div");
+        aiBubble.className = "bubble ai";
+        aiBubble.textContent = "マカロンAI: " + reply;
+        responseArea.appendChild(aiBubble);
+
+        // 音声で読み上げ
+        const utterance = new SpeechSynthesisUtterance(reply);
+        utterance.lang = "ja-JP";
+        window.speechSynthesis.speak(utterance);
       })
       .catch(error => {
         console.error(error);
-        responseBox.innerText = "エラーが発生しました。もう一度お試しください。";
+        const errorBubble = document.createElement("div");
+        errorBubble.className = "bubble ai";
+        errorBubble.textContent = "エラーが発生しました。もう一度ためしてね。";
+        responseArea.appendChild(errorBubble);
+
+        // エラー時にも声で伝える
+        const utterance = new SpeechSynthesisUtterance("エラーが発生しました。もう一度ためしてね。");
+        utterance.lang = "ja-JP";
+        window.speechSynthesis.speak(utterance);
       });
+
+      document.getElementById("userInput").value = "";
     }
   </script>
 </body>
