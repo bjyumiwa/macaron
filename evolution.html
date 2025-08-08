@@ -5,34 +5,81 @@
   <title>evolution.html - マカロン進化</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    html,body{height:100%;margin:0;padding:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;
-      background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      color:#fff;text-align:center;padding:20px;
-      display:flex;flex-direction:column;justify-content:center;align-items:center
+    html, body { height:100%; margin:0; padding:0; }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
     }
-    h2{margin-bottom:24px;font-size:1.8em;text-shadow:0 0 8px rgba(0,0,0,.5)}
-    .macaron-holder{
-      width:160px;height:160px;display:flex;justify-content:center;align-items:center;
-      margin-bottom:24px;background:rgba(255,255,255,.1);
-      border:2px dashed rgba(255,255,255,.35);border-radius:16px
+    h2 {
+      margin-bottom: 24px;
+      font-size: 1.8em;
+      text-shadow: 0 0 8px rgba(0,0,0,0.5);
     }
-    .macaron-img,.evolved-img{width:130px;height:auto;border-radius:12px;box-shadow:0 0 10px rgba(255,255,255,.5)}
-    .macaron-img{cursor:pointer;transition:transform .2s}
-    .macaron-img:hover{transform:scale(1.05)}
-    .message{margin-top:16px;font-size:1.2em;min-height:1.4em}
-    .btn{
-      margin-top:28px;padding:12px 24px;font-size:18px;border:none;border-radius:12px;
-      background:#ffd1ec;color:#111;cursor:pointer;display:none
+    .macaron-holder {
+      width: 160px;
+      height: 160px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+      background: rgba(255,255,255,0.1);
+      border: 2px dashed rgba(255,255,255,0.35);
+      border-radius: 16px;
     }
-    .btn:hover{background:#ff70c1;color:#fff}
-    .err{margin-top:12px;color:#ffdede;display:none;font-size:.95em}
-    @media(max-width:480px){
-      .macaron-holder{width:120px;height:120px}
-      .macaron-img,.evolved-img{width:90px}
-      .btn{font-size:16px;padding:10px 20px}
+    .macaron-img, .evolved-img {
+      width: 130px;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
+    .macaron-img {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .macaron-img:hover {
+      transform: scale(1.05);
+    }
+    .message {
+      margin-top: 16px;
+      font-size: 1.2em;
+      min-height: 1.4em;
+    }
+    .btn {
+      margin-top: 28px;
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 12px;
+      background: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+      display: none;
+      transition: background 0.3s, color 0.3s;
+    }
+    .btn:hover {
+      background: #ff70c1;
+      color: #fff;
+    }
+    .err {
+      margin-top: 12px;
+      color: #ffdede;
+      display: none;
+      font-size: 0.95em;
+    }
+    @media (max-width: 480px) {
+      .macaron-holder { width: 120px; height: 120px; }
+      .macaron-img, .evolved-img { width: 90px; }
+      .btn { font-size: 16px; padding: 10px 20px; }
     }
   </style>
 </head>
@@ -45,76 +92,102 @@
   <button class="btn" id="talkBtn" onclick="goToTalk()">会話を始める ▶</button>
 
   <script>
-    const COLORS = ["pink","green","blue","purple"];
-    const NAMES_JA = {pink:"ピンク",green:"グリーン",blue:"ブルー",purple:"パープル"};
+    // ===== 設定 =====
+    const COLORS = ["pink", "green", "blue", "purple"];
+    const NAMES_JA = {
+      pink: "ピンク",
+      green: "グリーン",
+      blue: "ブルー",
+      purple: "パープル"
+    };
 
-    // 汎用ローダ（assets優先→直下フォールバック）
-    function loadImage(paths, onload, onfail){
-      const img = new Image(); let i=0;
-      const tryNext = ()=>{ if(i>=paths.length){ onfail?.(); return; } img.src = paths[i++]; };
-      img.onload = ()=> onload(img);
+    // ===== 画像読み込み関数（フォールバック対応） =====
+    function loadImage(paths, onload, onfail) {
+      const img = new Image();
+      let i = 0;
+      const tryNext = () => {
+        if (i >= paths.length) {
+          onfail?.();
+          return;
+        }
+        img.src = paths[i++];
+      };
+      img.onload = () => onload(img);
       img.onerror = tryNext;
       tryNext();
     }
 
-    // ランダム色でマカロン表示
-    let chosenColor = COLORS[Math.floor(Math.random()*COLORS.length)];
+    // ===== ランダムにマカロン色を選ぶ =====
+    let chosenColor = COLORS[Math.floor(Math.random() * COLORS.length)];
 
-    function renderMacaron(){
+    // ===== マカロン表示 =====
+    function renderMacaron() {
       const holder = document.getElementById("macaronHolder");
       const err = document.getElementById("err");
-      holder.innerHTML=""; err.style.display="none";
+      holder.innerHTML = "";
+      err.style.display = "none";
 
       const macaronPaths = [
         `public/assets/stage1/macaron_${chosenColor}.png`,
         `assets/stage1/macaron_${chosenColor}.png`
       ];
 
-      loadImage(macaronPaths,(img)=>{
+      loadImage(macaronPaths, (img) => {
         img.alt = `${NAMES_JA[chosenColor]}マカロン`;
         img.className = "macaron-img";
         img.onclick = evolve;
         holder.appendChild(img);
-      },()=>{
-        err.style.display="block";
+      }, () => {
+        err.style.display = "block";
         err.textContent = `macaron_${chosenColor}.png が見つかりません。public/assets/stage1/ を確認してください。`;
       });
     }
 
-    // 進化（色対応）
-    function evolve(){
+    // ===== 進化処理 =====
+    function evolve() {
+      // 進化色と会話回数を保存
       localStorage.setItem("evolved_color", chosenColor);
-      localStorage.setItem("conv_count", "0");      // 会話回数をリセット
-      localStorage.setItem("conv_limit", "7");      // 7回に固定
+      localStorage.setItem("conv_count", "0");
+      localStorage.setItem("conv_limit", "7");
 
       const holder = document.getElementById("macaronHolder");
       const err = document.getElementById("err");
-      holder.innerHTML=""; err.style.display="none";
+      holder.innerHTML = "";
+      err.style.display = "none";
 
+      // メッセージ表示
       document.getElementById("message").textContent =
         `${NAMES_JA[chosenColor]}のマカロンを食べた！ ${NAMES_JA[chosenColor]}に進化した！`;
 
+      // 進化後画像パス候補（保存して会話画面でそのまま使う）
       const evoPaths = [
-        `public/assets/stage1/${chosenColor}_open.png`, // 推奨の配置
-        `${chosenColor}_open.png`                        // 直下にある場合
+        `public/assets/stage1/${chosenColor}_open.png`,
+        `${chosenColor}_open.png`
       ];
 
-      loadImage(evoPaths,(img)=>{
+      // 会話画面用に第一候補と第二候補を保存
+      localStorage.setItem("evolved_img_pref1", evoPaths[0]);
+      localStorage.setItem("evolved_img_pref2", evoPaths[1]);
+
+      // 実際に表示
+      loadImage(evoPaths, (img) => {
         img.alt = `${NAMES_JA[chosenColor]}に進化したキャラ`;
         img.className = "evolved-img";
         holder.appendChild(img);
         document.getElementById("talkBtn").style.display = "inline-block";
-      },()=>{
-        err.style.display="block";
+      }, () => {
+        err.style.display = "block";
         err.textContent = `${chosenColor}_open.png が見つかりません。public/assets/stage1/ かリポジトリ直下に置いてください。`;
-        // 画像がなくても会話へは進める
         document.getElementById("talkBtn").style.display = "inline-block";
       });
     }
 
-    function goToTalk(){ window.location.href = "conversation.html"; }
+    // ===== 新しい会話ページに移動 =====
+    function goToTalk() {
+      window.location.href = "whoai_talk.html"; // 既存 conversation.html は残す
+    }
 
-    // 初期表示
+    // ===== 初期表示 =====
     window.onload = renderMacaron;
   </script>
 </body>
