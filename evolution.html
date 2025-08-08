@@ -61,7 +61,7 @@
       tryNext();
     }
 
-    // マカロン（緑）を表示して、クリックで進化
+    // 緑マカロンを表示
     function renderGreenMacaron(){
       const holder = document.getElementById("macaronHolder");
       holder.innerHTML = "";
@@ -76,38 +76,50 @@
         },
         () => {
           document.getElementById("err").style.display = "block";
-          document.getElementById("err").textContent = "macaron_green.png を assets/stage1/ か public/assets/stage1/ に置いてください。";
+          document.getElementById("err").textContent = "macaron_green.png を assets/stage1/ または public/assets/stage1/ に置いてください。";
         }
       );
     }
 
-    // 進化処理：green_open.png に差し替え、フラグ保存、次へ
+    // 進化処理（デバッグ付き）
     function evolveToGreen(){
-      // 保存（次ページなどで利用）
       localStorage.setItem("evolved_color", "green");
-      localStorage.setItem("evolved_sprite", "green_open"); // 任意
+      localStorage.setItem("evolved_sprite", "green_open");
+      document.getElementById("message").textContent = "食べた！緑に進化した！";
 
-      const msg = lang === "en" ? "You ate it! Evolved to GREEN!" : "食べた！緑に進化した！";
-      document.getElementById("message").textContent = msg;
-
-      // 見た目を green_open.png に差し替え
       const holder = document.getElementById("macaronHolder");
-      holder.innerHTML = "";
-      loadImage(
-        ["assets/stage1/green_open.png", "public/assets/stage1/green_open.png"],
-        (img) => {
-          img.alt = "緑に進化したキャラ";
-          img.className = "evolved-img";
-          holder.appendChild(img);
-        },
-        () => {
-          document.getElementById("err").style.display = "block";
-          document.getElementById("err").textContent =
-            "green_open.png が見つかりません。assets/stage1/ か public/assets/stage1/ に配置してください。";
-        }
-      );
+      const err = document.getElementById("err");
+      holder.innerHTML = ""; err.style.display = "none";
 
-      document.getElementById("nextStageBtn").style.display = "inline-block";
+      const candidates = [
+        "public/assets/stage1/green_open.png?v=" + Date.now(),
+        "assets/stage1/green_open.png?v=" + Date.now()
+      ];
+
+      const tried = document.createElement("div");
+      tried.style.fontSize = "12px";
+      tried.style.opacity = "0.8";
+      tried.style.marginTop = "8px";
+      tried.textContent = "Trying: " + candidates.join("  →  ");
+      err.before(tried);
+
+      const img = new Image();
+      let i = 0;
+      img.onload = () => {
+        img.alt = "緑に進化したキャラ";
+        img.className = "evolved-img";
+        holder.appendChild(img);
+        document.getElementById("nextStageBtn").style.display = "inline-block";
+      };
+      img.onerror = () => {
+        if (++i < candidates.length) {
+          img.src = candidates[i];
+        } else {
+          err.style.display = "block";
+          err.textContent = "green_open.png が読み込めませんでした。上の URL を直接開いて 404/パス違いを確認してください。";
+        }
+      };
+      img.src = candidates[i];
     }
 
     function goToRebirth(){ window.location.href = "rebirth.html"; }
