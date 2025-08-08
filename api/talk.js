@@ -79,4 +79,4 @@ function corsHeaders(json = false) {
   };
   if (json) h["Content-Type"] = "application/json";
   return h;
-} 　　　これをコピペして、コードを書くのせばいいの？
+} 　　
