@@ -46,21 +46,25 @@
 
   <script>
     // ===== 設定 =====
-    const API_ENDPOINT = "/api/talk"; // ←あなたのAPIのURLに合わせて変更
+    const API_ENDPOINT = "/api/talk"; // ← あなたのAPI URLに合わせて変更
     const LIMIT_DEFAULT = 7;
+    const NAMES_JA = { pink:"ピンク", green:"グリーン", blue:"ブルー", purple:"パープル" };
 
-    const NAMES_JA = {pink:"ピンク",green:"グリーン",blue:"ブルー",purple:"パープル"};
-
-    // 進化情報 & 名前を取得
+    // 進化情報 & 名前
     const color = localStorage.getItem("evolved_color") || "green";
     const limit = parseInt(localStorage.getItem("conv_limit") || String(LIMIT_DEFAULT), 10);
     let count = parseInt(localStorage.getItem("conv_count") || "0", 10);
-    const petName = (localStorage.getItem("pet_name") || "").trim() || `${NAMES_JA[color]}`;
+    const petName = (localStorage.getItem("whoai_name") || "").trim() || `${NAMES_JA[color]}`;
 
     // タイトル & ステータス
     const titleEl = document.getElementById("title");
-    titleEl.textContent = `${petName} と話そう`;
     const statusEl = document.getElementById("status");
+    titleEl.textContent = `${petName} と話そう`;
+
+    function renderStatus(){
+      const remain = Math.max(0, limit - count);
+      statusEl.textContent = `色：${NAMES_JA[color]}　名前：${petName}　会話：${count}/${limit}（残り ${remain}）`;
+    }
 
     // キャラ画像（進化時に保存した候補を優先）
     function setCharImg(){
@@ -71,19 +75,14 @@
         `public/assets/stage1/${color}_open.png`,
         `${color}_open.png`
       ]);
-      const img = new Image(); let i=0;
-      const tryNext = ()=>{ if(i>=candidates.length){ el.style.display="none"; return; } img.src = candidates[i++]; };
+      const img = new Image(); let i = 0;
+      const tryNext = ()=>{ if(i >= candidates.length){ el.style.display="none"; return; } img.src = candidates[i++]; };
       img.onload = ()=>{ el.src = img.src; };
       img.onerror = tryNext;
       tryNext();
     }
 
-    function renderStatus(){
-      const remain = Math.max(0, limit - count);
-      statusEl.textContent = `色：${NAMES_JA[color]}　名前：${petName}　会話：${count}/${limit}（残り ${remain}）`;
-    }
-
-    // 簡易チャットUI
+    // チャットUI
     const chatEl = document.getElementById("chat");
     function addRow(text, who){
       const row = document.createElement("div");
@@ -93,7 +92,7 @@
       chatEl.scrollTop = chatEl.scrollHeight;
     }
 
-    // 履歴（APIに手がかりとして渡す）
+    // 履歴（API向け）
     const history = [];
 
     async function sendMsg(){
@@ -105,11 +104,10 @@
       if(count >= limit){ lockInput(); return; }
 
       addRow(text, "u");
-      history.push({role:"user", content:text});
+      history.push({ role:"user", content:text });
       input.value = ""; btn.disabled = true;
 
       try{
-        // 本物のAPI呼び出し：{reply: "..."} を返す想定
         const res = await fetch(API_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -117,7 +115,7 @@
             message: text,
             name: petName,
             color: color,
-            history: history    // 任意：サーバ側で会話の文脈に使える
+            history: history // 任意：サーバで文脈に使用
           })
         });
 
@@ -130,9 +128,9 @@
         }
         if(!reply) reply = "(…返答なし…)";
         addRow(reply, "a");
-        history.push({role:"assistant", content:reply});
+        history.push({ role:"assistant", content:reply });
 
-        // 返信を受け取ったらカウント
+        // 返信受信でカウント
         count += 1;
         localStorage.setItem("conv_count", String(count));
         renderStatus();
@@ -145,14 +143,14 @@
         console.error(err);
         const reply = fallbackReply(text, color, petName);
         addRow(reply, "a");
-        history.push({role:"assistant", content:reply});
+        history.push({ role:"assistant", content:reply });
       }finally{
         if(count < limit) btn.disabled = false;
       }
     }
 
     function fallbackReply(userText, color, name){
-      const mood = {pink:"やさしく",green:"元気に",blue:"落ち着いて",purple:"しっとりと"}[color] || "ふつうに";
+      const mood = { pink:"やさしく", green:"元気に", blue:"落ち着いて", purple:"しっとりと" }[color] || "ふつうに";
       return `${name}（${mood}）：「${userText}」ってことだね。もう少し詳しく教えて？`;
     }
 
@@ -163,9 +161,23 @@
 
     function goRebirth(){ window.location.href = "rebirth.html"; }
 
-    // 初期化
+    // ===== 初期化 =====
     setCharImg();
     renderStatus();
+
+    // 7回到達済みなら初期ロック
+    if (count >= limit) {
+      lockInput();
+      document.getElementById("rebirth").style.display = "inline-block";
+    }
+
+    // Enterキー送信（日本語IME確定Enterは無視）
+    const input = document.getElementById("msg");
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.isComposing) {
+        sendMsg();
+      }
+    });
   </script>
 </body>
 </html>
