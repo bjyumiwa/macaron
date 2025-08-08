@@ -26,56 +26,28 @@
       text-shadow: 0 0 8px rgba(0,0,0,0.5);
     }
     .macaron-holder {
-      width: 160px;
-      height: 160px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      width: 160px; height: 160px;
+      display: flex; justify-content: center; align-items: center;
       margin-bottom: 24px;
       background: rgba(255,255,255,0.1);
       border: 2px dashed rgba(255,255,255,0.35);
       border-radius: 16px;
     }
     .macaron-img, .evolved-img {
-      width: 130px;
-      height: auto;
+      width: 130px; height: auto;
       border-radius: 12px;
       box-shadow: 0 0 10px rgba(255,255,255,0.5);
     }
-    .macaron-img {
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .macaron-img:hover {
-      transform: scale(1.05);
-    }
-    .message {
-      margin-top: 16px;
-      font-size: 1.2em;
-      min-height: 1.4em;
-    }
+    .macaron-img { cursor: pointer; transition: transform 0.2s; }
+    .macaron-img:hover { transform: scale(1.05); }
+    .message { margin-top: 16px; font-size: 1.2em; min-height: 1.4em; }
+    .err { margin-top: 12px; color: #ffdede; display: none; font-size: 0.95em; }
     .btn {
-      margin-top: 28px;
-      padding: 12px 24px;
-      font-size: 18px;
-      border: none;
-      border-radius: 12px;
-      background: #ffd1ec;
-      color: #111;
-      cursor: pointer;
-      display: none;
-      transition: background 0.3s, color 0.3s;
+      margin-top: 28px; padding: 12px 24px; font-size: 18px;
+      border: none; border-radius: 12px; background: #ffd1ec; color: #111;
+      cursor: pointer; display: none; transition: background .3s, color .3s;
     }
-    .btn:hover {
-      background: #ff70c1;
-      color: #fff;
-    }
-    .err {
-      margin-top: 12px;
-      color: #ffdede;
-      display: none;
-      font-size: 0.95em;
-    }
+    .btn:hover { background:#ff70c1; color:#fff; }
     @media (max-width: 480px) {
       .macaron-holder { width: 120px; height: 120px; }
       .macaron-img, .evolved-img { width: 90px; }
@@ -92,102 +64,91 @@
   <button class="btn" id="talkBtn" onclick="goToTalk()">会話を始める ▶</button>
 
   <script>
-    // ===== 設定 =====
+    // ====== 設定 ======
     const COLORS = ["pink", "green", "blue", "purple"];
-    const NAMES_JA = {
-      pink: "ピンク",
-      green: "グリーン",
-      blue: "ブルー",
-      purple: "パープル"
-    };
+    const NAMES_JA = { pink:"ピンク", green:"グリーン", blue:"ブルー", purple:"パープル" };
+    const AUTO_JUMP_MS = 1000; // 進化表示後に whoai_talk.html へ自動遷移する遅延(ms)。0で無効。
 
-    // ===== 画像読み込み関数（フォールバック対応） =====
-    function loadImage(paths, onload, onfail) {
-      const img = new Image();
-      let i = 0;
-      const tryNext = () => {
-        if (i >= paths.length) {
-          onfail?.();
-          return;
-        }
-        img.src = paths[i++];
-      };
-      img.onload = () => onload(img);
+    // 画像ローダ（フォールバック）
+    function loadImage(paths, onload, onfail){
+      const img = new Image(); let i = 0;
+      const tryNext = ()=>{ if(i>=paths.length){ onfail && onfail(); return; } img.src = paths[i++]; };
+      img.onload = ()=> onload(img);
       img.onerror = tryNext;
       tryNext();
     }
 
-    // ===== ランダムにマカロン色を選ぶ =====
+    // ランダム色を選択
     let chosenColor = COLORS[Math.floor(Math.random() * COLORS.length)];
 
-    // ===== マカロン表示 =====
-    function renderMacaron() {
+    // マカロンを描画
+    function renderMacaron(){
       const holder = document.getElementById("macaronHolder");
       const err = document.getElementById("err");
-      holder.innerHTML = "";
-      err.style.display = "none";
+      holder.innerHTML = ""; err.style.display = "none";
 
       const macaronPaths = [
         `public/assets/stage1/macaron_${chosenColor}.png`,
         `assets/stage1/macaron_${chosenColor}.png`
       ];
 
-      loadImage(macaronPaths, (img) => {
+      loadImage(macaronPaths, (img)=>{
         img.alt = `${NAMES_JA[chosenColor]}マカロン`;
         img.className = "macaron-img";
         img.onclick = evolve;
         holder.appendChild(img);
-      }, () => {
+      }, ()=>{
         err.style.display = "block";
         err.textContent = `macaron_${chosenColor}.png が見つかりません。public/assets/stage1/ を確認してください。`;
       });
     }
 
-    // ===== 進化処理 =====
-    function evolve() {
-      // 進化色と会話回数を保存
+    // 進化
+    function evolve(){
+      // 進化データ保存（会話ページで利用）
       localStorage.setItem("evolved_color", chosenColor);
       localStorage.setItem("conv_count", "0");
       localStorage.setItem("conv_limit", "7");
 
       const holder = document.getElementById("macaronHolder");
       const err = document.getElementById("err");
-      holder.innerHTML = "";
-      err.style.display = "none";
+      holder.innerHTML = ""; err.style.display = "none";
 
-      // メッセージ表示
       document.getElementById("message").textContent =
         `${NAMES_JA[chosenColor]}のマカロンを食べた！ ${NAMES_JA[chosenColor]}に進化した！`;
 
-      // 進化後画像パス候補（保存して会話画面でそのまま使う）
+      // 進化後画像（第一候補: public/assets、第二候補: 直下）
       const evoPaths = [
         `public/assets/stage1/${chosenColor}_open.png`,
         `${chosenColor}_open.png`
       ];
-
-      // 会話画面用に第一候補と第二候補を保存
+      // 会話ページのために保存
       localStorage.setItem("evolved_img_pref1", evoPaths[0]);
       localStorage.setItem("evolved_img_pref2", evoPaths[1]);
 
-      // 実際に表示
-      loadImage(evoPaths, (img) => {
+      loadImage(evoPaths, (img)=>{
         img.alt = `${NAMES_JA[chosenColor]}に進化したキャラ`;
         img.className = "evolved-img";
         holder.appendChild(img);
         document.getElementById("talkBtn").style.display = "inline-block";
-      }, () => {
+
+        // 自動遷移
+        if (AUTO_JUMP_MS > 0) {
+          setTimeout(()=>{ goToTalk(); }, AUTO_JUMP_MS);
+        }
+      }, ()=>{
         err.style.display = "block";
         err.textContent = `${chosenColor}_open.png が見つかりません。public/assets/stage1/ かリポジトリ直下に置いてください。`;
         document.getElementById("talkBtn").style.display = "inline-block";
       });
     }
 
-    // ===== 新しい会話ページに移動 =====
-    function goToTalk() {
-      window.location.href = "whoai_talk.html"; // 既存 conversation.html は残す
+    // 会話ページへ
+    function goToTalk(){
+      window.location.href = "whoai_talk.html"; // 既存の conversation.html は温存
     }
 
-    // ===== 初期表示 =====
+    // 初期化
     window.onload = renderMacaron;
   </script>
 </body>
