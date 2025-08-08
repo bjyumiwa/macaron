@@ -22,6 +22,7 @@
     h2 {
       font-size: 1.8em;
       margin-bottom: 20px;
+      text-shadow: 0 0 8px rgba(0,0,0,0.5);
     }
     .input-area {
       margin-top: 20px;
@@ -33,6 +34,7 @@
       border: none;
       width: 80%;
       max-width: 300px;
+      text-align: center;
     }
     #confirmBtn {
       margin-top: 24px;
@@ -43,6 +45,7 @@
       background: #ffd1ec;
       color: #111;
       cursor: pointer;
+      transition: background 0.3s, color 0.3s;
     }
     #confirmBtn:hover {
       background: #ff90d2;
@@ -64,8 +67,11 @@
         alert("名前を入力してください。");
         return;
       }
+      // 名前を保存
       localStorage.setItem("whoai_name", name);
-      location.href = "conversation.html";
+
+      // 会話ページへ移動
+      window.location.href = "whoai_talk.html";
     }
   </script>
 </body>
