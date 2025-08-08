@@ -4,290 +4,55 @@
   <meta charset="UTF-8">
   <title>evolution.html - マカロン進化</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
+    html, body { height:100%; margin:0; padding:0; }
+    body{
+      font-family:"Noto Sans JP",sans-serif;
+      background-image:url("assets/stage1/space_background.png");
+      background-size:cover;
+      background-position:center;
+      background-attachment:fixed;
+      color:#fff; text-align:center; padding:20px;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
     }
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+    h2{ margin-bottom:24px; font-size:1.8em; text-shadow:0 0 8px rgba(0,0,0,.5); }
+    .macaron-holder{
+      width:140px; height:140px; display:flex; justify-content:center; align-items:center;
+      margin-bottom:24px; background:rgba(255,255,255,.1);
+      border:2px dashed rgba(255,255,255,.3); border-radius:16px;
     }
-    h2 {
-      margin-bottom: 24px;
-      font-size: 1.8em;
-      text-shadow: 0 0 8px rgba(0,0,0,0.5);
+    .macaron-img{ width:120px; height:auto; border-radius:12px; cursor:pointer;
+      box-shadow:0 0 10px rgba(255,255,255,.5); transition:transform .2s; }
+    .macaron-img:hover{ transform:scale(1.05); }
+    .message{ margin-top:16px; font-size:1.2em; min-height:1.4em; }
+    .growth-summary{
+      margin-top:24px; background:rgba(255,255,255,.4); color:#222;
+      padding:16px; border-radius:12px; max-width:90%; text-align:left; display:none;
     }
-    .macaron-holder {
-      width: 140px;
-      height: 140px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 24px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px dashed rgba(255, 255, 255, 0.3);
-      border-radius: 16px;
+    .growth-summary h3{ margin-top:0; }
+    .growth-summary ul{ margin:8px 0 0 16px; padding:0; }
+    .growth-summary li{ margin-bottom:4px; list-style:disc inside; }
+    #nextStageBtn{
+      margin-top:32px; padding:12px 24px; font-size:18px; border-radius:12px; border:none;
+      background:#ffd1ec; color:#111; cursor:pointer; display:none; transition:background .3s,color .3s;
     }
-    .macaron-img {
-      width: 120px;
-      height: auto;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 0 10px rgba(255,255,255,0.5);
-      transition: transform 0.2s;
-    }
-    .macaron-img:hover {
-      transform: scale(1.05);
-    }
-    .message {
-      margin-top: 16px;
-      font-size: 1.2em;
-      min-height: 1.4em;
-    }
-    .growth-summary {
-      margin-top: 24px;
-      background: rgba(255,255,255,0.4);
-      color: #222;
-      padding: 16px;
-      border-radius: 12px;
-      max-width: 90%;
-      text-align: left;
-      display: none;
-    }
-    .growth-summary h3 {
-      margin-top: 0;
-    }
-    .growth-summary ul {
-      margin: 8px 0 0 16px;
-      padding: 0;
-    }
-    .growth-summary li {
-      margin-bottom: 4px;
-      list-style: disc inside;
-    }
-    #nextStageBtn {
-      margin-top: 32px;
-      padding: 12px 24px;
-      font-size: 18px;
-      border-radius: 12px;
-      border: none;
-      background: #ffd1ec;
-      color: #111;
-      cursor: pointer;
-      display: none;
-      transition: background 0.3s, color 0.3s;
-    }
-    #nextStageBtn:hover {
-      background: #ff70c1;
-      color: white;
-    }
-    @media screen and (max-width: 480px) {
-      .macaron-holder {
-        width: 100px;
-        height: 100px;
-      }
-      .macaron-img {
-        width: 80px;
-      }
-      #nextStageBtn {
-        font-size: 16px;
-        padding: 10px 20px;
-      }
+    #nextStageBtn:hover{ background:#ff70c1; color:#fff; }
+    @media (max-width:480px){
+      .macaron-holder{ width:100px; height:100px; }
+      .macaron-img{ width:80px; }
+      #nextStageBtn{ font-size:16px; padding:10px 20px; }
     }
   </style>
 </head>
-
 <body>
   <h2>マカロンを食べて進化しよう！</h2>
 
-  <!-- ランダムに 1 枚のマカロンを表示する枠 -->
   <div class="macaron-holder" id="macaronHolder"></div>
-
-  <!-- 食べたときだけ一時的に表示されるメッセージ -->
   <div class="message" id="message"></div>
-
-  <!-- これまで食べたマカロンの色による成長サマリー -->
   <div class="growth-summary" id="growthSummary"></div>
-
-  <!-- すべて（または３回）食べ終えたらこのボタンを表示 -->
   <button id="nextStageBtn" onclick="goToRebirth()">復活の儀式へ ▶</button>
 
   <script>
-   // lang を取得した直後、定数定義エリアの上のほう
-const lang = localStorage.getItem("lang") || "ja";
-    
- // 🌍 タイトルの言語切り替え
-document.title = lang === "en"
-  ? "evolution.html - Macaron Evolution"
-  : "evolution.html - マカロン進化";   
-
-// 🎯 colorNames はここに追加！
-const colorNames = {
-  pink:   lang === "en" ? "pink"   : "ピンク",
-  green:  lang === "en" ? "green"  : "グリーン",
-  blue:   lang === "en" ? "blue"   : "ブルー",
-  purple: lang === "en" ? "purple" : "パープル"
-};
-
-// その下に定義されている growthMessages などが続きます
-const growthMessages = {
-  pink:   lang === "en" ? "🩷 You nurtured empathy and compassion." : "🩷 思いやり・共感の力が育ちました",
-  green:  lang === "en" ? "💚 You developed initiative and action." : "💚 自分から動く力が出てきました",
-  blue:   lang === "en" ? "💙 Your thinking and awareness grew."    : "💙 気づいて考える力が光っています",
-  purple: lang === "en" ? "💜 You deepened your sensitivity and insight." : "💜 感じ取って深める力が育っています"
-};
-
-
-document.querySelector("h2").textContent = lang === "en"
-  ? "Feed the macaron to evolve!"
-  : "マカロンを食べて進化しよう！";
-
-document.getElementById("nextStageBtn").textContent = lang === "en"
-  ? "To the Ritual of Rebirth ▶"
-  : "復活の儀式へ ▶";
-
-
-    // ======    ローカルストレージから「すでに食べたマカロン」を取得    ======
-    // （初回は空の配列となる）
-    let eaten = JSON.parse(localStorage.getItem("eaten_macarons")) || [];
-
-    // ======================================
-    // 残り食べていない色のマカロン一覧を返す関数
-    // ======================================
-    function getRemainingColors() {
-      return colors.filter(color => !eaten.includes(color));
-    }
-
-    // ======================================
-    // 残り未食の色からランダムに 1 つを選ぶ関数
-    // ======================================
-    function pickRandomColor() {
-      const remaining = getRemainingColors();
-      if (remaining.length === 0) {
-        return null;
-      }
-      const idx = Math.floor(Math.random() * remaining.length);
-      return remaining[idx];
-    }
-
-    // ======================================
-    // ページ表示時に呼び出される「マカロンを表示する」関数
-    // ======================================
-    function renderMacaron() {
-      const holder = document.getElementById("macaronHolder");
-      holder.innerHTML = ""; // いったん空にする
-
-      // （例）もし「3 回食べたら終了」にしたいなら下記のようにする：
-      // if (eaten.length >= 3) {
-      //   document.getElementById("growthSummary").style.display = "block";
-      //   document.getElementById("nextStageBtn").style.display = "block";
-      //   return;
-      // }
-
-      // 今回は “4 色すべて食べ終えたら終了” としているので、残りが 0 ならサマリー表示＆ボタン表示
-      if (getRemainingColors().length === 0) {
-        document.getElementById("growthSummary").style.display = "block";
-        document.getElementById("nextStageBtn").style.display = "block";
-        return;
-      }
-
-      // ランダムにひとつの色をピック
-      const pick = pickRandomColor();
-      if (!pick) {
-        // 念のため null の場合もサマリー表示
-        document.getElementById("growthSummary").style.display = "block";
-        document.getElementById("nextStageBtn").style.display = "block";
-        return;
-      }
-
-      // マカロン画像を生成し、クリックで食べる処理を割り当てる
-     // ▼この部分に追加してください！
-　　const img = document.createElement("img");
-　　img.src = `public/assets/stage1/macaron_${pick}.png`;
-
-　　img.alt = lang === "en"
-　  ? `${colorNames[pick]} macaron`
-　  : `${colorNames[pick]}マカロン`; // ✅ ← ここに入れる！
-
-img.className = "macaron-img";
-img.onclick = () => eatMacaron(pick);
-
-
-      holder.appendChild(img);
-
-      // 成長サマリー・次ステージボタンは非表示のまま
-      document.getElementById("growthSummary").style.display = "none";
-      document.getElementById("nextStageBtn").style.display = "none";
-    }
-
-    // ======================================
-    // マカロンを“食べた”ときの処理
-    // ======================================
-    function eatMacaron(color) {
-      // 重複クリックを防ぐ
-      if (eaten.includes(color)) return;
-
-      // 配列に色を追記し、localStorage にも保存
-      eaten.push(color);
-      localStorage.setItem("eaten_macarons", JSON.stringify(eaten));
-
-      // 「○○マカロンを食べた！」と一瞬だけ表示
-      const msgDiv = document.getElementById("message");
-     msgDiv.textContent = lang === "en"
-  ? `You ate the ${colorNames[color]} macaron!`
-  : `${colorNames[color]}マカロンを食べた！`;
-
-      setTimeout(() => {
-        msgDiv.textContent = "";
-      }, 2000);
-
-      // 次のマカロンを表示（または終了サマリーへ切り替え）
-      renderMacaron();
-      renderGrowthSummary();
-    }
-
-    // ======================================
-    // これまでに食べた色ごとのサマリーを作って表示
-    // ======================================
-    function renderGrowthSummary() {
-      const summaryDiv = document.getElementById("growthSummary");
-      if (eaten.length === 0) {
-        summaryDiv.innerHTML = "";
-        return;
-      }
-     let html = `<h3>${lang === "en" ? "You have nurtured these qualities:" : "あなたはこんな力を育てました♪"}</h3><ul>`;
-
-      eaten.forEach(color => {
-        html += `<li>${growthMessages[color]}</li>`;
-      });
-      html += `</ul>`;
-      summaryDiv.innerHTML = html;
-    }
-
-    // ======================================
-    // 「復活の儀式へ ▶」ボタンを押したときの画面遷移
-    // ======================================
-    function goToRebirth() {
-      window.location.href = "rebirth.html";
-    }
-
-    // ======================================
-    // ページ読み込みが完了したら最初に呼び出す
-    // ======================================
-    window.onload = renderMacaron;
-  </script>
-</body>
-</html>
+    // 言語
+    const lang = localStorage.getItem("lang") || "ja";
+    document.title = lang === "en" ? "evolution.html - Macaron Evolution" : "evolution.html - マカ
