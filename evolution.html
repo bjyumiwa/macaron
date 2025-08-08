@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>evolution.html - マカロン進化</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    html, body { height:100%; margin:0; padding:0; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("./public/assets/stage1/space_background.png");
+      background-image: url("public/assets/stage1/space_background.png"); /* 前のステージと同じパス */
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      color: #fff;
+      color: white;
       text-align: center;
       padding: 20px;
       display: flex;
@@ -20,35 +25,91 @@
       justify-content: center;
       align-items: center;
     }
-    h2 { margin-bottom: 24px; font-size: 1.8em; text-shadow: 0 0 8px rgba(0,0,0,.5); }
+    h2 {
+      margin-bottom: 24px;
+      font-size: 1.8em;
+      text-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
     .macaron-holder {
-      width: 140px; height: 140px; display: flex; justify-content: center; align-items: center;
-      margin-bottom: 24px; background: rgba(255,255,255,.1);
-      border: 2px dashed rgba(255,255,255,.3); border-radius: 16px;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px dashed rgba(255, 255, 255, 0.3);
+      border-radius: 16px;
     }
-    .macaron-img { width: 120px; height: auto; border-radius: 12px; cursor: pointer;
-      box-shadow: 0 0 10px rgba(255,255,255,.5); transition: transform .2s; }
-    .macaron-img:hover { transform: scale(1.05); }
-    .message { margin-top: 16px; font-size: 1.2em; min-height: 1.4em; }
+    .macaron-img {
+      width: 120px;
+      height: auto;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+      transition: transform 0.2s;
+    }
+    .macaron-img:hover {
+      transform: scale(1.05);
+    }
+    .message {
+      margin-top: 16px;
+      font-size: 1.2em;
+      min-height: 1.4em;
+    }
     .growth-summary {
-      margin-top: 24px; background: rgba(255,255,255,.4); color: #222;
-      padding: 16px; border-radius: 12px; max-width: 90%; text-align: left; display: none;
+      margin-top: 24px;
+      background: rgba(255,255,255,0.4);
+      color: #222;
+      padding: 16px;
+      border-radius: 12px;
+      max-width: 90%;
+      text-align: left;
+      display: none;
     }
-    .growth-summary h3 { margin-top: 0; }
-    .growth-summary ul { margin: 8px 0 0 16px; padding: 0; }
-    .growth-summary li { margin-bottom: 4px; list-style: disc inside; }
+    .growth-summary h3 {
+      margin-top: 0;
+    }
+    .growth-summary ul {
+      margin: 8px 0 0 16px;
+      padding: 0;
+    }
+    .growth-summary li {
+      margin-bottom: 4px;
+      list-style: disc inside;
+    }
     #nextStageBtn {
-      margin-top: 32px; padding: 12px 24px; font-size: 18px; border-radius: 12px; border: none;
-      background: #ffd1ec; color: #111; cursor: pointer; display: none; transition: background .3s, color .3s;
+      margin-top: 32px;
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: none;
+      background: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+      display: none;
+      transition: background 0.3s, color 0.3s;
     }
-    #nextStageBtn:hover { background: #ff70c1; color: #fff; }
-    @media (max-width: 480px) {
-      .macaron-holder { width: 100px; height: 100px; }
-      .macaron-img { width: 80px; }
-      #nextStageBtn { font-size: 16px; padding: 10px 20px; }
+    #nextStageBtn:hover {
+      background: #ff70c1;
+      color: white;
+    }
+    @media screen and (max-width: 480px) {
+      .macaron-holder {
+        width: 100px;
+        height: 100px;
+      }
+      .macaron-img {
+        width: 80px;
+      }
+      #nextStageBtn {
+        font-size: 16px;
+        padding: 10px 20px;
+      }
     }
   </style>
 </head>
+
 <body>
   <h2>マカロンを食べて進化しよう！</h2>
 
@@ -58,16 +119,14 @@
   <button id="nextStageBtn" onclick="goToRebirth()">復活の儀式へ ▶</button>
 
   <script>
-    // ===== 言語設定 =====
     const lang = localStorage.getItem("lang") || "ja";
-    document.title = lang === "en" ? "evolution.html - Macaron Evolution" : "evolution.html - マカロン進化";
-    document.querySelector("h2").textContent = lang === "en" ? "Feed the macaron to evolve!" : "マカロンを食べて進化しよう！";
-    document.getElementById("nextStageBtn").textContent = lang === "en" ? "To the Ritual of Rebirth ▶" : "復活の儀式へ ▶";
 
-    // ===== 必須：色のリスト =====
+    document.title = lang === "en"
+      ? "evolution.html - Macaron Evolution"
+      : "evolution.html - マカロン進化";
+
     const colors = ["pink", "green", "blue", "purple"];
 
-    // 表示名
     const colorNames = {
       pink:   lang === "en" ? "pink"   : "ピンク",
       green:  lang === "en" ? "green"  : "グリーン",
@@ -75,7 +134,6 @@
       purple: lang === "en" ? "purple" : "パープル"
     };
 
-    // 食べたときのメッセージ
     const growthMessages = {
       pink:   lang === "en" ? "🩷 You nurtured empathy and compassion." : "🩷 思いやり・共感の力が育ちました",
       green:  lang === "en" ? "💚 You developed initiative and action." : "💚 自分から動く力が出てきました",
@@ -83,16 +141,25 @@
       purple: lang === "en" ? "💜 You deepened your sensitivity and insight." : "💜 感じ取って深める力が育っています"
     };
 
-    // これまで食べた色
+    document.querySelector("h2").textContent = lang === "en"
+      ? "Feed the macaron to evolve!"
+      : "マカロンを食べて進化しよう！";
+
+    document.getElementById("nextStageBtn").textContent = lang === "en"
+      ? "To the Ritual of Rebirth ▶"
+      : "復活の儀式へ ▶";
+
     let eaten = JSON.parse(localStorage.getItem("eaten_macarons")) || [];
 
     function getRemainingColors() {
-      return colors.filter(c => !eaten.includes(c));
+      return colors.filter(color => !eaten.includes(color));
     }
 
     function pickRandomColor() {
       const remaining = getRemainingColors();
-      if (!remaining.length) return null;
+      if (remaining.length === 0) {
+        return null;
+      }
       const idx = Math.floor(Math.random() * remaining.length);
       return remaining[idx];
     }
@@ -101,7 +168,6 @@
       const holder = document.getElementById("macaronHolder");
       holder.innerHTML = "";
 
-      // 4色すべて食べたら終了UIに
       if (getRemainingColors().length === 0) {
         document.getElementById("growthSummary").style.display = "block";
         document.getElementById("nextStageBtn").style.display = "block";
@@ -116,10 +182,14 @@
       }
 
       const img = document.createElement("img");
-      img.src = `./public/assets/stage1/macaron_${pick}.png`; // フォルダ構成に合わせる
-      img.alt = lang === "en" ? `${colorNames[pick]} macaron` : `${colorNames[pick]}マカロン`;
+      img.src = `public/assets/stage1/macaron_${pick}.png`; /* マカロン画像も同じフォルダ想定 */
+      img.alt = lang === "en"
+        ? `${colorNames[pick]} macaron`
+        : `${colorNames[pick]}マカロン`;
+
       img.className = "macaron-img";
       img.onclick = () => eatMacaron(pick);
+
       holder.appendChild(img);
 
       document.getElementById("growthSummary").style.display = "none";
@@ -128,6 +198,7 @@
 
     function eatMacaron(color) {
       if (eaten.includes(color)) return;
+
       eaten.push(color);
       localStorage.setItem("eaten_macarons", JSON.stringify(eaten));
 
@@ -135,7 +206,10 @@
       msgDiv.textContent = lang === "en"
         ? `You ate the ${colorNames[color]} macaron!`
         : `${colorNames[color]}マカロンを食べた！`;
-      setTimeout(() => { msgDiv.textContent = ""; }, 1500);
+
+      setTimeout(() => {
+        msgDiv.textContent = "";
+      }, 2000);
 
       renderMacaron();
       renderGrowthSummary();
@@ -143,25 +217,23 @@
 
     function renderGrowthSummary() {
       const summaryDiv = document.getElementById("growthSummary");
-      if (!eaten.length) { summaryDiv.innerHTML = ""; return; }
+      if (eaten.length === 0) {
+        summaryDiv.innerHTML = "";
+        return;
+      }
       let html = `<h3>${lang === "en" ? "You have nurtured these qualities:" : "あなたはこんな力を育てました♪"}</h3><ul>`;
-      eaten.forEach(c => { html += `<li>${growthMessages[c]}</li>`; });
+      eaten.forEach(color => {
+        html += `<li>${growthMessages[color]}</li>`;
+      });
       html += `</ul>`;
       summaryDiv.innerHTML = html;
     }
 
-    function goToRebirth() { window.location.href = "./rebirth.html"; }
+    function goToRebirth() {
+      window.location.href = "rebirth.html";
+    }
 
-    // 安全な起動と簡易エラーメッセージ
-    window.onload = () => {
-      try {
-        renderMacaron();
-        renderGrowthSummary();
-      } catch (e) {
-        console.error(e);
-        document.getElementById("message").textContent = `Error: ${e.message}`;
-      }
-    };
+    window.onload = renderMacaron;
   </script>
 </body>
 </html>
