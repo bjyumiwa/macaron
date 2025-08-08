@@ -61,18 +61,18 @@
   </div>
 
   <script>
-    // ===== 設定 =====
-    const API_ENDPOINT = "/api/talk"; // ← あなたのAPIのURLに変更
+    // ====== ★ここを“動いてるVercelのURL”に合わせる ======
+    const API_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
+    // ================================================
+
     const NAMES_JA = { pink:"ピンク", green:"グリーン", blue:"ブルー", purple:"パープル" };
 
-    // 進化情報 & 名前
     const color   = localStorage.getItem("evolved_color") || "green";
     const limit   = parseInt(localStorage.getItem("conv_limit") || "10", 10);
     let count     = parseInt(localStorage.getItem("conv_count") || "0", 10);
     const petName = (localStorage.getItem("whoai_name") || "").trim() || NAMES_JA[color];
 
-    // タイトル・ステータス
-    const titleEl = document.getElementById("title");
+    const titleEl  = document.getElementById("title");
     const statusEl = document.getElementById("status");
     titleEl.textContent = `${petName} と話そう`;
     function renderStatus(){
@@ -80,12 +80,12 @@
       statusEl.textContent = `色：${NAMES_JA[color]}　名前：${petName}　会話：${count}/${limit}（残り ${remain}）`;
     }
 
-    // キャラ画像（open/closed）
+    // open/closed 読み込み + 口パク
     const charEl = document.getElementById("char");
     let openSrc="", closedSrc="", talkingTimer=null;
     function loadWithFallback(p1,p2,cb,fail){
-      const img=new Image();let i=0;const list=[p1,p2].filter(Boolean);
-      const next=()=>{ if(i>=list.length){ fail&&fail();return; } img.src=list[i++]; };
+      const img=new Image(); let i=0; const list=[p1,p2].filter(Boolean);
+      const next=()=>{ if(i>=list.length){ fail&&fail(); return; } img.src=list[i++]; };
       img.onload=()=>cb(img.src); img.onerror=next; next();
     }
     function setupCharacter(){
@@ -93,7 +93,6 @@
       const o2=localStorage.getItem("evolved_img_open_pref2");
       const c1=localStorage.getItem("evolved_img_closed_pref1");
       const c2=localStorage.getItem("evolved_img_closed_pref2");
-
       loadWithFallback(o1,o2,(src)=>{ openSrc=src; charEl.src=openSrc; },()=>{
         loadWithFallback(c1,c2,(src)=>{ closedSrc=src; charEl.src=closedSrc; },()=>{ charEl.style.display="none"; });
       });
@@ -123,13 +122,13 @@
       chatEl.scrollTop=chatEl.scrollHeight;
     }
 
-    // 会話履歴（APIへ）
+    // 履歴（APIへ）
     const history=[];
 
     async function sendMsg(){
       const input=document.getElementById("msg");
-      const btn=document.getElementById("send");
-      const text=input.value.trim();
+      const btn  =document.getElementById("send");
+      const text =input.value.trim();
       if(!text) return;
       if(count>=limit){ lockInput(); return; }
 
@@ -137,7 +136,6 @@
       history.push({role:"user",content:text});
       input.value=""; btn.disabled=true;
 
-      // 口パク + タイピング表示
       startTalking();
       addRow("…考え中…","sys");
 
@@ -145,31 +143,25 @@
         const res=await fetch(API_ENDPOINT,{
           method:"POST",
           headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({
-            message: text,
-            name: petName,
-            color: color,
-            history // 任意：サーバ側で文脈に使用
-          })
+          body: JSON.stringify({ message:text, name:petName, color, history })
         });
-
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data=await res.json();
-        const reply=(data && (data.reply || data.text)) || "";
+
+        const data = await res.json();
+        const reply = (data && (data.reply || data.text)) || "";
         if(!reply) throw new Error("Empty reply");
 
-        // 「考え中…」行を最後から削除
+        // 「考え中…」削除
         chatEl.lastChild && chatEl.lastChild.classList.contains("sys") && chatEl.removeChild(chatEl.lastChild);
 
         addRow(reply,"a");
         history.push({role:"assistant",content:reply});
 
-        // 口パク停止
         stopTalking();
 
-        // カウント更新（成功時のみ）
-        count+=1;
-        localStorage.setItem("conv_count",String(count));
+        // 成功時のみカウント
+        count += 1;
+        localStorage.setItem("conv_count", String(count));
         renderStatus();
 
         if(count>=limit){
@@ -179,12 +171,10 @@
           btn.disabled=false;
         }
       }catch(err){
-        // 失敗時：口パク停止＆エラー表示（カウントは増やさない）
         stopTalking();
-        // 「考え中…」行があれば削除
         chatEl.lastChild && chatEl.lastChild.classList.contains("sys") && chatEl.removeChild(chatEl.lastChild);
         console.error(err);
-        addRow("エラー：返答を取得できませんでした。少し待って再試行してください。","sys");
+        addRow("エラー：返答を取得できませんでした。URLやCORSを確認してください。","sys");
         btn.disabled=false;
       }
     }
@@ -193,9 +183,7 @@
       document.getElementById("send").disabled=true;
       document.getElementById("msg").disabled=true;
     }
-
     function goNextMacaron(){
-      // 次のマカロンへ（カウント等リセットして進化画面へ戻る）
       localStorage.setItem("conv_count","0");
       localStorage.setItem("conv_limit","10");
       window.location.href="evolution.html";
@@ -209,10 +197,12 @@
       lockInput();
       document.getElementById("choices").style.display="flex";
     }
-
     // Enter送信（IME確定Enterは除外）
     const input=document.getElementById("msg");
     input.addEventListener("keydown",(e)=>{ if(e.key==="Enter" && !e.isComposing) sendMsg(); });
+
+    // 反映チェック用のビルド表示（任意）
+    console.log("build: whoai_talk API REQUIRED v3");
   </script>
 </body>
 </html>
