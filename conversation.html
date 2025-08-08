@@ -126,12 +126,12 @@
           setTimeout(() => { window.location.href = "evolution.html"; }, 2000);
         }
       } catch (err) {
-        console.error(err);
-        addMessage("ai", "サーバーエラーだよ。もう一度ためしてね。");
-      } finally {
-        sendBtn.disabled = false;
-      }
-    }
+  console.error(err);
+  addMessage("ai", "サーバーエラー: " + err.message);
+} finally {
+  sendBtn.disabled = false;
+}
+
 
     // ======== イベント設定 ========
     sendBtn.addEventListener("click", sendMessage);
@@ -141,3 +141,4 @@
   </script>
 </body>
 </html>
+
