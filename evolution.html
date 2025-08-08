@@ -1,111 +1,41 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>evolution.html - マカロン進化</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+    html, body { height: 100%; margin: 0; padding: 0; }
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png"); /* 前のステージと同じパス */
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      background-image: url("assets/stage1/space_background.png");
+      background-size: cover; background-position: center; background-attachment: fixed;
+      color: #fff; text-align: center; padding: 20px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
-    h2 {
-      margin-bottom: 24px;
-      font-size: 1.8em;
-      text-shadow: 0 0 8px rgba(0,0,0,0.5);
-    }
+    h2 { margin-bottom: 24px; font-size: 1.8em; text-shadow: 0 0 8px rgba(0,0,0,.5); }
     .macaron-holder {
-      width: 140px;
-      height: 140px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: 24px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px dashed rgba(255, 255, 255, 0.3);
-      border-radius: 16px;
+      width: 140px; height: 140px; display: flex; justify-content: center; align-items: center;
+      margin-bottom: 24px; background: rgba(255,255,255,.1);
+      border: 2px dashed rgba(255,255,255,.3); border-radius: 16px;
     }
     .macaron-img {
-      width: 120px;
-      height: auto;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 0 10px rgba(255,255,255,0.5);
-      transition: transform 0.2s;
+      width: 120px; height: auto; border-radius: 12px; cursor: pointer;
+      box-shadow: 0 0 10px rgba(255,255,255,.5); transition: transform .2s;
     }
-    .macaron-img:hover {
-      transform: scale(1.05);
-    }
-    .message {
-      margin-top: 16px;
-      font-size: 1.2em;
-      min-height: 1.4em;
-    }
-    .growth-summary {
-      margin-top: 24px;
-      background: rgba(255,255,255,0.4);
-      color: #222;
-      padding: 16px;
-      border-radius: 12px;
-      max-width: 90%;
-      text-align: left;
-      display: none;
-    }
-    .growth-summary h3 {
-      margin-top: 0;
-    }
-    .growth-summary ul {
-      margin: 8px 0 0 16px;
-      padding: 0;
-    }
-    .growth-summary li {
-      margin-bottom: 4px;
-      list-style: disc inside;
-    }
+    .macaron-img:hover { transform: scale(1.05); }
+    .message { margin-top: 16px; font-size: 1.2em; min-height: 1.4em; }
     #nextStageBtn {
-      margin-top: 32px;
-      padding: 12px 24px;
-      font-size: 18px;
-      border-radius: 12px;
-      border: none;
-      background: #ffd1ec;
-      color: #111;
-      cursor: pointer;
-      display: none;
-      transition: background 0.3s, color 0.3s;
+      margin-top: 32px; padding: 12px 24px; font-size: 18px; border-radius: 12px; border: none;
+      background: #ffd1ec; color: #111; cursor: pointer; display: none; transition: background .3s,color .3s;
     }
-    #nextStageBtn:hover {
-      background: #ff70c1;
-      color: white;
-    }
-    @media screen and (max-width: 480px) {
-      .macaron-holder {
-        width: 100px;
-        height: 100px;
-      }
-      .macaron-img {
-        width: 80px;
-      }
-      #nextStageBtn {
-        font-size: 16px;
-        padding: 10px 20px;
-      }
+    #nextStageBtn:hover { background: #ff70c1; color: #fff; }
+    .err { margin-top: 12px; color: #ffdddd; font-size: .95em; display:none; }
+    @media (max-width: 480px){
+      .macaron-holder{ width:100px;height:100px; }
+      .macaron-img{ width:80px; }
+      #nextStageBtn{ font-size:16px; padding:10px 20px; }
     }
   </style>
 </head>
@@ -115,125 +45,79 @@
 
   <div class="macaron-holder" id="macaronHolder"></div>
   <div class="message" id="message"></div>
-  <div class="growth-summary" id="growthSummary"></div>
+  <div class="err" id="err"></div>
   <button id="nextStageBtn" onclick="goToRebirth()">復活の儀式へ ▶</button>
 
   <script>
     const lang = localStorage.getItem("lang") || "ja";
+    document.title = lang === "en" ? "evolution.html - Macaron Evolution" : "evolution.html - マカロン進化";
+    document.querySelector("h2").textContent = lang === "en" ? "Feed the macaron to evolve!" : "マカロンを食べて進化しよう！";
+    document.getElementById("nextStageBtn").textContent = lang === "en" ? "To the Ritual of Rebirth ▶" : "復活の儀式へ ▶";
 
-    document.title = lang === "en"
-      ? "evolution.html - Macaron Evolution"
-      : "evolution.html - マカロン進化";
-
-    const colors = ["pink", "green", "blue", "purple"];
-
-    const colorNames = {
-      pink:   lang === "en" ? "pink"   : "ピンク",
-      green:  lang === "en" ? "green"  : "グリーン",
-      blue:   lang === "en" ? "blue"   : "ブルー",
-      purple: lang === "en" ? "purple" : "パープル"
-    };
-
-    const growthMessages = {
-      pink:   lang === "en" ? "🩷 You nurtured empathy and compassion." : "🩷 思いやり・共感の力が育ちました",
-      green:  lang === "en" ? "💚 You developed initiative and action." : "💚 自分から動く力が出てきました",
-      blue:   lang === "en" ? "💙 Your thinking and awareness grew."    : "💙 気づいて考える力が光っています",
-      purple: lang === "en" ? "💜 You deepened your sensitivity and insight." : "💜 感じ取って深める力が育っています"
-    };
-
-    document.querySelector("h2").textContent = lang === "en"
-      ? "Feed the macaron to evolve!"
-      : "マカロンを食べて進化しよう！";
-
-    document.getElementById("nextStageBtn").textContent = lang === "en"
-      ? "To the Ritual of Rebirth ▶"
-      : "復活の儀式へ ▶";
-
-    let eaten = JSON.parse(localStorage.getItem("eaten_macarons")) || [];
-
-    function getRemainingColors() {
-      return colors.filter(color => !eaten.includes(color));
+    // ▼ 画像を assets/ → public/assets/ の順で探すフォールバックローダ
+    function loadImageWithFallback(relPathList, onload, onerror){
+      const img = new Image();
+      let i = 0;
+      const tryNext = () => {
+        if (i >= relPathList.length) { onerror && onerror(); return; }
+        img.src = relPathList[i++];
+      };
+      img.onload = () => onload(img);
+      img.onerror = tryNext;
+      tryNext();
     }
 
-    function pickRandomColor() {
-      const remaining = getRemainingColors();
-      if (remaining.length === 0) {
-        return null;
-      }
-      const idx = Math.floor(Math.random() * remaining.length);
-      return remaining[idx];
-    }
-
-    function renderMacaron() {
+    // ▼ 緑マカロンを表示（まずは確実に「緑に進化」へ）
+    function renderGreenMacaron(){
       const holder = document.getElementById("macaronHolder");
       holder.innerHTML = "";
 
-      if (getRemainingColors().length === 0) {
-        document.getElementById("growthSummary").style.display = "block";
-        document.getElementById("nextStageBtn").style.display = "block";
-        return;
-      }
+      const candidates = [
+        "assets/stage1/macaron_green.png",
+        "public/assets/stage1/macaron_green.png"
+      ];
 
-      const pick = pickRandomColor();
-      if (!pick) {
-        document.getElementById("growthSummary").style.display = "block";
-        document.getElementById("nextStageBtn").style.display = "block";
-        return;
-      }
-
-      const img = document.createElement("img");
-      img.src = `public/assets/stage1/macaron_${pick}.png`; /* マカロン画像も同じフォルダ想定 */
-      img.alt = lang === "en"
-        ? `${colorNames[pick]} macaron`
-        : `${colorNames[pick]}マカロン`;
-
-      img.className = "macaron-img";
-      img.onclick = () => eatMacaron(pick);
-
-      holder.appendChild(img);
-
-      document.getElementById("growthSummary").style.display = "none";
-      document.getElementById("nextStageBtn").style.display = "none";
+      loadImageWithFallback(
+        candidates,
+        (loadedImg) => {
+          loadedImg.alt = lang === "en" ? "green macaron" : "グリーンマカロン";
+          loadedImg.className = "macaron-img";
+          loadedImg.onclick = eatGreen; // クリックで進化
+          holder.appendChild(loadedImg);
+          document.getElementById("err").style.display = "none";
+        },
+        () => {
+          document.getElementById("err").style.display = "block";
+          document.getElementById("err").textContent =
+            lang === "en"
+              ? "Macaron image not found. Put macaron_green.png in assets/stage1/ (or public/assets/stage1/)."
+              : "マカロン画像が見つかりません。assets/stage1/（または public/assets/stage1/）に macaron_green.png を置いてください。";
+        }
+      );
     }
 
-    function eatMacaron(color) {
-      if (eaten.includes(color)) return;
-
-      eaten.push(color);
-      localStorage.setItem("eaten_macarons", JSON.stringify(eaten));
-
-      const msgDiv = document.getElementById("message");
-      msgDiv.textContent = lang === "en"
-        ? `You ate the ${colorNames[color]} macaron!`
-        : `${colorNames[color]}マカロンを食べた！`;
-
-      setTimeout(() => {
-        msgDiv.textContent = "";
-      }, 2000);
-
-      renderMacaron();
-      renderGrowthSummary();
+    // ▼ 食べたら緑に進化 → フラグ保存 & 次へボタン表示
+    function eatGreen(){
+      localStorage.setItem("evolved_color", "green"); // 次ステージで使う想定
+      const msg = lang === "en" ? "You ate the green macaron! Evolved to GREEN!" : "グリーンのマカロンを食べた！緑に進化した！";
+      document.getElementById("message").textContent = msg;
+      document.getElementById("nextStageBtn").style.display = "inline-block";
     }
 
-    function renderGrowthSummary() {
-      const summaryDiv = document.getElementById("growthSummary");
-      if (eaten.length === 0) {
-        summaryDiv.innerHTML = "";
-        return;
-      }
-      let html = `<h3>${lang === "en" ? "You have nurtured these qualities:" : "あなたはこんな力を育てました♪"}</h3><ul>`;
-      eaten.forEach(color => {
-        html += `<li>${growthMessages[color]}</li>`;
-      });
-      html += `</ul>`;
-      summaryDiv.innerHTML = html;
-    }
+    function goToRebirth(){ window.location.href = "rebirth.html"; }
 
-    function goToRebirth() {
-      window.location.href = "rebirth.html";
-    }
+    // ▼ 背景もフォールバック（任意）
+    (function fixBackground(){
+      const test = new Image();
+      test.onload = () => {}; // OK
+      test.onerror = () => {
+        // assets 側が無いなら public 側に切り替え
+        document.body.style.backgroundImage = 'url("public/assets/stage1/space_background.png")';
+      };
+      test.src = "assets/stage1/space_background.png";
+    })();
 
-    window.onload = renderMacaron;
+    window.onload = renderGreenMacaron;
   </script>
 </body>
 </html>
