@@ -119,5 +119,72 @@
       }
     }
   </script>
+  <!-- これを </body> の直前に貼る -->
+<script>
+  // ▼ あなたのVercelのURLに置き換え不要ならこのまま（リポジトリ上に表示されてるやつ）
+  // 例: https://macaron-one.vercel.app/api/talk
+  const API_URL = "https://macaron-one.vercel.app/api/talk";
+
+  // ▼ UI要素（存在しなければHTML側にidを付けて用意）
+  const input   = document.getElementById("userInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const chat    = document.getElementById("chatArea");
+
+  function appendMyMessage(text) {
+    const b = document.createElement("div");
+    b.className = "bubble me";
+    b.textContent = text;
+    chat.appendChild(b);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function appendAiMessage(text) {
+    const b = document.createElement("div");
+    b.className = "bubble ai";
+    b.textContent = text;
+    chat.appendChild(b);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  async function talkToAI(userText) {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: "あなたはやさしい相棒AI。短めに答える。" },
+          { role: "user", content: userText }
+        ]
+      })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+    return data.reply;
+  }
+
+  async function send() {
+    const text = (input.value || "").trim();
+    if (!text) return;
+    appendMyMessage(text);
+    input.value = "";
+    sendBtn.disabled = true;
+    try {
+      const reply = await talkToAI(text);
+      appendAiMessage(reply);
+    } catch (e) {
+      appendAiMessage("ごめん、今はつながらないみたい… (" + e.message + ")");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  // 送信ボタンとEnterキーで送信
+  if (sendBtn) sendBtn.addEventListener("click", send);
+  if (input) input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") send();
+  });
+</script>
+
 </body>
 </html>
+
