@@ -45,13 +45,24 @@
   <button id="rebirth" onclick="goRebirth()">復活の儀式へ ▶</button>
 
   <script>
+    // ===== 設定 =====
+    const API_ENDPOINT = "/api/talk"; // ←あなたのAPIのURLに合わせて変更
+    const LIMIT_DEFAULT = 7;
+
     const NAMES_JA = {pink:"ピンク",green:"グリーン",blue:"ブルー",purple:"パープル"};
+
+    // 進化情報 & 名前を取得
     const color = localStorage.getItem("evolved_color") || "green";
-    const limit = parseInt(localStorage.getItem("conv_limit") || "7", 10);
+    const limit = parseInt(localStorage.getItem("conv_limit") || String(LIMIT_DEFAULT), 10);
     let count = parseInt(localStorage.getItem("conv_count") || "0", 10);
+    const petName = (localStorage.getItem("pet_name") || "").trim() || `${NAMES_JA[color]}`;
 
-    document.getElementById("title").textContent = `${NAMES_JA[color]} と話そう`;
+    // タイトル & ステータス
+    const titleEl = document.getElementById("title");
+    titleEl.textContent = `${petName} と話そう`;
+    const statusEl = document.getElementById("status");
 
+    // キャラ画像（進化時に保存した候補を優先）
     function setCharImg(){
       const el = document.getElementById("char");
       const pref1 = localStorage.getItem("evolved_img_pref1");
@@ -69,32 +80,45 @@
 
     function renderStatus(){
       const remain = Math.max(0, limit - count);
-      document.getElementById("status").textContent = `色：${NAMES_JA[color]}　会話：${count}/${limit}（残り ${remain}）`;
+      statusEl.textContent = `色：${NAMES_JA[color]}　名前：${petName}　会話：${count}/${limit}（残り ${remain}）`;
     }
 
+    // 簡易チャットUI
+    const chatEl = document.getElementById("chat");
     function addRow(text, who){
       const row = document.createElement("div");
       row.className = `row ${who}`;
       row.textContent = text;
-      document.getElementById("chat").appendChild(row);
-      document.getElementById("chat").scrollTop = chat.scrollHeight;
+      chatEl.appendChild(row);
+      chatEl.scrollTop = chatEl.scrollHeight;
     }
+
+    // 履歴（APIに手がかりとして渡す）
+    const history = [];
 
     async function sendMsg(){
       const input = document.getElementById("msg");
       const btn = document.getElementById("send");
       const text = input.value.trim();
       if(!text) return;
+
       if(count >= limit){ lockInput(); return; }
 
-      addRow(text,"u");
+      addRow(text, "u");
+      history.push({role:"user", content:text});
       input.value = ""; btn.disabled = true;
 
       try{
-        const res = await fetch("/api/talk",{
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ message:text, color })
+        // 本物のAPI呼び出し：{reply: "..."} を返す想定
+        const res = await fetch(API_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: text,
+            name: petName,
+            color: color,
+            history: history    // 任意：サーバ側で会話の文脈に使える
+          })
         });
 
         let reply;
@@ -102,11 +126,13 @@
           const data = await res.json();
           reply = data.reply;
         }else{
-          reply = fallbackReply(text, color);
+          reply = fallbackReply(text, color, petName);
         }
         if(!reply) reply = "(…返答なし…)";
-        addRow(reply,"a");
+        addRow(reply, "a");
+        history.push({role:"assistant", content:reply});
 
+        // 返信を受け取ったらカウント
         count += 1;
         localStorage.setItem("conv_count", String(count));
         renderStatus();
@@ -115,17 +141,19 @@
           lockInput();
           document.getElementById("rebirth").style.display = "inline-block";
         }
-      }catch(e){
-        addRow(fallbackReply(text, color),"a");
-        console.error(e);
+      }catch(err){
+        console.error(err);
+        const reply = fallbackReply(text, color, petName);
+        addRow(reply, "a");
+        history.push({role:"assistant", content:reply});
       }finally{
         if(count < limit) btn.disabled = false;
       }
     }
 
-    function fallbackReply(userText, color){
+    function fallbackReply(userText, color, name){
       const mood = {pink:"やさしく",green:"元気に",blue:"落ち着いて",purple:"しっとりと"}[color] || "ふつうに";
-      return `${mood}返すよ：「${userText}」ってことだね。つづけて教えて！`;
+      return `${name}（${mood}）：「${userText}」ってことだね。もう少し詳しく教えて？`;
     }
 
     function lockInput(){
@@ -135,6 +163,7 @@
 
     function goRebirth(){ window.location.href = "rebirth.html"; }
 
+    // 初期化
     setCharImg();
     renderStatus();
   </script>
