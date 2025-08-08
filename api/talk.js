@@ -1,7 +1,6 @@
 export const config = { runtime: "edge" };
 
-export default async function handler(req: Request) {
-  // CORSプリフライト対応
+export default async function handler(req) {
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -16,8 +15,7 @@ export default async function handler(req: Request) {
     });
   }
 
-  // JSONパース
-  let body: any = {};
+  let body = {};
   try {
     body = await req.json();
   } catch {
@@ -27,7 +25,6 @@ export default async function handler(req: Request) {
     });
   }
 
-  // messages[] の有無チェック
   const messages = Array.isArray(body?.messages) ? body.messages : null;
   if (!messages) {
     return new Response(JSON.stringify({ error: "Bad request: messages[]" }), {
@@ -36,7 +33,6 @@ export default async function handler(req: Request) {
     });
   }
 
-  // APIキー確認
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
@@ -45,7 +41,6 @@ export default async function handler(req: Request) {
     });
   }
 
-  // OpenAI APIへリクエスト
   const r = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -76,13 +71,12 @@ export default async function handler(req: Request) {
   });
 }
 
-// CORS許可（GitHub Pages 固定）
 function corsHeaders(json = false) {
-  const h: Record<string, string> = {
-    "Access-Control-Allow-Origin": "https://biyuminu.github.io",
+  const h = {
+    "Access-Control-Allow-Origin": "*", // 一時的に全許可（後で必要に応じて制限）
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
   if (json) h["Content-Type"] = "application/json";
   return h;
-}
+} 　　　これをコピペして、コードを書くのせばいいの？
