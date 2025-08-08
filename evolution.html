@@ -4,42 +4,40 @@
   <meta charset="UTF-8" />
   <title>evolution.html - マカロン進化</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
-    html, body { height: 100%; margin: 0; padding: 0; }
+    html, body { height:100%; margin:0; padding:0; }
     body {
       font-family: "Noto Sans JP", sans-serif;
       background-image: url("assets/stage1/space_background.png");
       background-size: cover; background-position: center; background-attachment: fixed;
-      color: #fff; text-align: center; padding: 20px;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      color:#fff; text-align:center; padding:20px;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
     }
-    h2 { margin-bottom: 24px; font-size: 1.8em; text-shadow: 0 0 8px rgba(0,0,0,.5); }
-    .macaron-holder {
-      width: 140px; height: 140px; display: flex; justify-content: center; align-items: center;
-      margin-bottom: 24px; background: rgba(255,255,255,.1);
-      border: 2px dashed rgba(255,255,255,.3); border-radius: 16px;
+    h2 { margin-bottom:24px; font-size:1.8em; text-shadow:0 0 8px rgba(0,0,0,.5); }
+    .macaron-holder{
+      width:140px; height:140px; display:flex; justify-content:center; align-items:center;
+      margin-bottom:24px; background:rgba(255,255,255,.1);
+      border:2px dashed rgba(255,255,255,.3); border-radius:16px;
     }
-    .macaron-img {
-      width: 120px; height: auto; border-radius: 12px; cursor: pointer;
-      box-shadow: 0 0 10px rgba(255,255,255,.5); transition: transform .2s;
+    .macaron-img,.evolved-img{
+      width:120px; height:auto; border-radius:12px; box-shadow:0 0 10px rgba(255,255,255,.5);
     }
-    .macaron-img:hover { transform: scale(1.05); }
-    .message { margin-top: 16px; font-size: 1.2em; min-height: 1.4em; }
-    #nextStageBtn {
-      margin-top: 32px; padding: 12px 24px; font-size: 18px; border-radius: 12px; border: none;
-      background: #ffd1ec; color: #111; cursor: pointer; display: none; transition: background .3s,color .3s;
+    .macaron-img{ cursor:pointer; transition:transform .2s; }
+    .macaron-img:hover{ transform:scale(1.05); }
+    .message{ margin-top:16px; font-size:1.2em; min-height:1.4em; }
+    #nextStageBtn{
+      margin-top:32px; padding:12px 24px; font-size:18px; border:none; border-radius:12px;
+      background:#ffd1ec; color:#111; cursor:pointer; display:none;
     }
-    #nextStageBtn:hover { background: #ff70c1; color: #fff; }
-    .err { margin-top: 12px; color: #ffdddd; font-size: .95em; display:none; }
-    @media (max-width: 480px){
-      .macaron-holder{ width:100px;height:100px; }
-      .macaron-img{ width:80px; }
+    #nextStageBtn:hover{ background:#ff70c1; color:#fff; }
+    .err{ margin-top:12px; color:#ffdede; display:none; font-size:.95em; }
+    @media (max-width:480px){
+      .macaron-holder{ width:100px; height:100px; }
+      .macaron-img,.evolved-img{ width:80px; }
       #nextStageBtn{ font-size:16px; padding:10px 20px; }
     }
   </style>
 </head>
-
 <body>
   <h2>マカロンを食べて進化しよう！</h2>
 
@@ -54,67 +52,71 @@
     document.querySelector("h2").textContent = lang === "en" ? "Feed the macaron to evolve!" : "マカロンを食べて進化しよう！";
     document.getElementById("nextStageBtn").textContent = lang === "en" ? "To the Ritual of Rebirth ▶" : "復活の儀式へ ▶";
 
-    // ▼ 画像を assets/ → public/assets/ の順で探すフォールバックローダ
-    function loadImageWithFallback(relPathList, onload, onerror){
-      const img = new Image();
-      let i = 0;
-      const tryNext = () => {
-        if (i >= relPathList.length) { onerror && onerror(); return; }
-        img.src = relPathList[i++];
-      };
+    // 画像フォールバック: assets/ → public/assets/
+    function loadImage(paths, onload, onfail){
+      const img = new Image(); let i = 0;
+      const tryNext = () => { if(i>=paths.length){ onfail?.(); return; } img.src = paths[i++]; };
       img.onload = () => onload(img);
       img.onerror = tryNext;
       tryNext();
     }
 
-    // ▼ 緑マカロンを表示（まずは確実に「緑に進化」へ）
+    // マカロン（緑）を表示して、クリックで進化
     function renderGreenMacaron(){
       const holder = document.getElementById("macaronHolder");
       holder.innerHTML = "";
-
-      const candidates = [
-        "assets/stage1/macaron_green.png",
-        "public/assets/stage1/macaron_green.png"
-      ];
-
-      loadImageWithFallback(
-        candidates,
-        (loadedImg) => {
-          loadedImg.alt = lang === "en" ? "green macaron" : "グリーンマカロン";
-          loadedImg.className = "macaron-img";
-          loadedImg.onclick = eatGreen; // クリックで進化
-          holder.appendChild(loadedImg);
+      loadImage(
+        ["assets/stage1/macaron_green.png", "public/assets/stage1/macaron_green.png"],
+        (img) => {
+          img.alt = "グリーンマカロン";
+          img.className = "macaron-img";
+          img.onclick = evolveToGreen;
+          holder.appendChild(img);
           document.getElementById("err").style.display = "none";
         },
         () => {
           document.getElementById("err").style.display = "block";
-          document.getElementById("err").textContent =
-            lang === "en"
-              ? "Macaron image not found. Put macaron_green.png in assets/stage1/ (or public/assets/stage1/)."
-              : "マカロン画像が見つかりません。assets/stage1/（または public/assets/stage1/）に macaron_green.png を置いてください。";
+          document.getElementById("err").textContent = "macaron_green.png を assets/stage1/ か public/assets/stage1/ に置いてください。";
         }
       );
     }
 
-    // ▼ 食べたら緑に進化 → フラグ保存 & 次へボタン表示
-    function eatGreen(){
-      localStorage.setItem("evolved_color", "green"); // 次ステージで使う想定
-      const msg = lang === "en" ? "You ate the green macaron! Evolved to GREEN!" : "グリーンのマカロンを食べた！緑に進化した！";
+    // 進化処理：green_open.png に差し替え、フラグ保存、次へ
+    function evolveToGreen(){
+      // 保存（次ページなどで利用）
+      localStorage.setItem("evolved_color", "green");
+      localStorage.setItem("evolved_sprite", "green_open"); // 任意
+
+      const msg = lang === "en" ? "You ate it! Evolved to GREEN!" : "食べた！緑に進化した！";
       document.getElementById("message").textContent = msg;
+
+      // 見た目を green_open.png に差し替え
+      const holder = document.getElementById("macaronHolder");
+      holder.innerHTML = "";
+      loadImage(
+        ["assets/stage1/green_open.png", "public/assets/stage1/green_open.png"],
+        (img) => {
+          img.alt = "緑に進化したキャラ";
+          img.className = "evolved-img";
+          holder.appendChild(img);
+        },
+        () => {
+          document.getElementById("err").style.display = "block";
+          document.getElementById("err").textContent =
+            "green_open.png が見つかりません。assets/stage1/ か public/assets/stage1/ に配置してください。";
+        }
+      );
+
       document.getElementById("nextStageBtn").style.display = "inline-block";
     }
 
     function goToRebirth(){ window.location.href = "rebirth.html"; }
 
-    // ▼ 背景もフォールバック（任意）
-    (function fixBackground(){
-      const test = new Image();
-      test.onload = () => {}; // OK
-      test.onerror = () => {
-        // assets 側が無いなら public 側に切り替え
-        document.body.style.backgroundImage = 'url("public/assets/stage1/space_background.png")';
-      };
-      test.src = "assets/stage1/space_background.png";
+    // 背景もフォールバック
+    (function fixBg(){
+      const t = new Image();
+      t.onerror = () => { document.body.style.backgroundImage = 'url("public/assets/stage1/space_background.png")'; };
+      t.src = "assets/stage1/space_background.png";
     })();
 
     window.onload = renderGreenMacaron;
