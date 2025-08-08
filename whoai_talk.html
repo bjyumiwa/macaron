@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>whoai_talk.html - 進化後の会話（7回で儀式へ）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html,body{height:100%;margin:0;padding:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      color:#fff;padding:20px;display:flex;flex-direction:column;align-items:center
+    }
+    h2{margin:8px 0 6px;text-shadow:0 0 8px rgba(0,0,0,.5)}
+    .status{opacity:.9;margin-bottom:8px}
+    #char{width:120px;margin:8px auto 12px;display:block}
+    #chat{
+      width:min(680px,92vw);height:50vh;overflow-y:auto;
+      background:rgba(255,255,255,.08);border-radius:12px;padding:12px
+    }
+    .row{margin:8px 0;padding:8px 10px;border-radius:10px;line-height:1.5}
+    .u{background:rgba(255,255,255,.15);align-self:flex-end}
+    .a{background:rgba(0,0,0,.25)}
+    .inputBar{width:min(680px,92vw);display:flex;gap:8px;margin-top:10px}
+    input[type=text]{flex:1;padding:10px;border-radius:10px;border:none}
+    button{padding:10px 16px;border:none;border-radius:10px;cursor:pointer}
+    #send{background:#ffd1ec;color:#111}
+    #send:disabled{opacity:.6;cursor:not-allowed}
+    #rebirth{margin-top:14px;display:none;background:#ffd1ec;color:#111}
+  </style>
+</head>
+<body>
+  <h2 id="title">いっしょに話そう</h2>
+  <div class="status" id="status"></div>
+  <img id="char" alt="進化キャラ" />
+
+  <div id="chat"></div>
+
+  <div class="inputBar">
+    <input id="msg" type="text" placeholder="メッセージを入力…" />
+    <button id="send" onclick="sendMsg()">送信</button>
+  </div>
+
+  <button id="rebirth" onclick="goRebirth()">復活の儀式へ ▶</button>
+
+  <script>
+    const NAMES_JA = {pink:"ピンク",green:"グリーン",blue:"ブルー",purple:"パープル"};
+    const color = localStorage.getItem("evolved_color") || "green";
+    const limit = parseInt(localStorage.getItem("conv_limit") || "7", 10);
+    let count = parseInt(localStorage.getItem("conv_count") || "0", 10);
+
+    document.getElementById("title").textContent = `${NAMES_JA[color]} と話そう`;
+
+    function setCharImg(){
+      const el = document.getElementById("char");
+      const pref1 = localStorage.getItem("evolved_img_pref1");
+      const pref2 = localStorage.getItem("evolved_img_pref2");
+      const candidates = [pref1, pref2].filter(Boolean).concat([
+        `public/assets/stage1/${color}_open.png`,
+        `${color}_open.png`
+      ]);
+      const img = new Image(); let i=0;
+      const tryNext = ()=>{ if(i>=candidates.length){ el.style.display="none"; return; } img.src = candidates[i++]; };
+      img.onload = ()=>{ el.src = img.src; };
+      img.onerror = tryNext;
+      tryNext();
+    }
+
+    function renderStatus(){
+      const remain = Math.max(0, limit - count);
+      document.getElementById("status").textContent = `色：${NAMES_JA[color]}　会話：${count}/${limit}（残り ${remain}）`;
+    }
+
+    function addRow(text, who){
+      const row = document.createElement("div");
+      row.className = `row ${who}`;
+      row.textContent = text;
+      document.getElementById("chat").appendChild(row);
+      document.getElementById("chat").scrollTop = chat.scrollHeight;
+    }
+
+    async function sendMsg(){
+      const input = document.getElementById("msg");
+      const btn = document.getElementById("send");
+      const text = input.value.trim();
+      if(!text) return;
+      if(count >= limit){ lockInput(); return; }
+
+      addRow(text,"u");
+      input.value = ""; btn.disabled = true;
+
+      try{
+        const res = await fetch("/api/talk",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ message:text, color })
+        });
+
+        let reply;
+        if(res.ok){
+          const data = await res.json();
+          reply = data.reply;
+        }else{
+          reply = fallbackReply(text, color);
+        }
+        if(!reply) reply = "(…返答なし…)";
+        addRow(reply,"a");
+
+        count += 1;
+        localStorage.setItem("conv_count", String(count));
+        renderStatus();
+
+        if(count >= limit){
+          lockInput();
+          document.getElementById("rebirth").style.display = "inline-block";
+        }
+      }catch(e){
+        addRow(fallbackReply(text, color),"a");
+        console.error(e);
+      }finally{
+        if(count < limit) btn.disabled = false;
+      }
+    }
+
+    function fallbackReply(userText, color){
+      const mood = {pink:"やさしく",green:"元気に",blue:"落ち着いて",purple:"しっとりと"}[color] || "ふつうに";
+      return `${mood}返すよ：「${userText}」ってことだね。つづけて教えて！`;
+    }
+
+    function lockInput(){
+      document.getElementById("send").disabled = true;
+      document.getElementById("msg").disabled = true;
+    }
+
+    function goRebirth(){ window.location.href = "rebirth.html"; }
+
+    setCharImg();
+    renderStatus();
+  </script>
+</body>
+</html>
