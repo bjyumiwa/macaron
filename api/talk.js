@@ -16,7 +16,7 @@ export default async function handler(req: Request) {
     });
   }
 
-  // リクエスト内容を取得
+  // JSONパース
   let body: any = {};
   try {
     body = await req.json();
@@ -27,6 +27,7 @@ export default async function handler(req: Request) {
     });
   }
 
+  // messages[] の有無チェック
   const messages = Array.isArray(body?.messages) ? body.messages : null;
   if (!messages) {
     return new Response(JSON.stringify({ error: "Bad request: messages[]" }), {
@@ -35,6 +36,7 @@ export default async function handler(req: Request) {
     });
   }
 
+  // APIキー確認
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
@@ -74,10 +76,10 @@ export default async function handler(req: Request) {
   });
 }
 
-// CORS許可ヘッダー
+// CORS許可（GitHub Pages 固定）
 function corsHeaders(json = false) {
   const h: Record<string, string> = {
-    "Access-Control-Allow-Origin": "*", // ← 全てのオリジン許可
+    "Access-Control-Allow-Origin": "https://biyuminu.github.io",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
   };
