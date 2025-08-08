@@ -11,7 +11,7 @@
       color: white;
       padding: 20px;
       text-align: center;
-      background-image: url("public/assets/stage1/space_background.png");
+      background-image: url("./assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -69,9 +69,9 @@
 
   <script>
     // ======== 設定 ========
-    const API_URL = "https://macaron-one.vercel.app/api/talk"; // VercelのURL
+    const API_URL = "https://macaron-one.vercel.app/api/talk"; // ← 自分のVercel URLに置き換える
     const name = localStorage.getItem("whoai_name") || "ともだち";
-    const img = localStorage.getItem("characterImage") || "public/assets/stage1/tane_green.png";
+    const img = localStorage.getItem("characterImage") || "./assets/stage1/tane_green.png"; // public削除
     const maxTurns = 3;
     let turnCount = 0;
 
@@ -126,12 +126,12 @@
           setTimeout(() => { window.location.href = "evolution.html"; }, 2000);
         }
       } catch (err) {
-  console.error(err);
-  addMessage("ai", "サーバーエラー: " + err.message);
-} finally {
-  sendBtn.disabled = false;
-}
-
+        console.error(err);
+        addMessage("ai", "サーバーエラー: " + err.message);
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
 
     // ======== イベント設定 ========
     sendBtn.addEventListener("click", sendMessage);
@@ -141,4 +141,3 @@
   </script>
 </body>
 </html>
-
