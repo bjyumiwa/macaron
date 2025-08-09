@@ -39,6 +39,10 @@
     .choice{background:#fff}
     details.history{margin-top:8px}
     .mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px}
+
+    /* Start Overlay */
+    #startOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50}
+    #startBox{background:rgba(255,255,255,.12);padding:20px;border-radius:16px;min-width:280px;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
   </style>
 </head>
 <body>
@@ -88,6 +92,16 @@
     </div>
   </div>
 
+  <!-- Start Overlay -->
+  <div id="startOverlay">
+    <div id="startBox">
+      <div style="margin-bottom:8px;font-weight:600">どうする？</div>
+      <div id="savePreview" style="font-size:12px;opacity:.85;margin-bottom:14px"></div>
+      <button id="continueBtn" style="margin-right:8px">コンティニュー</button>
+      <button id="newBtn" style="background:#fff">最初から</button>
+    </div>
+  </div>
+
 <script>
 /* ===== 設定 ===== */
 const API_URL = "https://macaron-one.vercel.app/api/talk"; // conversation.html と同じ messages 形式
@@ -119,12 +133,16 @@ const stageBadge   = document.getElementById('stageBadge');
 const nameBadge    = document.getElementById('nameBadge');
 const resetBtn     = document.getElementById('resetBtn');
 const historyBox   = document.getElementById('historyBox');
+const startOverlay = document.getElementById('startOverlay');
+const continueBtn  = document.getElementById('continueBtn');
+const newBtn       = document.getElementById('newBtn');
+const savePreview  = document.getElementById('savePreview');
 
-/* ===== 状態ヘルパ =====
+/* ===== 状態 =====
   name:            現在の名前
   appearanceColor: 見た目（画像）
   personaColor:    性格（トーン、API用）
-  lockAppearance:  容姿固定中なら true
+  lockAppearance:  容姿固定中なら true（性格だけ変更）
   logs:            現世代の会話ログ（全文）
   history:         過去世代 [{name,appearanceColor,personaColor,startedAt,endedAt,summary,logsLen}]
 */
@@ -248,11 +266,7 @@ evolveBtn.addEventListener('click', ()=>{
   choiceArea.style.display = 'flex';
 });
 
-/* ===== 記憶ルート =====
-   - 名前は変えない
-   - 会話ログは継続（“要旨”は履歴に保存）
-   - 見た目リセット → 次のマカロンで外見+性格決定
-*/
+/* ===== 記憶ルート ===== */
 memoryBtn.addEventListener('click', ()=>{
   const st = loadState();
   st.history = st.history || [];
@@ -266,7 +280,7 @@ memoryBtn.addEventListener('click', ()=>{
     summary,
     logsLen: (st.logs||[]).length
   });
-  // 記憶は残す → ログは保持、見た目/性格 未決定へ
+  // 記憶を残す → ログ継続、見た目/性格を未決定に戻す
   st.appearanceColor = null;
   st.personaColor = null;
   st.stage = 'tane';
@@ -282,12 +296,7 @@ memoryBtn.addEventListener('click', ()=>{
   choiceArea.style.display = 'none';
 });
 
-/* ===== 容姿ルート =====
-   - 見た目は残す
-   - 新しい名前を付ける（ここで入力）
-   - 性格は次のマカロンで決める
-   - 会話ログは新世代としてリセット（前ログは履歴へ）
-*/
+/* ===== 容姿ルート ===== */
 appearanceBtn.addEventListener('click', ()=>{
   const st = loadState();
   const newName = prompt('新しい名前をつけてね（例：ピークる2世）', '');
@@ -314,7 +323,6 @@ appearanceBtn.addEventListener('click', ()=>{
   st.startedAt = new Date().toISOString();
   st.lockAppearance = true;            // 容姿は固定、性格だけ変更
   st.personaColor = null;              // 次のマカロンで決める
-  // st.appearanceColor は維持
   saveState(st);
 
   applyAppearance(st);
@@ -325,12 +333,29 @@ appearanceBtn.addEventListener('click', ()=>{
   choiceArea.style.display = 'none';
 });
 
-/* ===== 要旨生成（超ライト） ===== */
+/* ===== 要旨生成（ライト要約） ===== */
 function makeSummary(logs){
   const users = logs.filter(l=>l.role==='user').map(l=>l.text);
   const first = users[0] || '';
   const last  = users[users.length-1] || '';
   return `発話${users.length}件。最初「${first.slice(0,18)}」/ 最後「${last.slice(0,18)}」`;
+}
+
+/* ===== Start Overlay ロジック ===== */
+function hasSave(){
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    return s && (s.logs?.length || s.appearanceColor || s.personaColor || s.history?.length);
+  } catch { return false; }
+}
+function startNewGame(){
+  localStorage.removeItem(KEY);
+  init();             // ランダムマカロン＆未選択
+  startOverlay.style.display = 'none';
+}
+function continueGame(){
+  init();             // 保存をそのまま復元（最後に残ってたキャラで再開）
+  startOverlay.style.display = 'none';
 }
 
 /* ===== リセット ===== */
@@ -342,6 +367,22 @@ resetBtn.addEventListener('click', ()=>{
 
 /* ===== 初期化 ===== */
 function init(){
+  // 初回のみ：保存があればスタート選択を表示
+  if (init.firstRun !== false && hasSave()) {
+    const st = loadState();
+    const nm = st.name || localStorage.getItem('whoai_name') || 'ともだち';
+    const app = st.appearanceColor || '未選択';
+    const per = st.personaColor || app || '未選択';
+    const turns = (st.logs||[]).filter(l=>l.role==='user').length;
+    savePreview.textContent = `名前: ${nm} / 容姿: ${app} / 性格: ${per} / 発話: ${turns}件`;
+    startOverlay.style.display = 'flex';
+    continueBtn.onclick = continueGame;
+    newBtn.onclick = startNewGame;
+    init.firstRun = false;
+    return;
+  }
+  init.firstRun = false;
+
   const st = loadState();
   if(!st.name){
     st.name = localStorage.getItem('whoai_name') || 'ともだち';
