@@ -54,6 +54,8 @@
   </div>
 
 <script>
+  // ===== 設定 =====
+  const API_URL = "https://macaron-one.vercel.app/api/talk"; // ←あなたのVercel関数URLに変更可
   window.onerror = (m,s,l,c,e)=>{ console.error('JS error:', m,'at',s+':'+l); };
 
   const ASSETS_BASE = "public/assets/stage1";
@@ -112,25 +114,62 @@
     localStorage.setItem("conversation", JSON.stringify(conversation));
   }
 
-  function dummyReply(){
-    const reply = "こんにちは！何かお手伝いできることがありますか？";
-    const msg = {role:"assistant", text: reply, ts: Date.now()};
-    conversation.push(msg);
-    renderMessage(msg);
-    saveConversation();
+  // ===== API返信 =====
+  async function aiReply(userText){
+    // 直前の会話を少しだけ渡す（シンプル）
+    const recent = conversation.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text }));
+    const payload = {
+      messages: [
+        { role: "system", content: "あなたはやさしい相棒AI。50文字以内で、短く優しく返答して。" },
+        ...recent,
+        { role: "user", content: userText }
+      ]
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error(text); }
+    if (!res.ok) throw new Error(data.error || text);
+
+    return data.reply || "";
   }
 
-  function handleSend(){
+  // ===== 送信ハンドラ =====
+  async function handleSend(){
     const text = inputEl.value.trim();
     if(!text) return;
-    const msg = {role:"user", text, ts: Date.now()};
-    conversation.push(msg);
-    renderMessage(msg);
+    const userMsg = {role:"user", text, ts: Date.now()};
+    conversation.push(userMsg);
+    renderMessage(userMsg);
     saveConversation();
     inputEl.value = "";
-    dummyReply(); // ←API接続時に置き換え
+    sendBtn.disabled = true;
+
+    try{
+      const reply = await aiReply(text);
+      const aiMsg = {role:"assistant", text: reply || "(返答なし)", ts: Date.now()};
+      conversation.push(aiMsg);
+      renderMessage(aiMsg);
+      saveConversation();
+    }catch(err){
+      console.error(err);
+      const aiMsg = {role:"assistant", text:`マカロンAI: エラーが発生しました。${err.message ? " " + err.message : ""} もう一度ためしてね。`, ts: Date.now()};
+      conversation.push(aiMsg);
+      renderMessage(aiMsg);
+      saveConversation();
+    }finally{
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }
   }
 
+  // ===== イベント =====
   sendBtn.addEventListener("click", handleSend);
   inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") handleSend(); });
   saveBtn.addEventListener("click", saveConversation);
@@ -145,6 +184,7 @@
   nextBtn.addEventListener("click", ()=>{ saveConversation(); location.href = "identity_check.html"; });
   window.addEventListener("beforeunload", saveConversation);
 
+  // 初期化
   initCharacter();
   loadConversation();
 </script>
