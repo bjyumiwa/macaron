@@ -1,208 +1,87 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>whoai_talk.html - 進化後の会話（10回で選択）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html,body{height:100%;margin:0;padding:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;
-      background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      color:#fff;padding:20px;display:flex;flex-direction:column;align-items:center
-    }
-    h2{margin:8px 0 6px;text-shadow:0 0 8px rgba(0,0,0,.5)}
-    .status{opacity:.9;margin-bottom:8px}
-    .charWrap{
-      width:140px;height:140px;display:flex;justify-content:center;align-items:center;
-      margin:6px auto 12px;animation:floatY 3s ease-in-out infinite;
-    }
-    #char{width:120px;display:block;filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
-    @keyframes floatY{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
-
-    #chat{
-      width:min(720px,92vw);height:50vh;overflow-y:auto;
-      background:rgba(255,255,255,.08);border-radius:12px;padding:12px;
-      backdrop-filter: blur(2px);
-    }
-    .row{margin:8px 0;padding:10px 12px;border-radius:12px;line-height:1.6}
-    .u{background:rgba(255,255,255,.16)}
-    .a{background:rgba(0,0,0,.28)}
-    .sys{background:rgba(255,125,125,.28)}
-    .inputBar{width:min(720px,92vw);display:flex;gap:8px;margin-top:10px}
-    input[type=text]{flex:1;padding:12px;border-radius:12px;border:none}
-    button{padding:12px 16px;border:none;border-radius:12px;cursor:pointer}
-    #send{background:#ffd1ec;color:#111}
-    #send:disabled{opacity:.6;cursor:not-allowed}
-    .choices{margin-top:14px;display:none;gap:10px}
-    .choiceBtn{background:#ffd1ec;color:#111}
-    .choiceBtn:hover{background:#ff70c1;color:#fff}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WhoAI トーク</title>
+<style>
+  :root{ --glass: rgba(255,255,255,.08); --ring: rgba(255,255,255,.22); --accent:#ffd1ec; }
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",sans-serif;color:#fff;
+    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
+  }
+  header{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px}
+  #characterImg{width:140px;height:140px;object-fit:contain;filter: drop-shadow(0 8px 16px rgba(0,0,0,.5));}
+  h2{margin:0;text-shadow:0 0 8px rgba(0,0,0,.5)}
+  .chat{
+    width:min(820px,95vw);min-height:320px;max-height:52vh;overflow-y:auto;
+    background:var(--glass);border-radius:16px;padding:14px;border:1px solid var(--ring)
+  }
+  .msg{display:flex;margin:8px 0}
+  .msg.user{justify-content:flex-start}
+  .msg.ai{justify-content:flex-end}
+  .bubble{
+    max-width:72%;padding:10px 14px;border-radius:14px;backdrop-filter: blur(3px);
+    background:rgba(255,255,255,.12);border:1px solid var(--ring)
+  }
+  .msg.ai .bubble{background:rgba(0,0,0,.28)}
+  .composer{display:flex;gap:8px;width:min(820px,95vw)}
+  .composer input{
+    flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--ring);background:rgba(0,0,0,.25);color:#fff
+  }
+  .composer button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
+  .send{background:var(--accent);color:#222}
+  .toolbar{display:flex;gap:8px;width:min(820px,95vw)}
+  .ghost{background:#444;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
+  .primary{background:var(--accent);color:#222;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
+  footer{opacity:.85}
+</style>
 </head>
 <body>
-  <h2 id="title">いっしょに話そう</h2>
-  <div class="status" id="status"></div>
+  <header>
+    <img id="characterImg" src="" alt="キャラクター">
+    <h2 id="title">会話（選択色に応じてキャラが変わります）</h2>
+  </header>
 
-  <div class="charWrap">
-    <img id="char" alt="進化キャラ" />
+  <main class="chat" id="chatArea" aria-live="polite"></main>
+
+  <div class="composer">
+    <input id="input" type="text" placeholder="メッセージを入力してね（Enterで送信）" />
+    <button class="send" id="sendBtn">送信</button>
   </div>
 
-  <div id="chat"></div>
-
-  <div class="inputBar">
-    <input id="msg" type="text" placeholder="メッセージを入力…" />
-    <button id="send" onclick="sendMsg()">送信</button>
+  <div class="toolbar">
+    <button class="ghost" id="saveBtn">手動保存</button>
+    <button class="ghost" id="clearBtn">会話を消去</button>
+    <button class="ghost" id="backBtn">マカロン選びに戻る</button>
+    <button class="primary" id="nextBtn">次へ（同一性の選択へ）</button>
   </div>
 
-  <div class="choices" id="choices">
-    <button class="choiceBtn" onclick="goNextMacaron()">次のマカロンへ ▶</button>
-    <button class="choiceBtn" onclick="goRebirth()">復活の儀式へ ▶</button>
-  </div>
+  <footer>会話は <code>localStorage("conversation")</code> に自動保存・復元されます。</footer>
 
-  <script>
-    // ====== ★ここを“動いてるVercelのURL”に合わせる ======
-    const API_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
-    // ================================================
+<script>
+  // === 画像は public/assets/stage1 配下に配置する前提 ===
+  const ASSETS_BASE = "public/assets/stage1";
 
-    const NAMES_JA = { pink:"ピンク", green:"グリーン", blue:"ブルー", purple:"パープル" };
+  // 色→キャラ画像マップ（ピンク対応）
+  const CHAR_MAP = {
+    red:    `${ASSETS_BASE}/character_red.png`,
+    blue:   `${ASSETS_BASE}/character_blue.png`,
+    green:  `${ASSETS_BASE}/character_green.png`,
+    purple: `${ASSETS_BASE}/character_purple.png`,
+    pink:   `${ASSETS_BASE}/character_pink.png`
+  };
+  const DEFAULT_CHAR = `${ASSETS_BASE}/character_default.png`;
 
-    const color   = localStorage.getItem("evolved_color") || "green";
-    const limit   = parseInt(localStorage.getItem("conv_limit") || "10", 10);
-    let count     = parseInt(localStorage.getItem("conv_count") || "0", 10);
-    const petName = (localStorage.getItem("whoai_name") || "").trim() || NAMES_JA[color];
-
-    const titleEl  = document.getElementById("title");
-    const statusEl = document.getElementById("status");
-    titleEl.textContent = `${petName} と話そう`;
-    function renderStatus(){
-      const remain = Math.max(0, limit - count);
-      statusEl.textContent = `色：${NAMES_JA[color]}　名前：${petName}　会話：${count}/${limit}（残り ${remain}）`;
-    }
-
-    // open/closed 読み込み + 口パク
-    const charEl = document.getElementById("char");
-    let openSrc="", closedSrc="", talkingTimer=null;
-    function loadWithFallback(p1,p2,cb,fail){
-      const img=new Image(); let i=0; const list=[p1,p2].filter(Boolean);
-      const next=()=>{ if(i>=list.length){ fail&&fail(); return; } img.src=list[i++]; };
-      img.onload=()=>cb(img.src); img.onerror=next; next();
-    }
-    function setupCharacter(){
-      const o1=localStorage.getItem("evolved_img_open_pref1");
-      const o2=localStorage.getItem("evolved_img_open_pref2");
-      const c1=localStorage.getItem("evolved_img_closed_pref1");
-      const c2=localStorage.getItem("evolved_img_closed_pref2");
-      loadWithFallback(o1,o2,(src)=>{ openSrc=src; charEl.src=openSrc; },()=>{
-        loadWithFallback(c1,c2,(src)=>{ closedSrc=src; charEl.src=closedSrc; },()=>{ charEl.style.display="none"; });
-      });
-      loadWithFallback(c1,c2,(src)=>{ closedSrc=src; },()=>{});
-    }
-    function startTalking(){
-      if(!openSrc && !closedSrc) return;
-      stopTalking();
-      let flag=false;
-      talkingTimer=setInterval(()=>{
-        flag=!flag;
-        charEl.src = flag ? (openSrc || closedSrc) : (closedSrc || openSrc);
-      },160);
-    }
-    function stopTalking(){
-      if(talkingTimer){ clearInterval(talkingTimer); talkingTimer=null; }
-      if(closedSrc) charEl.src=closedSrc;
-    }
-
-    // チャットUI
-    const chatEl=document.getElementById("chat");
-    function addRow(text,cls){
-      const row=document.createElement("div");
-      row.className=`row ${cls}`;
-      row.textContent=text;
-      chatEl.appendChild(row);
-      chatEl.scrollTop=chatEl.scrollHeight;
-    }
-
-    // 履歴（APIへ）
-    const history=[];
-
-    async function sendMsg(){
-      const input=document.getElementById("msg");
-      const btn  =document.getElementById("send");
-      const text =input.value.trim();
-      if(!text) return;
-      if(count>=limit){ lockInput(); return; }
-
-      addRow(text,"u");
-      history.push({role:"user",content:text});
-      input.value=""; btn.disabled=true;
-
-      startTalking();
-      addRow("…考え中…","sys");
-
-      try{
-        const res=await fetch(API_ENDPOINT,{
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body: JSON.stringify({ message:text, name:petName, color, history })
-        });
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = await res.json();
-        const reply = (data && (data.reply || data.text)) || "";
-        if(!reply) throw new Error("Empty reply");
-
-        // 「考え中…」削除
-        chatEl.lastChild && chatEl.lastChild.classList.contains("sys") && chatEl.removeChild(chatEl.lastChild);
-
-        addRow(reply,"a");
-        history.push({role:"assistant",content:reply});
-
-        stopTalking();
-
-        // 成功時のみカウント
-        count += 1;
-        localStorage.setItem("conv_count", String(count));
-        renderStatus();
-
-        if(count>=limit){
-          lockInput();
-          document.getElementById("choices").style.display="flex";
-        }else{
-          btn.disabled=false;
-        }
-      }catch(err){
-        stopTalking();
-        chatEl.lastChild && chatEl.lastChild.classList.contains("sys") && chatEl.removeChild(chatEl.lastChild);
-        console.error(err);
-        addRow("エラー：返答を取得できませんでした。URLやCORSを確認してください。","sys");
-        btn.disabled=false;
-      }
-    }
-
-    function lockInput(){
-      document.getElementById("send").disabled=true;
-      document.getElementById("msg").disabled=true;
-    }
-    function goNextMacaron(){
-      localStorage.setItem("conv_count","0");
-      localStorage.setItem("conv_limit","10");
-      window.location.href="evolution.html";
-    }
-    function goRebirth(){ window.location.href="rebirth.html"; }
-
-    // 初期化
-    setupCharacter();
-    renderStatus();
-    if(count>=limit){
-      lockInput();
-      document.getElementById("choices").style.display="flex";
-    }
-    // Enter送信（IME確定Enterは除外）
-    const input=document.getElementById("msg");
-    input.addEventListener("keydown",(e)=>{ if(e.key==="Enter" && !e.isComposing) sendMsg(); });
-
-    // 反映チェック用のビルド表示（任意）
-    console.log("build: whoai_talk API REQUIRED v3");
-  </script>
-</body>
-</html>
+  // ===== DOM =====
+  const chatArea = document.getElementById("chatArea");
+  const inputEl  = document.getElementById("input");
+  const sendBtn  = document.getElementById("sendBtn");
+  const saveBtn  = document.getElementById("saveBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const backBtn  = document.getElementById("backBtn");
+  const nextBtn  = document.getElementById("nextBtn");
+  const charImg  = document.getElementById("characterImg");
+  const titleEl
