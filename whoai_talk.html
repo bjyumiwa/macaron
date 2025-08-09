@@ -55,18 +55,19 @@
 
 <script>
   // ===== 設定 =====
-  const API_URL = "https://macaron-one.vercel.app/api/talk"; // ←あなたのVercel関数URLに変更可
+  const API_URL = "https://macaron-one.vercel.app/api/talk"; // ←あなたのVercel関数URLに変更
   window.onerror = (m,s,l,c,e)=>{ console.error('JS error:', m,'at',s+':'+l); };
 
+  // 実際のファイル名に合わせてマッピング
   const ASSETS_BASE = "public/assets/stage1";
   const CHAR_MAP = {
-    red:    `${ASSETS_BASE}/character_red.png`,
-    blue:   `${ASSETS_BASE}/character_blue.png`,
-    green:  `${ASSETS_BASE}/character_green.png`,
-    purple: `${ASSETS_BASE}/character_purple.png`,
-    pink:   `${ASSETS_BASE}/character_pink.png`
+    red:    `${ASSETS_BASE}/red_open.png`,
+    blue:   `${ASSETS_BASE}/blue_open.png`,
+    green:  `${ASSETS_BASE}/green_open.png`,
+    purple: `${ASSETS_BASE}/purple_open.png`,
+    pink:   `${ASSETS_BASE}/pink_open.png`
   };
-  const DEFAULT_CHAR = `${ASSETS_BASE}/character_default.png`;
+  const DEFAULT_CHAR = `${ASSETS_BASE}/tane_green.png`;
 
   const chatArea = document.getElementById("chatArea");
   const inputEl  = document.getElementById("input");
@@ -81,15 +82,28 @@
   let conversation = [];
 
   function initCharacter(){
+    // 1) 選択画面で保存していた画像パスがあれば最優先
+    const storedImg = localStorage.getItem("characterImage");
+
+    // 2) マカロンの色選択が保存されていれば、その色から推定
+    let mappedImg = null;
     try{
       const choice = JSON.parse(localStorage.getItem("macaron_choice") || "{}");
-      const key = choice.macaron;
-      charImg.src = (key && CHAR_MAP[key]) ? CHAR_MAP[key] : DEFAULT_CHAR;
-      titleEl.textContent = key ? `会話（選択色：${choice.macaronLabel ?? key}）` : "会話（マカロン未選択：デフォルト表示）";
-    }catch(e){
-      charImg.src = DEFAULT_CHAR;
+      const key = choice.macaron; // 例: "green"
+      if (key && CHAR_MAP[key]) mappedImg = CHAR_MAP[key];
+      titleEl.textContent = key
+        ? `会話（選択色：${choice.macaronLabel ?? key}（対話））`
+        : "会話（マカロン未選択：デフォルト表示）";
+    }catch{
       titleEl.textContent = "会話（初期化：デフォルト表示）";
     }
+
+    // 3) 表示画像を決定
+    const src = storedImg || mappedImg || DEFAULT_CHAR;
+    charImg.src = src;
+
+    // 読み込み失敗時はデフォルトに切り替え
+    charImg.onerror = () => { charImg.onerror = null; charImg.src = DEFAULT_CHAR; };
   }
 
   function renderMessage(msg){
@@ -114,13 +128,11 @@
     localStorage.setItem("conversation", JSON.stringify(conversation));
   }
 
-  // ===== API返信 =====
   async function aiReply(userText){
-    // 直前の会話を少しだけ渡す（シンプル）
     const recent = conversation.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text }));
     const payload = {
       messages: [
-        { role: "system", content: "あなたはやさしい相棒AI。50文字以内で、短く優しく返答して。" },
+        { role: "system", content: "あなたはやさしい相棒AI。50文字以内で短く優しく返答して。" },
         ...recent,
         { role: "user", content: userText }
       ]
@@ -140,7 +152,6 @@
     return data.reply || "";
   }
 
-  // ===== 送信ハンドラ =====
   async function handleSend(){
     const text = inputEl.value.trim();
     if(!text) return;
@@ -159,7 +170,7 @@
       saveConversation();
     }catch(err){
       console.error(err);
-      const aiMsg = {role:"assistant", text:`マカロンAI: エラーが発生しました。${err.message ? " " + err.message : ""} もう一度ためしてね。`, ts: Date.now()};
+      const aiMsg = {role:"assistant", text:`マカロンAI: エラーが発生しました。${err.message ? " " + err.message : ""}`, ts: Date.now()};
       conversation.push(aiMsg);
       renderMessage(aiMsg);
       saveConversation();
@@ -169,7 +180,6 @@
     }
   }
 
-  // ===== イベント =====
   sendBtn.addEventListener("click", handleSend);
   inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") handleSend(); });
   saveBtn.addEventListener("click", saveConversation);
@@ -184,7 +194,6 @@
   nextBtn.addEventListener("click", ()=>{ saveConversation(); location.href = "identity_check.html"; });
   window.addEventListener("beforeunload", saveConversation);
 
-  // 初期化
   initCharacter();
   loadConversation();
 </script>
