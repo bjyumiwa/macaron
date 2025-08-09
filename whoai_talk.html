@@ -1,201 +1,247 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WhoAI トーク</title>
-<style>
-  :root{ --glass: rgba(255,255,255,.08); --ring: rgba(255,255,255,.22); --accent:#ffd1ec; }
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
-  }
-  header{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:4px}
-  #characterImg{width:140px;height:140px;object-fit:contain;filter: drop-shadow(0 8px 16px rgba(0,0,0,.5));}
-  h2{margin:0;text-shadow:0 0 8px rgba(0,0,0,.5)}
-  .chat{
-    width:min(820px,95vw);min-height:320px;max-height:52vh;overflow-y:auto;
-    background:var(--glass);border-radius:16px;padding:14px;border:1px solid var(--ring)
-  }
-  .msg{display:flex;margin:8px 0}
-  .msg.user{justify-content:flex-start}
-  .msg.ai{justify-content:flex-end}
-  .bubble{max-width:72%;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.12);border:1px solid var(--ring)}
-  .msg.ai .bubble{background:rgba(0,0,0,.28)}
-  .composer{display:flex;gap:8px;width:min(820px,95vw)}
-  .composer input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--ring);background:rgba(0,0,0,.25);color:#fff}
-  .composer button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
-  .send{background:var(--accent);color:#222}
-  .toolbar{display:flex;gap:8px;width:min(820px,95vw)}
-  .ghost{background:#444;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
-  .primary{background:var(--accent);color:#222;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
-</style>
+  <meta charset="UTF-8" />
+  <title>whoai_talk.html - 進化後の会話（10回で選択）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #fff;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h2 {
+      margin: 8px 0 6px;
+      text-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    #characterImg {
+      width: 140px;
+      margin: 10px 0;
+    }
+    #chatArea {
+      background: rgba(255,255,255,0.1);
+      padding: 16px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+    .msg {
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .user {
+      background: rgba(0, 150, 255, 0.4);
+      align-self: flex-end;
+    }
+    .assistant {
+      background: rgba(255, 255, 255, 0.2);
+      align-self: flex-start;
+    }
+    #inputArea {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 500px;
+    }
+    #userInput {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+    }
+    button {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      background: #ffd1ec;
+      color: #111;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #ffbde0;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <img id="characterImg" src="" alt="キャラクター">
-    <h2 id="title">会話（選択色に応じてキャラが変わります）</h2>
-  </header>
-
-  <main class="chat" id="chatArea" aria-live="polite"></main>
-
-  <div class="composer">
-    <input id="input" type="text" placeholder="メッセージを入力してね（Enterで送信）" />
-    <button class="send" id="sendBtn">送信</button>
+  <h2 id="title">会話</h2>
+  <img id="characterImg" src="" alt="キャラクター" />
+  <div id="chatArea"></div>
+  <div id="inputArea">
+    <input type="text" id="userInput" placeholder="メッセージを入力..." />
+    <button id="sendBtn">送信</button>
   </div>
 
-  <div class="toolbar">
-    <button class="ghost" id="saveBtn">手動保存</button>
-    <button class="ghost" id="clearBtn">会話を消去</button>
-    <button class="ghost" id="backBtn">マカロン選びに戻る</button>
-    <button class="primary" id="nextBtn">次へ（同一性の選択へ）</button>
-  </div>
-
-<script>
-  // ===== 設定 =====
-  const API_URL = "https://macaron-one.vercel.app/api/talk"; // ←あなたのVercel関数URLに変更
-  window.onerror = (m,s,l,c,e)=>{ console.error('JS error:', m,'at',s+':'+l); };
-
-  // 実際のファイル名に合わせてマッピング
-  const ASSETS_BASE = "public/assets/stage1";
-  const CHAR_MAP = {
-    red:    `${ASSETS_BASE}/red_open.png`,
-    blue:   `${ASSETS_BASE}/blue_open.png`,
-    green:  `${ASSETS_BASE}/green_open.png`,
-    purple: `${ASSETS_BASE}/purple_open.png`,
-    pink:   `${ASSETS_BASE}/pink_open.png`
-  };
-  const DEFAULT_CHAR = `${ASSETS_BASE}/tane_green.png`;
-
-  const chatArea = document.getElementById("chatArea");
-  const inputEl  = document.getElementById("input");
-  const sendBtn  = document.getElementById("sendBtn");
-  const saveBtn  = document.getElementById("saveBtn");
-  const clearBtn = document.getElementById("clearBtn");
-  const backBtn  = document.getElementById("backBtn");
-  const nextBtn  = document.getElementById("nextBtn");
-  const charImg  = document.getElementById("characterImg");
-  const titleEl  = document.getElementById("title");
-
-  let conversation = [];
-
-  function initCharacter(){
-    // 1) 選択画面で保存していた画像パスがあれば最優先
-    const storedImg = localStorage.getItem("characterImage");
-
-    // 2) マカロンの色選択が保存されていれば、その色から推定
-    let mappedImg = null;
-    try{
-      const choice = JSON.parse(localStorage.getItem("macaron_choice") || "{}");
-      const key = choice.macaron; // 例: "green"
-      if (key && CHAR_MAP[key]) mappedImg = CHAR_MAP[key];
-      titleEl.textContent = key
-        ? `会話（選択色：${choice.macaronLabel ?? key}（対話））`
-        : "会話（マカロン未選択：デフォルト表示）";
-    }catch{
-      titleEl.textContent = "会話（初期化：デフォルト表示）";
-    }
-
-    // 3) 表示画像を決定
-    const src = storedImg || mappedImg || DEFAULT_CHAR;
-    charImg.src = src;
-
-    // 読み込み失敗時はデフォルトに切り替え
-    charImg.onerror = () => { charImg.onerror = null; charImg.src = DEFAULT_CHAR; };
-  }
-
-  function renderMessage(msg){
-    const row = document.createElement("div");
-    row.className = `msg ${msg.role === "assistant" ? "ai" : "user"}`;
-    const b = document.createElement("div");
-    b.className = "bubble";
-    b.textContent = msg.text;
-    row.appendChild(b);
-    chatArea.appendChild(row);
-    chatArea.scrollTop = chatArea.scrollHeight;
-  }
-
-  function loadConversation(){
-    try{ conversation = JSON.parse(localStorage.getItem("conversation") || "[]"); }
-    catch{ conversation = []; }
-    chatArea.innerHTML = "";
-    conversation.forEach(renderMessage);
-  }
-
-  function saveConversation(){
-    localStorage.setItem("conversation", JSON.stringify(conversation));
-  }
-
-  async function aiReply(userText){
-    const recent = conversation.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.text }));
-    const payload = {
-      messages: [
-        { role: "system", content: "あなたはやさしい相棒AI。50文字以内で短く優しく返答して。" },
-        ...recent,
-        { role: "user", content: userText }
-      ]
+  <script>
+    // ===== マカロン色と意味・会話スタイル設定 =====
+    const MACARON_PERSONA = {
+      pink:   { name: "ピンク", meaning: "情熱", style: "テンポ速め。エネルギッシュで前向き。相手を励ます。感嘆符を時々。" },
+      blue:   { name: "青", meaning: "静寂", style: "落ち着いた口調。短く丁寧。安心感を与える。改行を使って余白を作る。" },
+      green:  { name: "緑", meaning: "元気", style: "明るくフレンドリー。相手の発言を要約→提案を1つ。顔文字は控えめに。" },
+      purple: { name: "紫", meaning: "創造", style: "比喩や発想の飛躍を少し。問い返しを1つ入れる。言い切りすぎない。" }
     };
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+    const OPENING_LINES = {
+      pink:   "熱、きたね！今の気持ち、ひとことで教えて？",
+      blue:   "大丈夫。ゆっくりでいいよ。今日は何から話す？",
+      green:  "元気チャージOK！やってみたいこと、ある？",
+      purple: "ひらめきの種を1つ。今、心に浮かぶ色は？"
+    };
+
+    function getActiveColor(){
+      const finalColor   = localStorage.getItem("finalColor");
+      const evolvedColor = localStorage.getItem("evolvedColor");
+      const choice = (()=>{ try{return JSON.parse(localStorage.getItem("macaron_choice")||"{}");}catch{return{}}})();
+      return finalColor || evolvedColor || choice.macaron || "green";
+    }
+
+    // ===== 会話データ管理 =====
+    let conversation = JSON.parse(localStorage.getItem("conversation") || "[]");
+    let turnCount = parseInt(localStorage.getItem("turnCount") || "0");
+
+    const chatArea = document.getElementById("chatArea");
+    const inputEl = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const titleEl = document.getElementById("title");
+    const charImg = document.getElementById("characterImg");
+
+    function saveConversation(){
+      localStorage.setItem("conversation", JSON.stringify(conversation));
+      localStorage.setItem("turnCount", turnCount);
+    }
+
+    function renderMessage(msg){
+      const div = document.createElement("div");
+      div.className = `msg ${msg.role}`;
+      div.textContent = msg.text;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function loadConversation(){
+      conversation.forEach(renderMessage);
+    }
+
+    function initCharacter(){
+      const imgPath = localStorage.getItem("characterImg") || "public/assets/stage1/tane.png";
+      charImg.src = imgPath;
+    }
+
+    function decorateTitle(){
+      const color = getActiveColor();
+      const p = MACARON_PERSONA[color] || MACARON_PERSONA.green;
+      titleEl.textContent = `会話（${p.name}：${p.meaning}）`;
+    }
+
+    function maybePostOpening(){
+      if (conversation.length > 0) return;
+      const color = getActiveColor();
+      const line = OPENING_LINES[color] || OPENING_LINES.green;
+      const aiMsg = { role: "assistant", text: line, ts: Date.now() };
+      conversation.push(aiMsg);
+      renderMessage(aiMsg);
+      saveConversation();
+    }
+
+    // ===== AI返答処理 =====
+    const API_URL = "https://your-server-domain/api/talk"; // ← サーバーURLに置き換え
+
+    async function aiReply(userText){
+      const color = getActiveColor();
+      const persona = MACARON_PERSONA[color] || MACARON_PERSONA.green;
+
+      const recent = conversation.slice(-6).map(m => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.text
+      }));
+
+      const systemPrompt =
+        `あなたは優しい相棒AI。返答は日本語。最大50文字程度で簡潔に。
+色テーマ: ${persona.name}（意味: ${persona.meaning}）
+会話スタイル: ${persona.style}
+相手の意図を尊重し、断定しすぎない。必要なら質問は1つまで。`;
+
+      const payload = {
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...recent,
+          { role: "user", content: userText }
+        ]
+      };
+
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(text); }
+      if (!res.ok) throw new Error(data.error || text);
+      return data.reply || "";
+    }
+
+    async function handleSend(){
+      const userText = inputEl.value.trim();
+      if (!userText) return;
+      const userMsg = { role: "user", text: userText, ts: Date.now() };
+      conversation.push(userMsg);
+      renderMessage(userMsg);
+      inputEl.value = "";
+
+      turnCount++;
+      saveConversation();
+
+      // 10ターンごとにマカロンイベントへ
+      if (turnCount >= 10){
+        turnCount = 0;
+        saveConversation();
+        window.location.href = "macaron.html";
+        return;
+      }
+
+      try {
+        const reply = await aiReply(userText);
+        const aiMsg = { role: "assistant", text: reply, ts: Date.now() };
+        conversation.push(aiMsg);
+        renderMessage(aiMsg);
+        saveConversation();
+      } catch (err){
+        console.error(err);
+        const aiMsg = { role: "assistant", text: "通信に失敗しました。", ts: Date.now() };
+        conversation.push(aiMsg);
+        renderMessage(aiMsg);
+      }
+    }
+
+    sendBtn.addEventListener("click", handleSend);
+    inputEl.addEventListener("keypress", e => {
+      if (e.key === "Enter") handleSend();
     });
 
-    const text = await res.text();
-    let data;
-    try { data = JSON.parse(text); } catch { throw new Error(text); }
-    if (!res.ok) throw new Error(data.error || text);
-
-    return data.reply || "";
-  }
-
-  async function handleSend(){
-    const text = inputEl.value.trim();
-    if(!text) return;
-    const userMsg = {role:"user", text, ts: Date.now()};
-    conversation.push(userMsg);
-    renderMessage(userMsg);
-    saveConversation();
-    inputEl.value = "";
-    sendBtn.disabled = true;
-
-    try{
-      const reply = await aiReply(text);
-      const aiMsg = {role:"assistant", text: reply || "(返答なし)", ts: Date.now()};
-      conversation.push(aiMsg);
-      renderMessage(aiMsg);
-      saveConversation();
-    }catch(err){
-      console.error(err);
-      const aiMsg = {role:"assistant", text:`マカロンAI: エラーが発生しました。${err.message ? " " + err.message : ""}`, ts: Date.now()};
-      conversation.push(aiMsg);
-      renderMessage(aiMsg);
-      saveConversation();
-    }finally{
-      sendBtn.disabled = false;
-      inputEl.focus();
-    }
-  }
-
-  sendBtn.addEventListener("click", handleSend);
-  inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") handleSend(); });
-  saveBtn.addEventListener("click", saveConversation);
-  clearBtn.addEventListener("click", ()=>{
-    if(confirm("会話をすべて削除します。よろしいですか？")){
-      conversation = [];
-      saveConversation();
-      loadConversation();
-    }
-  });
-  backBtn.addEventListener("click", ()=> location.href = "macaron_select.html");
-  nextBtn.addEventListener("click", ()=>{ saveConversation(); location.href = "identity_check.html"; });
-  window.addEventListener("beforeunload", saveConversation);
-
-  initCharacter();
-  loadConversation();
-</script>
+    // ===== 初期化 =====
+    initCharacter();
+    decorateTitle();
+    loadConversation();
+    maybePostOpening();
+  </script>
 </body>
 </html>
