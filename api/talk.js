@@ -1,82 +1,52 @@
-export const config = { runtime: "edge" };
+// /api/talk.js
+export default async function handler(req, res) {
+  // --- CORS ---
+  res.setHeader('Access-Control-Allow-Origin', '*'); // 本番はドメインを限定してOK
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-export default async function handler(req) {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders(),
-    });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
-      status: 405,
-      headers: corsHeaders(true),
-    });
-  }
-
-  let body = {};
   try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: corsHeaders(true),
+    const body = req.body || {};
+    // フロントから {messages:[...]} が来る想定（あなたのconversation.html）
+    // {message:"..."} でも動くように両対応
+    let messages = body.messages;
+    if (!messages && body.message) {
+      messages = [
+        { role: 'system', content: 'あなたはやさしい相棒AI。短く優しく答えて。' },
+        { role: 'user', content: String(body.message) }
+      ];
+    }
+    if (!Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: 'messages is required' });
+    }
+
+    const r = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages,
+        temperature: 0.7,
+      })
     });
+
+    const text = await r.text();
+    if (!r.ok) {
+      return res.status(500).json({ error: 'OpenAI error', detail: text });
+    }
+    const data = JSON.parse(text);
+    const reply = data.choices?.[0]?.message?.content ?? '';
+
+    return res.status(200).json({ reply });
+  } catch (e) {
+    return res.status(500).json({ error: 'Server error', detail: String(e) });
   }
-
-  const messages = Array.isArray(body?.messages) ? body.messages : null;
-  if (!messages) {
-    return new Response(JSON.stringify({ error: "Bad request: messages[]" }), {
-      status: 400,
-      headers: corsHeaders(true),
-    });
-  }
-
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
-      status: 500,
-      headers: corsHeaders(true),
-    });
-  }
-
-  const r = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages,
-      temperature: 0.7,
-    }),
-  });
-
-  if (!r.ok) {
-    const t = await r.text();
-    return new Response(JSON.stringify({ error: t }), {
-      status: r.status,
-      headers: corsHeaders(true),
-    });
-  }
-
-  const data = await r.json();
-  const text = data.choices?.[0]?.message?.content ?? "";
-
-  return new Response(JSON.stringify({ reply: text }), {
-    status: 200,
-    headers: corsHeaders(true),
-  });
 }
-
-function corsHeaders(json = false) {
-  const h = {
-    "Access-Control-Allow-Origin": "*", // 一時的に全許可（後で必要に応じて制限）
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-  if (json) h["Content-Type"] = "application/json";
-  return h;
-} 　　
