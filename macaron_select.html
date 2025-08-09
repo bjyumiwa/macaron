@@ -5,57 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>マカロン選択</title>
 <style>
-  :root{
-    --glass: rgba(255,255,255,.08);
-    --accent: #ffd1ec;
-  }
+  :root{ --glass: rgba(255,255,255,.10); --accent:#ffd1ec; }
   html,body{height:100%;margin:0}
   body{
     font-family:"Noto Sans JP",sans-serif;color:#fff;
     background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-    padding:24px;gap:18px
+    display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px
   }
-  h1{margin:8px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
-  p.lead{margin:0 0 8px;opacity:.9}
-  .grid{
-    display:grid;gap:16px;grid-template-columns:repeat(2,minmax(140px,1fr));
-    width:min(560px,92vw)
-  }
-  .card{
-    background:var(--glass);border-radius:16px;padding:14px;text-align:center;border:2px solid transparent;
-    cursor:pointer;user-select:none;transition:transform .12s ease,border-color .12s ease,box-shadow .12s ease
-  }
+  h1{margin:6px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
+  p{margin:0 0 6px;opacity:.9}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(140px,1fr));width:min(560px,92vw)}
+  .card{background:var(--glass);border-radius:16px;padding:14px;text-align:center;border:2px solid transparent;cursor:pointer;transition:.12s}
   .card:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,0,0,.25)}
   .card.selected{border-color:var(--accent);box-shadow:0 0 0 4px rgba(255,209,236,.25) inset}
   .card img{width:94px;height:94px;object-fit:contain;display:block;margin:6px auto 8px}
-  .label{font-weight:700;letter-spacing:.03em}
-  .actions{margin-top:8px;display:flex;gap:12px}
-  button{padding:10px 18px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
+  .label{font-weight:700}
+  .actions{display:flex;gap:12px;margin-top:8px}
+  button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
   .next{background:var(--accent);color:#222}
   .next:disabled{opacity:.6;cursor:not-allowed}
   .clear{background:#444;color:#fff}
-  footer{opacity:.8;font-size:.9rem}
 </style>
 </head>
 <body>
   <h1>好きなマカロンを選んでね</h1>
-  <p class="lead">クリックで選択 → 「決定する」で次の画面へ進みます。</p>
+  <p>クリックで選択 → 「決定する」で会話画面へ。</p>
 
   <div id="grid" class="grid"></div>
 
   <div class="actions">
-    <button class="clear" id="clearBtn">クリア</button>
-    <button class="next" id="goBtn" disabled>決定する</button>
+    <button id="clearBtn" class="clear">クリア</button>
+    <button id="goBtn" class="next" disabled>決定する</button>
   </div>
 
-  <footer>選択内容は <code>localStorage("macaron_choice")</code> に保存されます。</footer>
-
 <script>
-  // === このプロジェクトでは public/assets/stage1 内に画像を置く ===
   const ASSETS_BASE = "public/assets/stage1";
-
-  // 5色のマカロン
   const OPTIONS = [
     {key:"red",    label:"赤（情意）",        img:`${ASSETS_BASE}/macaron_red.png`},
     {key:"blue",   label:"青（認知）",        img:`${ASSETS_BASE}/macaron_blue.png`},
@@ -64,19 +48,17 @@
     {key:"pink",   label:"ピンク（かわいい）", img:`${ASSETS_BASE}/macaron_pink.png`}
   ];
 
-  const grid    = document.getElementById("grid");
-  const goBtn   = document.getElementById("goBtn");
-  const clearBtn= document.getElementById("clearBtn");
-
+  const grid = document.getElementById("grid");
+  const goBtn = document.getElementById("goBtn");
+  const clearBtn = document.getElementById("clearBtn");
   let selected = null;
 
-  // カード生成
   OPTIONS.forEach(opt=>{
     const c = document.createElement("div");
     c.className = "card";
     c.dataset.key = opt.key;
     c.innerHTML = `<img src="${opt.img}" alt="${opt.label}"><div class="label">${opt.label}</div>`;
-    c.addEventListener("click", ()=>{
+    c.addEventListener("click",()=>{
       document.querySelectorAll(".card").forEach(el=>el.classList.remove("selected"));
       c.classList.add("selected");
       selected = opt;
@@ -85,7 +67,6 @@
     grid.appendChild(c);
   });
 
-  // クリア
   clearBtn.addEventListener("click", ()=>{
     document.querySelectorAll(".card").forEach(el=>el.classList.remove("selected"));
     selected = null;
@@ -93,18 +74,16 @@
     localStorage.removeItem("macaron_choice");
   });
 
-  // 決定→保存→次へ
   goBtn.addEventListener("click", ()=>{
     if(!selected) return;
     const history = JSON.parse(localStorage.getItem("conversation") || "[]");
-    const payload = {
+    localStorage.setItem("macaron_choice", JSON.stringify({
       macaron: selected.key,
       macaronLabel: selected.label,
       decidedAt: new Date().toISOString(),
       conversation: history
-    };
-    localStorage.setItem("macaron_choice", JSON.stringify(payload));
-    location.href = "whoai_talk.html"; // 会話ページへ
+    }));
+    location.href = "whoai_talk.html";
   });
 </script>
 </body>
