@@ -9,7 +9,7 @@
     body{
       font-family:"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,"Helvetica Neue",Arial;
       color:#fff; 
-      background-image:url("public/assets/stage1/space_background.png");
+      background-image:url("assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
       display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
     }
@@ -49,7 +49,7 @@
     <!-- 上部：キャラ＆ランダムマカロン -->
     <div class="panel grid2">
       <div class="col" style="align-items:center">
-        <img id="characterImg" src="public/assets/characters/peakuru_tane.png" alt="キャラクター">
+        <img id="characterImg" src="assets/characters/peakuru_tane.png" alt="キャラクター">
         <div class="small" id="charCaption">タネ（未選択）</div>
       </div>
       <div class="col">
@@ -88,12 +88,12 @@
 const KEY = 'whoaiState';
 const COLORS = ['pink','blue','green','purple']; // 赤は無し
 const COLOR_MAP = {
-  pink:   { label:'情熱', img:'public/assets/characters/peakuru_pink.png'   },
-  blue:   { label:'静寂', img:'public/assets/characters/peakuru_blue.png'   },
-  green:  { label:'元気', img:'public/assets/characters/peakuru_green.png'  },
-  purple: { label:'創造', img:'public/assets/characters/peakuru_purple.png' }
+  pink:   { label:'情熱', img:'assets/characters/peakuru_pink.png'   },
+  blue:   { label:'静寂', img:'assets/characters/peakuru_blue.png'   },
+  green:  { label:'元気', img:'assets/characters/peakuru_green.png'  },
+  purple: { label:'創造', img:'assets/characters/peakuru_purple.png' }
 };
-const MACARON_PATH = (c)=>`public/assets/macarons/${c}.png`;
+const MACARON_PATH = (c)=>`assets/macarons/${c}.png`;
 
 function loadState(){
   try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
@@ -124,7 +124,7 @@ const titleEl      = document.getElementById('title');
  *  ========================= */
 function applyColor(color){
   if(!color || !COLOR_MAP[color]){
-    characterImg.src = 'public/assets/characters/peakuru_tane.png';
+    characterImg.src = 'assets/characters/peakuru_tane.png';
     charCaption.textContent = 'タネ（未選択）';
     colorTitle.textContent = '未選択';
     return;
@@ -298,3 +298,4 @@ resetBtn.addEventListener('click', ()=>{
 </script>
 </body>
 </html>
+
