@@ -2,246 +2,96 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk.html - 進化後の会話（10回で選択）</title>
+  <title>whoai_talk.html - 会話（緑：元気）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
+    :root{
+      --bubble-user:#4aa3ff;
+      --bubble-ai:#ffffff;
+      --glass:rgba(255,255,255,0.14);
     }
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: #fff;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    html,body{height:100%;margin:0;padding:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      color:#fff;
+      display:flex;flex-direction:column;align-items:center;gap:12px;
+      padding:20px;
     }
-    h2 {
-      margin: 8px 0 6px;
-      text-shadow: 0 0 8px rgba(0,0,0,0.5);
+    /* もし上の背景が見つからない時のフォールバック */
+    body.bg-fallback{background-image:url("assets/stage1/space_background.png");}
+
+    h1{
+      margin:4px 0 8px;font-size:28px;letter-spacing:.03em;text-shadow:0 2px 8px rgba(0,0,0,.5)
     }
-    #characterImg {
-      width: 140px;
-      margin: 10px 0;
+    .subtitle{opacity:.9;margin-bottom:4px}
+    .stage-badge{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.3);
+      box-shadow:0 8px 24px rgba(0,0,0,.25);backdrop-filter:blur(8px)
     }
-    #chatArea {
-      background: rgba(255,255,255,0.1);
-      padding: 16px;
-      border-radius: 12px;
-      max-width: 500px;
-      width: 100%;
-      flex: 1;
-      overflow-y: auto;
-      margin-bottom: 12px;
+    #characterImg{
+      width:140px;height:140px;object-fit:contain;
+      filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));
     }
-    .msg {
-      margin-bottom: 10px;
-      padding: 8px;
-      border-radius: 8px;
-      max-width: 80%;
-      word-wrap: break-word;
+    .chat{
+      width:min(720px,92vw);
+      background:rgba(0,0,0,.18);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:16px;display:flex;flex-direction:column;gap:12px;
+      box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(10px)
     }
-    .user {
-      background: rgba(0, 150, 255, 0.4);
-      align-self: flex-end;
+    .log{
+      height:52vh;overflow-y:auto;padding-right:8px;
+      display:flex;flex-direction:column;gap:10px;
     }
-    .assistant {
-      background: rgba(255, 255, 255, 0.2);
-      align-self: flex-start;
+    .bubble{
+      max-width:86%;
+      padding:12px 14px;border-radius:14px;
+      background:var(--glass);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), 0 4px 14px rgba(0,0,0,.2);
+      line-height:1.6
     }
-    #inputArea {
-      display: flex;
-      gap: 8px;
-      width: 100%;
-      max-width: 500px;
+    .me{align-self:flex-end;background:rgba(74,163,255,.18)}
+    .ai{align-self:flex-start;background:rgba(255,255,255,.16)}
+    .inputRow{display:flex;gap:10px}
+    input[type="text"]{
+      flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);
+      background:rgba(0,0,0,.25);color:#fff;outline:none
     }
-    #userInput {
-      flex: 1;
-      padding: 8px;
-      border-radius: 8px;
-      border: none;
+    button{
+      padding:12px 16px;border:none;border-radius:12px;cursor:pointer;
+      background:#b3f26b;color:#0a1b0a;font-weight:600;box-shadow:0 6px 16px rgba(0,0,0,.25)
     }
-    button {
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: none;
-      background: #ffd1ec;
-      color: #111;
-      cursor: pointer;
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .corner-tag{
+      position:fixed;right:10px;bottom:10px;font-size:12px;opacity:.9;
+      background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.2);
+      padding:6px 10px;border-radius:10px;backdrop-filter:blur(6px)
     }
-    button:hover {
-      background: #ffbde0;
-    }
+    .row{display:flex;align-items:center;gap:10px}
+    .small{font-size:12px;opacity:.85}
   </style>
 </head>
 <body>
-  <h2 id="title">会話</h2>
-  <img id="characterImg" src="" alt="キャラクター" />
-  <div id="chatArea"></div>
-  <div id="inputArea">
-    <input type="text" id="userInput" placeholder="メッセージを入力..." />
-    <button id="sendBtn">送信</button>
+  <h1>会話（緑：元気）</h1>
+  <div class="subtitle">ピークる & 最終進化キャラの表示・復元つき</div>
+
+  <div class="stage-badge">
+    <img id="characterImg" src="" alt="キャラクター">
+    <div class="small" id="charMeta">—</div>
   </div>
 
-  <script>
-    // ===== マカロン色と意味・会話スタイル設定 =====
-    const MACARON_PERSONA = {
-      pink:   { name: "ピンク", meaning: "情熱", style: "テンポ速め。エネルギッシュで前向き。相手を励ます。感嘆符を時々。" },
-      blue:   { name: "青", meaning: "静寂", style: "落ち着いた口調。短く丁寧。安心感を与える。改行を使って余白を作る。" },
-      green:  { name: "緑", meaning: "元気", style: "明るくフレンドリー。相手の発言を要約→提案を1つ。顔文字は控えめに。" },
-      purple: { name: "紫", meaning: "創造", style: "比喩や発想の飛躍を少し。問い返しを1つ入れる。言い切りすぎない。" }
-    };
+  <div class="chat">
+    <div id="log" class="log" aria-live="polite"></div>
 
-    const OPENING_LINES = {
-      pink:   "熱、きたね！今の気持ち、ひとことで教えて？",
-      blue:   "大丈夫。ゆっくりでいいよ。今日は何から話す？",
-      green:  "元気チャージOK！やってみたいこと、ある？",
-      purple: "ひらめきの種を1つ。今、心に浮かぶ色は？"
-    };
-
-    function getActiveColor(){
-      const finalColor   = localStorage.getItem("finalColor");
-      const evolvedColor = localStorage.getItem("evolvedColor");
-      const choice = (()=>{ try{return JSON.parse(localStorage.getItem("macaron_choice")||"{}");}catch{return{}}})();
-      return finalColor || evolvedColor || choice.macaron || "green";
-    }
-
-    // ===== 会話データ管理 =====
-    let conversation = JSON.parse(localStorage.getItem("conversation") || "[]");
-    let turnCount = parseInt(localStorage.getItem("turnCount") || "0");
-
-    const chatArea = document.getElementById("chatArea");
-    const inputEl = document.getElementById("userInput");
-    const sendBtn = document.getElementById("sendBtn");
-    const titleEl = document.getElementById("title");
-    const charImg = document.getElementById("characterImg");
-
-    function saveConversation(){
-      localStorage.setItem("conversation", JSON.stringify(conversation));
-      localStorage.setItem("turnCount", turnCount);
-    }
-
-    function renderMessage(msg){
-      const div = document.createElement("div");
-      div.className = `msg ${msg.role}`;
-      div.textContent = msg.text;
-      chatArea.appendChild(div);
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function loadConversation(){
-      conversation.forEach(renderMessage);
-    }
-
-    function initCharacter(){
-      const imgPath = localStorage.getItem("characterImg") || "public/assets/stage1/tane.png";
-      charImg.src = imgPath;
-    }
-
-    function decorateTitle(){
-      const color = getActiveColor();
-      const p = MACARON_PERSONA[color] || MACARON_PERSONA.green;
-      titleEl.textContent = `会話（${p.name}：${p.meaning}）`;
-    }
-
-    function maybePostOpening(){
-      if (conversation.length > 0) return;
-      const color = getActiveColor();
-      const line = OPENING_LINES[color] || OPENING_LINES.green;
-      const aiMsg = { role: "assistant", text: line, ts: Date.now() };
-      conversation.push(aiMsg);
-      renderMessage(aiMsg);
-      saveConversation();
-    }
-
-    // ===== AI返答処理 =====
-    const API_URL = "https://your-server-domain/api/talk"; // ← サーバーURLに置き換え
-
-    async function aiReply(userText){
-      const color = getActiveColor();
-      const persona = MACARON_PERSONA[color] || MACARON_PERSONA.green;
-
-      const recent = conversation.slice(-6).map(m => ({
-        role: m.role === "assistant" ? "assistant" : "user",
-        content: m.text
-      }));
-
-      const systemPrompt =
-        `あなたは優しい相棒AI。返答は日本語。最大50文字程度で簡潔に。
-色テーマ: ${persona.name}（意味: ${persona.meaning}）
-会話スタイル: ${persona.style}
-相手の意図を尊重し、断定しすぎない。必要なら質問は1つまで。`;
-
-      const payload = {
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...recent,
-          { role: "user", content: userText }
-        ]
-      };
-
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); } catch { throw new Error(text); }
-      if (!res.ok) throw new Error(data.error || text);
-      return data.reply || "";
-    }
-
-    async function handleSend(){
-      const userText = inputEl.value.trim();
-      if (!userText) return;
-      const userMsg = { role: "user", text: userText, ts: Date.now() };
-      conversation.push(userMsg);
-      renderMessage(userMsg);
-      inputEl.value = "";
-
-      turnCount++;
-      saveConversation();
-
-      // 10ターンごとにマカロンイベントへ
-      if (turnCount >= 10){
-        turnCount = 0;
-        saveConversation();
-        window.location.href = "macaron.html";
-        return;
-      }
-
-      try {
-        const reply = await aiReply(userText);
-        const aiMsg = { role: "assistant", text: reply, ts: Date.now() };
-        conversation.push(aiMsg);
-        renderMessage(aiMsg);
-        saveConversation();
-      } catch (err){
-        console.error(err);
-        const aiMsg = { role: "assistant", text: "通信に失敗しました。", ts: Date.now() };
-        conversation.push(aiMsg);
-        renderMessage(aiMsg);
-      }
-    }
-
-    sendBtn.addEventListener("click", handleSend);
-    inputEl.addEventListener("keypress", e => {
-      if (e.key === "Enter") handleSend();
-    });
-
-    // ===== 初期化 =====
-    initCharacter();
-    decorateTitle();
-    loadConversation();
-    maybePostOpening();
-  </script>
-</body>
-</html>
+    <div class="row small">
+      <span>容姿/記憶 選択:</span>
+      <select id="chooseMode">
+        <option value="appearance">appearance（容姿）</option>
+        <option value="memory">memory（記憶）</option>
+      </select>
+      <button id="saveChoiceBtn">保存</button>
+      <span
