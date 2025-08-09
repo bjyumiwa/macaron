@@ -240,4 +240,145 @@ async function showRandomMacaron(){
 
 function renderLogs(logs){
   chatArea.innerHTML = '';
-  (logs||[]).forE
+  (logs||[]).forEach(addBubble);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+function addBubble(item){
+  const div = document.createElement('div');
+  div.className = `bubble ${item.role==='user'?'user':item.role==='bot'?'bot':'sys'}`;
+  div.textContent = item.text;
+  chatArea.appendChild(div);
+}
+
+/* =========================
+   会話ロジック（簡易BOT）
+   ========================= */
+function botReply(userText, color){
+  const tone = {
+    pink:   ['情熱が湧いてくるね！','わくわくする！','その勢い、最高！'],
+    blue:   ['落ち着いて考えてみよう。','澄んだ視点だね。','静かに深めていこう。'],
+    green:  ['元気でいこう！','よし、やってみよう！','パワー出てきた！'],
+    purple: ['ひらめきが来たかも。','発想を広げよう。','創造の時間だね。']
+  };
+  const list = tone[color] || ['うん、なるほど。','わかったよ！','いいね！'];
+  const pick = list[Math.floor(Math.random()*list.length)];
+  if(/アイ(ン|ンシュタイン|ンシュタイン)/.test(userText)) {
+    return 'はい、アインシュタインは有名な物理学者ですね。相対性理論で知られています。';
+    }
+  if(/こんにちは|こんちは|はろ|hello/i.test(userText)) {
+    return 'こんにちは！何かお手伝いできることがある？';
+  }
+  return `${pick}「${userText}」の続き、もう少し教えて！`;
+}
+
+/* =========================
+   イベント
+   ========================= */
+macaronImg.addEventListener('click', ()=>{
+  const color = macaronImg.dataset.color;
+  const st = loadState();
+  st.color = color;           // 選択後は固定
+  st.stage = 'evolved';
+  st.logs = st.logs || [];
+  st.logs.push({role:'sys', text:`マカロン（${color}）を選択。性格が固定されました。`});
+  saveState(st);
+  applyColor(st.color);
+  setStage(st.stage);
+  renderLogs(st.logs);
+});
+
+sendBtn.addEventListener('click', ()=>{
+  const text = msgInput.value.trim();
+  if(!text) return;
+  const st = loadState();
+  st.logs = st.logs || [];
+  st.logs.push({role:'user', text});
+  const reply = botReply(text, st.color);
+  st.logs.push({role:'bot', text: reply});
+  saveState(st);
+  addBubble({role:'user', text});
+  addBubble({role:'bot', text: reply});
+  msgInput.value = '';
+  chatArea.scrollTop = chatArea.scrollHeight;
+
+  const turnCount = st.logs.filter(l=>l.role==='user').length;
+  evolveBtn.style.opacity = (turnCount>=10)?'1':'0.5';
+});
+
+msgInput.addEventListener('keydown', e=>{
+  if(e.key==='Enter') sendBtn.click();
+});
+
+evolveBtn.addEventListener('click', ()=>{
+  const st = loadState();
+  const turns = (st.logs||[]).filter(l=>l.role==='user').length;
+  if(turns<10){
+    st.logs = st.logs || [];
+    st.logs.push({role:'sys', text:`進化イベントはあと${10-turns}ターン後に解放されます。`});
+    saveState(st); addBubble(st.logs[st.logs.length-1]); chatArea.scrollTop=chatArea.scrollHeight; 
+    return;
+  }
+  choiceArea.style.display = 'flex';
+});
+
+memoryBtn.addEventListener('click', async ()=>{
+  const st = loadState();
+  st.logs = st.logs || [];
+  st.logs.push({role:'sys', text:'リバース：記憶を選択。見た目はタネに戻ります。'});
+  delete st.color;     // ★色を消す→デフォルト代入しない
+  st.stage = 'tane';
+  saveState(st);
+  await applyColor(st.color);
+  setStage(st.stage);
+  renderLogs(st.logs);
+  showRandomMacaron();           // 次のマカロンは再びランダム
+  choiceArea.style.display = 'none';
+});
+
+appearanceBtn.addEventListener('click', async ()=>{
+  const st = loadState();
+  st.logs = st.logs || [];
+  st.logs.push({role:'sys', text:'リバース：容姿を選択。見た目はそのまま維持します。'});
+  st.stage = 'final';
+  saveState(st);
+  await applyColor(st.color);
+  setStage(st.stage);
+  renderLogs(st.logs);
+  if(st.color){
+    try{ macaronImg.src = await resolveAsset(`macarons/${st.color}`); }catch{}
+    macaronImg.dataset.color = st.color;
+  }
+  choiceArea.style.display = 'none';
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!confirm('保存された会話と状態を初期化します。よろしいですか？')) return;
+  localStorage.removeItem(KEY);
+  init(); // 再初期化
+});
+
+/* =========================
+   初期化
+   ========================= */
+async function init(){
+  dbg.length = 0; flushDbg();
+  await setBackground();
+  const st = loadState();
+  await applyColor(st.color);                 // ★勝手に緑にしない
+  setStage(st.stage || 'tane');
+  renderLogs(st.logs || []);
+  if(st.color){
+    try{ macaronImg.src = await resolveAsset(`macarons/${st.color}`); }catch(e){ logNG(e.message); }
+    macaronImg.dataset.color = st.color;
+  }else{
+    showRandomMacaron();
+  }
+  const turnCount = (st.logs||[]).filter(l=>l.role==='user').length;
+  evolveBtn.style.opacity = (turnCount>=10)?'1':'0.5';
+  flushDbg();
+}
+
+init();
+</script>
+</body>
+</html>
