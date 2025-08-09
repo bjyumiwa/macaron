@@ -1,97 +1,224 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>whoai_talk.html - 会話（緑：元気）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    :root{
-      --bubble-user:#4aa3ff;
-      --bubble-ai:#ffffff;
-      --glass:rgba(255,255,255,0.14);
-    }
-    html,body{height:100%;margin:0;padding:0}
-    body{
-      font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      color:#fff;
-      display:flex;flex-direction:column;align-items:center;gap:12px;
-      padding:20px;
-    }
-    /* もし上の背景が見つからない時のフォールバック */
-    body.bg-fallback{background-image:url("assets/stage1/space_background.png");}
-
-    h1{
-      margin:4px 0 8px;font-size:28px;letter-spacing:.03em;text-shadow:0 2px 8px rgba(0,0,0,.5)
-    }
-    .subtitle{opacity:.9;margin-bottom:4px}
-    .stage-badge{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:6px 12px;border-radius:999px;background:rgba(0,0,0,.3);
-      box-shadow:0 8px 24px rgba(0,0,0,.25);backdrop-filter:blur(8px)
-    }
-    #characterImg{
-      width:140px;height:140px;object-fit:contain;
-      filter:drop-shadow(0 6px 16px rgba(0,0,0,.6));
-    }
-    .chat{
-      width:min(720px,92vw);
-      background:rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:16px;
-      padding:16px;display:flex;flex-direction:column;gap:12px;
-      box-shadow:0 10px 30px rgba(0,0,0,.25);backdrop-filter:blur(10px)
-    }
-    .log{
-      height:52vh;overflow-y:auto;padding-right:8px;
-      display:flex;flex-direction:column;gap:10px;
-    }
-    .bubble{
-      max-width:86%;
-      padding:12px 14px;border-radius:14px;
-      background:var(--glass);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), 0 4px 14px rgba(0,0,0,.2);
-      line-height:1.6
-    }
-    .me{align-self:flex-end;background:rgba(74,163,255,.18)}
-    .ai{align-self:flex-start;background:rgba(255,255,255,.16)}
-    .inputRow{display:flex;gap:10px}
-    input[type="text"]{
-      flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.25);color:#fff;outline:none
-    }
-    button{
-      padding:12px 16px;border:none;border-radius:12px;cursor:pointer;
-      background:#b3f26b;color:#0a1b0a;font-weight:600;box-shadow:0 6px 16px rgba(0,0,0,.25)
-    }
-    button:disabled{opacity:.6;cursor:not-allowed}
-    .corner-tag{
-      position:fixed;right:10px;bottom:10px;font-size:12px;opacity:.9;
-      background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.2);
-      padding:6px 10px;border-radius:10px;backdrop-filter:blur(6px)
-    }
-    .row{display:flex;align-items:center;gap:10px}
-    .small{font-size:12px;opacity:.85}
-  </style>
+<meta charset="UTF-8">
+<title>WhoAI 会話ページ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  html,body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: "Noto Sans JP", sans-serif;
+    background-image: url("public/assets/stage1/space_background.png");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h2 {
+    margin-top: 10px;
+    text-shadow: 0 0 8px rgba(0,0,0,0.5);
+  }
+  #characterImg {
+    width: 160px;
+    margin-top: 20px;
+  }
+  #charCaption {
+    font-size: 0.9em;
+    margin-top: 6px;
+  }
+  #charNameLabel {
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  #chatArea {
+    background: rgba(255,255,255,0.1);
+    padding: 12px;
+    margin-top: 16px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    height: 300px;
+    overflow-y: auto;
+  }
+  .bubble {
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    max-width: 90%;
+    word-wrap: break-word;
+  }
+  .bubble.user {
+    background: rgba(0,128,255,0.4);
+    align-self: flex-end;
+  }
+  .bubble.bot {
+    background: rgba(255,255,255,0.2);
+    align-self: flex-start;
+  }
+  .bubble.sys {
+    background: rgba(255,255,0,0.2);
+    align-self: center;
+    font-style: italic;
+  }
+  #inputArea {
+    display: flex;
+    margin-top: 10px;
+    width: 90%;
+    max-width: 500px;
+  }
+  #userInput {
+    flex: 1;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    font-size: 1em;
+  }
+  #sendBtn {
+    padding: 8px 14px;
+    margin-left: 6px;
+    background: #ff9edf;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #menuArea {
+    margin-top: 12px;
+  }
+  button.menu {
+    padding: 6px 12px;
+    margin: 4px;
+    border: none;
+    border-radius: 6px;
+    background: #ffd1ec;
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
-  <h1>会話（緑：元気）</h1>
-  <div class="subtitle">ピークる & 最終進化キャラの表示・復元つき</div>
 
-  <div class="stage-badge">
-    <img id="characterImg" src="" alt="キャラクター">
-    <div class="small" id="charMeta">—</div>
-  </div>
+<h2>WhoAI 会話ページ</h2>
 
-  <div class="chat">
-    <div id="log" class="log" aria-live="polite"></div>
+<img id="characterImg" src="" alt="キャラクター">
+<div id="charCaption">タネ（未選択）</div>
+<div id="charNameLabel">名前：？？？</div>
 
-    <div class="row small">
-      <span>容姿/記憶 選択:</span>
-      <select id="chooseMode">
-        <option value="appearance">appearance（容姿）</option>
-        <option value="memory">memory（記憶）</option>
-      </select>
-      <button id="saveChoiceBtn">保存</button>
-      <span
+<div id="chatArea"></div>
+
+<div id="inputArea">
+  <input type="text" id="userInput" placeholder="メッセージを入力">
+  <button id="sendBtn">送信</button>
+</div>
+
+<div id="menuArea">
+  <button class="menu" id="continueBtn">コンティニュー</button>
+  <button class="menu" id="restartBtn">最初から</button>
+</div>
+
+<script>
+  // ==== キャラ色と画像の対応 ====
+  const COLOR_META = {
+    pink: { label: '情熱', img: 'public/assets/characters/pink.png' },
+    blue: { label: '静寂', img: 'public/assets/characters/blue.png' },
+    green: { label: '元気', img: 'public/assets/characters/green.png' },
+    purple: { label: '創造', img: 'public/assets/characters/purple.png' }
+  };
+  const SEED_IMG = 'public/assets/stage1/tane.png';
+
+  // ==== DOM取得 ====
+  const characterImg = document.getElementById('characterImg');
+  const charCaption = document.getElementById('charCaption');
+  const charNameLabel = document.getElementById('charNameLabel');
+  const chatArea = document.getElementById('chatArea');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+
+  // ==== 状態管理 ====
+  function loadState(){
+    const s = localStorage.getItem('whoai_state');
+    return s ? JSON.parse(s) : {};
+  }
+  function saveState(s){
+    localStorage.setItem('whoai_state', JSON.stringify(s));
+  }
+  function currentName(){
+    const s = loadState();
+    return s.name || 'ともだち';
+  }
+
+  // ==== キャラ表示 ====
+  function applyAppearance(state){
+    const color = state.appearanceColor;
+    if(!color || !COLOR_META[color]){
+      characterImg.src = SEED_IMG;
+      charCaption.textContent = 'タネ（未選択）';
+    } else {
+      characterImg.src = COLOR_META[color].img;
+      charCaption.textContent = `ピークる（${COLOR_META[color].label}）`;
+    }
+    charNameLabel.textContent = `名前：${currentName()}`;
+  }
+
+  // ==== バブル追加 ====
+  function addBubble(role, text){
+    const div = document.createElement('div');
+    div.className = `bubble ${role==='user'?'user':role==='bot'?'bot':'sys'}`;
+    const nm = currentName();
+    const prefix = role==='user' ? 'あなた：' : role==='bot' ? `${nm}：` : '';
+    div.textContent = prefix + text;
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  // ==== 会話送信 ====
+  function sendMessage(){
+    const msg = userInput.value.trim();
+    if(!msg) return;
+    addBubble('user', msg);
+    userInput.value = '';
+    // 仮のAI応答
+    setTimeout(()=>{
+      addBubble('bot', 'なるほど、そうなんだね！');
+    }, 400);
+  }
+
+  // ==== コンティニュー ====
+  document.getElementById('continueBtn').addEventListener('click', ()=>{
+    const st = loadState();
+    applyAppearance(st);
+    addBubble('sys', '前回のキャラクターで会話を再開します。');
+  });
+
+  // ==== 最初から ====
+  document.getElementById('restartBtn').addEventListener('click', ()=>{
+    localStorage.removeItem('whoai_state');
+    addBubble('sys', '状態をリセットしました。最初から開始します。');
+    applyAppearance({});
+  });
+
+  // ==== 初期化 ====
+  function init(){
+    const st = loadState();
+    if(Object.keys(st).length === 0){
+      // 初回はタネ状態
+      applyAppearance({});
+    } else {
+      applyAppearance(st);
+      addBubble('sys', '前回のキャラクターをロードしました。');
+    }
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  userInput.addEventListener('keypress', e=>{
+    if(e.key === 'Enter') sendMessage();
+  });
+
+  init();
+</script>
+
+</body>
+</html>
