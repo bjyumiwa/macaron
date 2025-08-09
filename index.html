@@ -9,7 +9,8 @@
   body{
     font-family:"Noto Sans JP",sans-serif;color:#fff;
     background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px
   }
   h1{font-size:48px;margin:10px 0 12px;text-shadow:0 2px 10px rgba(0,0,0,.4)}
   p{max-width:720px;line-height:1.9;margin:0 auto 20px;text-shadow:0 2px 10px rgba(0,0,0,.35)}
@@ -18,55 +19,34 @@
   .btn{border:none;border-radius:14px;padding:14px 22px;cursor:pointer;font-size:18px}
   .primary{background:#ffd1ec;color:#111}
   .ghost{background:#fff;color:#111}
-  small{opacity:.85}
 </style>
 </head>
 <body>
   <h1>WhoAI ?</h1>
   <img class="hero" src="public/assets/stage1/miwacchi_close.png" alt="キャラクター">
+
   <p>
     この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>
     さあ、旅を始めましょう。
   </p>
-  <div class="row" style="margin:12px 0 4px">
-    <button class="btn primary" id="continueBtn">続ける ▶</button>
-    <button class="btn ghost"   id="restartBtn">やり直す ↺</button>
+
+  <div class="row" style="margin:12px 0 20px">
+    <!-- ▶ スタートの遷移先を実際の開始ページ名に変更してください -->
+    <button class="btn primary" onclick="location.href='whoai_talk.html'">スタート ▶</button>
   </div>
-  <small id="saveInfo"></small>
+
+  <div class="row">
+    <button class="btn ghost" onclick="setLang('ja')">日本語</button>
+    <button class="btn ghost" onclick="setLang('en')">English</button>
+    <button class="btn ghost" onclick="location.href='about.html'">このアプリについて</button>
+  </div>
 
 <script>
-  const KEY = 'whoaiState';
-  const hasSave = () => {
-    try {
-      const s = JSON.parse(localStorage.getItem(KEY)||'{}');
-      return !!(s.logs?.length || s.appearanceColor || s.personaColor || s.history?.length);
-    } catch { return false; }
-  };
-
-  // 保存の概要を軽く表示
-  (function showPreview(){
-    const el = document.getElementById('saveInfo');
-    try{
-      const s = JSON.parse(localStorage.getItem(KEY)||'{}');
-      if(!hasSave()){ el.textContent = '前回の保存はありません。'; return; }
-      const name = s.name || localStorage.getItem('whoai_name') || 'ともだち';
-      const app  = s.appearanceColor || '未選択';
-      const per  = s.personaColor || app || '未選択';
-      const turns= (s.logs||[]).filter(l=>l.role==='user').length;
-      el.textContent = `保存あり → 名前:${name} / 容姿:${app} / 性格:${per} / 発話:${turns}件`;
-    }catch{ el.textContent='保存の読み込みに失敗しました。'; }
-  })();
-
-  document.getElementById('continueBtn').onclick = ()=>{
-    // そのまま会話へ（保存がなくても入れる＝新規開始）
-    location.href = 'evolution.html';
-  };
-  document.getElementById('restartBtn').onclick = ()=>{
-    if(confirm('保存を消して最初からやり直します。よろしいですか？')){
-      localStorage.removeItem(KEY);
-      location.href = 'evolution.html';
-    }
-  };
+  // 言語選択を保存（占いなど他ページが参照していた場合の互換用）
+  function setLang(lang){
+    try { localStorage.setItem('whoai_lang', lang); } catch(e) {}
+    alert(lang === 'ja' ? '言語を日本語にしました' : 'Language set to English');
+  }
 </script>
 </body>
 </html>
