@@ -22,21 +22,15 @@
   .msg{display:flex;margin:8px 0}
   .msg.user{justify-content:flex-start}
   .msg.ai{justify-content:flex-end}
-  .bubble{
-    max-width:72%;padding:10px 14px;border-radius:14px;backdrop-filter: blur(3px);
-    background:rgba(255,255,255,.12);border:1px solid var(--ring)
-  }
+  .bubble{max-width:72%;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.12);border:1px solid var(--ring)}
   .msg.ai .bubble{background:rgba(0,0,0,.28)}
   .composer{display:flex;gap:8px;width:min(820px,95vw)}
-  .composer input{
-    flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--ring);background:rgba(0,0,0,.25);color:#fff
-  }
+  .composer input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--ring);background:rgba(0,0,0,.25);color:#fff}
   .composer button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
   .send{background:var(--accent);color:#222}
   .toolbar{display:flex;gap:8px;width:min(820px,95vw)}
   .ghost{background:#444;color:#fff;border:none;border-radius:10px;padding:8px 12px;cursor:pointer}
   .primary{background:var(--accent);color:#222;border:none;border-radius:10px;padding:10px 14px;cursor:pointer}
-  footer{opacity:.85}
 </style>
 </head>
 <body>
@@ -59,13 +53,10 @@
     <button class="primary" id="nextBtn">次へ（同一性の選択へ）</button>
   </div>
 
-  <footer>会話は <code>localStorage("conversation")</code> に自動保存・復元されます。</footer>
-
 <script>
-  // === 画像は public/assets/stage1 配下に配置する前提 ===
-  const ASSETS_BASE = "public/assets/stage1";
+  window.onerror = (m,s,l,c,e)=>{ console.error('JS error:', m,'at',s+':'+l); };
 
-  // 色→キャラ画像マップ（ピンク対応）
+  const ASSETS_BASE = "public/assets/stage1";
   const CHAR_MAP = {
     red:    `${ASSETS_BASE}/character_red.png`,
     blue:   `${ASSETS_BASE}/character_blue.png`,
@@ -75,7 +66,6 @@
   };
   const DEFAULT_CHAR = `${ASSETS_BASE}/character_default.png`;
 
-  // ===== DOM =====
   const chatArea = document.getElementById("chatArea");
   const inputEl  = document.getElementById("input");
   const sendBtn  = document.getElementById("sendBtn");
@@ -84,5 +74,79 @@
   const backBtn  = document.getElementById("backBtn");
   const nextBtn  = document.getElementById("nextBtn");
   const charImg  = document.getElementById("characterImg");
-  const titleEl = document.getElementById("title");
+  const titleEl  = document.getElementById("title");
 
+  let conversation = [];
+
+  function initCharacter(){
+    try{
+      const choice = JSON.parse(localStorage.getItem("macaron_choice") || "{}");
+      const key = choice.macaron;
+      charImg.src = (key && CHAR_MAP[key]) ? CHAR_MAP[key] : DEFAULT_CHAR;
+      titleEl.textContent = key ? `会話（選択色：${choice.macaronLabel ?? key}）` : "会話（マカロン未選択：デフォルト表示）";
+    }catch(e){
+      charImg.src = DEFAULT_CHAR;
+      titleEl.textContent = "会話（初期化：デフォルト表示）";
+    }
+  }
+
+  function renderMessage(msg){
+    const row = document.createElement("div");
+    row.className = `msg ${msg.role === "assistant" ? "ai" : "user"}`;
+    const b = document.createElement("div");
+    b.className = "bubble";
+    b.textContent = msg.text;
+    row.appendChild(b);
+    chatArea.appendChild(row);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  function loadConversation(){
+    try{ conversation = JSON.parse(localStorage.getItem("conversation") || "[]"); }
+    catch{ conversation = []; }
+    chatArea.innerHTML = "";
+    conversation.forEach(renderMessage);
+  }
+
+  function saveConversation(){
+    localStorage.setItem("conversation", JSON.stringify(conversation));
+  }
+
+  function dummyReply(){
+    const reply = "こんにちは！何かお手伝いできることがありますか？";
+    const msg = {role:"assistant", text: reply, ts: Date.now()};
+    conversation.push(msg);
+    renderMessage(msg);
+    saveConversation();
+  }
+
+  function handleSend(){
+    const text = inputEl.value.trim();
+    if(!text) return;
+    const msg = {role:"user", text, ts: Date.now()};
+    conversation.push(msg);
+    renderMessage(msg);
+    saveConversation();
+    inputEl.value = "";
+    dummyReply(); // ←API接続時に置き換え
+  }
+
+  sendBtn.addEventListener("click", handleSend);
+  inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") handleSend(); });
+  saveBtn.addEventListener("click", saveConversation);
+  clearBtn.addEventListener("click", ()=>{
+    if(confirm("会話をすべて削除します。よろしいですか？")){
+      conversation = [];
+      saveConversation();
+      loadConversation();
+    }
+  });
+  backBtn.addEventListener("click", ()=> location.href = "macaron_select.html");
+  nextBtn.addEventListener("click", ()=>{ saveConversation(); location.href = "identity_check.html"; });
+  window.addEventListener("beforeunload", saveConversation);
+
+  initCharacter();
+  loadConversation();
+</script>
+</body>
+</html>
