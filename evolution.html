@@ -1,138 +1,300 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>進化イベント</title>
-<style>
-  :root{ --glass: rgba(255,255,255,.08); --ring: rgba(255,255,255,.22); --accent:#ffd1ec; }
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:18px
-  }
-  h2{margin:0 0 8px;text-shadow:0 0 10px rgba(0,0,0,.6)}
-  .stage{display:flex;flex-direction:column;align-items:center;gap:16px}
-  .card{
-    background:var(--glass);border:1px solid var(--ring);
-    border-radius:18px;padding:16px 20px;text-align:center
-  }
-  #baseChar,#macaron,#evolvedChar{width:160px;height:160px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,.6))}
-  .row{display:flex;align-items:center;gap:24px}
-  .fade{opacity:0;transition:opacity .6s ease}
-  .show{opacity:1}
-  .btn{background:var(--accent);color:#222;border:none;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer}
-  .ghost{background:#444;color:#fff;border:none;border-radius:12px;padding:10px 16px;cursor:pointer}
-</style>
+  <meta charset="UTF-8" />
+  <title>whoai_talk.html - マカロン進化＆会話（完全版）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      color:#fff; 
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
+    }
+    .page-tag{position:fixed;right:8px;bottom:8px;opacity:.7;font-size:12px}
+    h1{margin:8px 0 4px;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+    .subtitle{opacity:.9;margin-bottom:8px}
+    .wrap{width:min(780px,92vw)}
+    .panel{background:rgba(255,255,255,.12);backdrop-filter:blur(2px);border-radius:16px;padding:14px;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+    .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+    #characterImg{width:150px;height:150px;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6))}
+    #macaronImg{width:130px;height:130px;object-fit:contain;cursor:pointer;transition:transform .15s ease}
+    #macaronImg:hover{transform:scale(1.06)}
+    .hint{font-size:12px;opacity:.85}
+    #chatArea{height:340px;overflow-y:auto;padding:10px;border-radius:12px;background:rgba(0,0,0,.28)}
+    .bubble{max-width:80%;padding:10px 12px;border-radius:12px;margin:8px 0;line-height:1.5}
+    .user{background:rgba(135,206,250,.85);align-self:flex-end;color:#081018}
+    .bot{background:rgba(255,255,255,.78);color:#101018}
+    .sys{background:rgba(186,85,211,.65);color:#fff;font-size:12px}
+    .col{display:flex;flex-direction:column}
+    .input-row{display:flex;gap:8px;margin-top:10px}
+    input[type="text"]{flex:1;border-radius:10px;border:none;padding:12px 12px;outline:none}
+    button{border:none;border-radius:12px;padding:10px 14px;cursor:pointer}
+    .btn{background:#ffd1ec;color:#111}
+    .btn:hover{filter:brightness(1.05)}
+    .choice-area{display:none;gap:10px;justify-content:center;margin-top:8px}
+    .choice{background:#fff;color:#111}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.35);font-size:12px;margin-left:6px}
+    .grid2{display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:start}
+    .small{font-size:12px;opacity:.85}
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <h1 id="title">会話（<span id="colorTitle">未選択</span>）<span class="badge" id="stageBadge">tane</span></h1>
+    <div class="subtitle small">※ マカロンは毎回ランダム表示。選ぶと色と性格が固定されます。</div>
 
-  <div class="stage">
-    <h2 id="title">進化のとき…</h2>
-
-    <div class="row">
-      <img id="baseChar"    alt="キャラ（前）">
-      <img id="macaron"     alt="マカロン">
-      <img id="evolvedChar" alt="キャラ（進化後）" class="fade">
+    <!-- 上部：キャラ＆ランダムマカロン -->
+    <div class="panel grid2">
+      <div class="col" style="align-items:center">
+        <img id="characterImg" src="public/assets/characters/peakuru_tane.png" alt="キャラクター">
+        <div class="small" id="charCaption">タネ（未選択）</div>
+      </div>
+      <div class="col">
+        <div class="row">
+          <img id="macaronImg" alt="マカロン（クリックして選択）">
+        </div>
+        <div class="hint">↑ マカロンをクリックで色を「選択」します。<br>（pink=情熱 / blue=静寂 / green=元気 / purple=創造）</div>
+      </div>
     </div>
 
-    <div class="card" id="log">マカロンを食べています…</div>
-
-    <div>
-      <button class="ghost" id="replayBtn">もう一度みる</button>
-      <button class="btn"   id="nextBtn">次へ</button>
+    <!-- 会話 -->
+    <div class="panel">
+      <div id="chatArea" class="col"></div>
+      <div class="input-row">
+        <input id="msgInput" type="text" placeholder="メッセージを入力…" />
+        <button class="btn" id="sendBtn">送信</button>
+        <button class="btn" id="evolveBtn" title="10ターンを超えると有効">進化イベント</button>
+      </div>
+      <div class="choice-area" id="choiceArea">
+        <button class="choice" id="memoryBtn">記憶を選ぶ（見た目リセット）</button>
+        <button class="choice" id="appearanceBtn">容姿を選ぶ（見た目固定）</button>
+      </div>
+      <div class="small" style="margin-top:6px">
+        会話と状態はブラウザの <code>localStorage</code> に保存されます（このPCのみ）。  
+        <button id="resetBtn" class="choice" style="margin-left:6px">状態を初期化</button>
+      </div>
     </div>
   </div>
 
+  <div class="page-tag">whoai_talk.html</div>
+
 <script>
-  const ASSETS_BASE = "public/assets/stage1";
+/** =========================
+ *   状態・定数
+ *  ========================= */
+const KEY = 'whoaiState';
+const COLORS = ['pink','blue','green','purple']; // 赤は無し
+const COLOR_MAP = {
+  pink:   { label:'情熱', img:'public/assets/characters/peakuru_pink.png'   },
+  blue:   { label:'静寂', img:'public/assets/characters/peakuru_blue.png'   },
+  green:  { label:'元気', img:'public/assets/characters/peakuru_green.png'  },
+  purple: { label:'創造', img:'public/assets/characters/peakuru_purple.png' }
+};
+const MACARON_PATH = (c)=>`public/assets/macarons/${c}.png`;
 
-  const BEFORE_MAP = {
-    green : `${ASSETS_BASE}/green_open.png`,
-    blue  : `${ASSETS_BASE}/blue_open.png`,
-    purple: `${ASSETS_BASE}/green_open.png`,
-    red   : `${ASSETS_BASE}/green_open.png`,
-    pink  : `${ASSETS_BASE}/green_open.png`,
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
+  catch { return {}; }
+}
+function saveState(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+
+/** =========================
+ *   UI 参照
+ *  ========================= */
+const characterImg = document.getElementById('characterImg');
+const charCaption  = document.getElementById('charCaption');
+const macaronImg   = document.getElementById('macaronImg');
+const chatArea     = document.getElementById('chatArea');
+const msgInput     = document.getElementById('msgInput');
+const sendBtn      = document.getElementById('sendBtn');
+const evolveBtn    = document.getElementById('evolveBtn');
+const choiceArea   = document.getElementById('choiceArea');
+const memoryBtn    = document.getElementById('memoryBtn');
+const appearanceBtn= document.getElementById('appearanceBtn');
+const colorTitle   = document.getElementById('colorTitle');
+const stageBadge   = document.getElementById('stageBadge');
+const resetBtn     = document.getElementById('resetBtn');
+const titleEl      = document.getElementById('title');
+
+/** =========================
+ *   表示更新
+ *  ========================= */
+function applyColor(color){
+  if(!color || !COLOR_MAP[color]){
+    characterImg.src = 'public/assets/characters/peakuru_tane.png';
+    charCaption.textContent = 'タネ（未選択）';
+    colorTitle.textContent = '未選択';
+    return;
+  }
+  const meta = COLOR_MAP[color];
+  characterImg.src = meta.img;
+  charCaption.textContent = `ピークる（${meta.label}）`;
+  colorTitle.textContent = `${meta.label}・${color}`;
+}
+
+function setStage(stage){
+  stageBadge.textContent = stage || 'tane';
+}
+
+function showRandomMacaron(){
+  const color = COLORS[Math.floor(Math.random()*COLORS.length)];
+  macaronImg.src = MACARON_PATH(color);
+  macaronImg.alt = `マカロン(${color})`;
+  macaronImg.dataset.color = color; // クリック時に確定
+}
+
+function renderLogs(logs){
+  chatArea.innerHTML = '';
+  (logs||[]).forEach(addBubble);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function addBubble(item){
+  const div = document.createElement('div');
+  div.className = `bubble ${item.role==='user'?'user':item.role==='bot'?'bot':'sys'}`;
+  div.textContent = item.text;
+  chatArea.appendChild(div);
+}
+
+/** =========================
+ *   会話ロジック（簡易BOT）
+ *  ========================= */
+function botReply(userText, color){
+  // 色の性格で返答のトーンを少し変える（簡易）
+  const tone = {
+    pink:   ['情熱が湧いてくるね！','わくわくする！','その勢い、最高！'],
+    blue:   ['落ち着いて考えてみよう。','澄んだ視点だね。','静かに深めていこう。'],
+    green:  ['元気でいこう！','よし、やってみよう！','パワー出てきた！'],
+    purple: ['ひらめきが来たかも。','ちょっと発想を広げよう。','創造の時間だね。']
   };
-
-  const EVOLVED_MAP = {
-    green : `${ASSETS_BASE}/miwacchi_open.png`,
-    blue  : `${ASSETS_BASE}/miwacchi_open.png`,
-    purple: `${ASSETS_BASE}/miwacchi_open.png`,
-    red   : `${ASSETS_BASE}/miwacchi_open.png`,
-    pink  : `${ASSETS_BASE}/miwacchi_open.png`,
-  };
-
-  const MACARON_MAP = {
-    green : `${ASSETS_BASE}/macaron_green.png`,
-    blue  : `${ASSETS_BASE}/macaron_blue.png`,
-    purple: `${ASSETS_BASE}/macaron_purple.png`,
-    pink  : `${ASSETS_BASE}/macaron_pink.png`,
-    red   : `${ASSETS_BASE}/macaron_green.png`,
-  };
-
-  const DEFAULT_CHAR = `${ASSETS_BASE}/green_open.png`;
-  const DEFAULT_MACARON = `${ASSETS_BASE}/macaron_green.png`;
-
-  const baseChar    = document.getElementById("baseChar");
-  const macaronImg  = document.getElementById("macaron");
-  const evolvedChar = document.getElementById("evolvedChar");
-  const titleEl     = document.getElementById("title");
-  const logEl       = document.getElementById("log");
-  const replayBtn   = document.getElementById("replayBtn");
-  const nextBtn     = document.getElementById("nextBtn");
-
-  function getColorKey(){
-    try{
-      const choice = JSON.parse(localStorage.getItem("macaron_choice") || "{}");
-      return choice.macaron || null;
-    }catch{ return null; }
+  const list = tone[color] || ['うん、なるほど。','わかったよ！','いいね！'];
+  const pick = list[Math.floor(Math.random()*list.length)];
+  // 超簡易エコー
+  if(/アイ(ン|ンシュタイン|ンシュタイン)/.test(userText)) {
+    return 'はい、アインシュタインは有名な物理学者ですね。相対性理論で知られています。';
   }
-
-  function pick(map, key, fallback){
-    return (key && map[key]) ? map[key] : fallback;
+  if(/こんにちは|こんちは|はろ|hello/i.test(userText)) {
+    return 'こんにちは！何かお手伝いできることがある？';
   }
+  return `${pick}「${userText}」の続き、もう少し教えて！`;
+}
 
-  async function playEvolution(){
-    evolvedChar.classList.remove("show");
-    logEl.textContent = "マカロンを食べています…";
-    await sleep(700);
-    logEl.textContent = "力が満ちてきた…！";
-    await sleep(700);
-    evolvedChar.classList.add("show");
-    logEl.textContent = "進化したよ！";
-    localStorage.setItem("evolved", "true");
-    localStorage.setItem("evolvedCharacterImage", evolvedChar.src);
+/** =========================
+ *   イベント
+ *  ========================= */
+macaronImg.addEventListener('click', ()=>{
+  // クリックした色を確定
+  const color = macaronImg.dataset.color;
+  const st = loadState();
+  st.color = color;
+  st.stage = 'evolved';
+  st.logs = st.logs || [];
+  st.logs.push({role:'sys', text:`マカロン（${color}）を選択。性格が固定されました。`});
+  saveState(st);
+  applyColor(st.color);
+  setStage(st.stage);
+  // 次回以降は固定。画面上のマカロンはそのままにしておく
+  renderLogs(st.logs);
+});
+
+sendBtn.addEventListener('click', ()=>{
+  const text = msgInput.value.trim();
+  if(!text) return;
+  const st = loadState();
+  st.logs = st.logs || [];
+  st.logs.push({role:'user', text});
+  // 簡易返答
+  const reply = botReply(text, st.color);
+  st.logs.push({role:'bot', text: reply});
+  saveState(st);
+  addBubble({role:'user', text});
+  addBubble({role:'bot', text: reply});
+  msgInput.value = '';
+  chatArea.scrollTop = chatArea.scrollHeight;
+
+  // 10ターン超で進化イベントを有効化（ユーザ発話数で判定）
+  const turnCount = st.logs.filter(l=>l.role==='user').length;
+  evolveBtn.style.opacity = (turnCount>=10)?'1':'0.5';
+});
+
+msgInput.addEventListener('keydown', e=>{
+  if(e.key==='Enter') sendBtn.click();
+});
+
+evolveBtn.addEventListener('click', ()=>{
+  const st = loadState();
+  const turns = (st.logs||[]).filter(l=>l.role==='user').length;
+  if(turns<10){
+    st.logs = st.logs || [];
+    st.logs.push({role:'sys', text:`進化イベントはあと${10-turns}ターン後に解放されます。`});
+    saveState(st); addBubble(st.logs[st.logs.length-1]); chatArea.scrollTop=chatArea.scrollHeight; 
+    return;
   }
+  choiceArea.style.display = 'flex';
+});
 
-  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+memoryBtn.addEventListener('click', ()=>{
+  const st = loadState();
+  st.logs = st.logs || [];
+  st.logs.push({role:'sys', text:'リバース：記憶を選択。見た目はタネに戻ります。'});
+  delete st.color;     // ★色を消す→デフォルト代入しない
+  st.stage = 'tane';
+  saveState(st);
+  applyColor(st.color);
+  setStage(st.stage);
+  renderLogs(st.logs);
+  showRandomMacaron();           // 次のマカロンは再びランダム
+  choiceArea.style.display = 'none';
+});
 
-  function init(){
-    const color = getColorKey();
-    const beforeSrc  = pick(BEFORE_MAP,  color, DEFAULT_CHAR);
-    const macaronSrc = pick(MACARON_MAP, color, DEFAULT_MACARON);
-    const evolvedSrc = pick(EVOLVED_MAP, color, DEFAULT_CHAR);
+appearanceBtn.addEventListener('click', ()=>{
+  const st = loadState();
+  st.logs = st.logs || [];
+  st.logs.push({role:'sys', text:'リバース：容姿を選択。見た目はそのまま維持します。'});
+  // 色は保持
+  st.stage = 'final';
+  saveState(st);
+  applyColor(st.color);
+  setStage(st.stage);
+  renderLogs(st.logs);
+  // 見た目固定に合わせ、マカロンもその色を表示しておく（好みで可）
+  if(st.color){ macaronImg.src = MACARON_PATH(st.color); macaronImg.dataset.color = st.color; }
+  choiceArea.style.display = 'none';
+});
 
-    titleEl.textContent = color ? `進化イベント（選択色：${color}）` : "進化イベント";
+resetBtn.addEventListener('click', ()=>{
+  if(!confirm('保存された会話と状態を初期化します。よろしいですか？')) return;
+  localStorage.removeItem(KEY);
+  // 初期表示へ
+  applyColor(undefined);
+  setStage('tane');
+  renderLogs([]);
+  showRandomMacaron();
+});
 
-    baseChar.src    = beforeSrc;
-    macaronImg.src  = macaronSrc;
-    evolvedChar.src = evolvedSrc;
-
-    baseChar.onerror    = () => { baseChar.onerror = null; baseChar.src = DEFAULT_CHAR; };
-    macaronImg.onerror  = () => { macaronImg.onerror = null; macaronImg.src = DEFAULT_MACARON; };
-    evolvedChar.onerror = () => { evolvedChar.onerror = null; evolvedChar.src = DEFAULT_CHAR; };
-
-    playEvolution();
+/** =========================
+ *   初期化
+ *  ========================= */
+(function init(){
+  const st = loadState();
+  // 状態が空でも勝手に緑にしない！
+  applyColor(st.color);
+  setStage(st.stage || 'tane');
+  renderLogs(st.logs || []);
+  // マカロン：色未選択ならランダム表示、選択済みならその色を表示
+  if(st.color){
+    macaronImg.src = MACARON_PATH(st.color);
+    macaronImg.dataset.color = st.color;
+  }else{
+    showRandomMacaron();
   }
-
-  replayBtn.addEventListener("click", playEvolution);
-  nextBtn.addEventListener("click", ()=>{
-    location.href = "identity_check.html";
-  });
-
-  init();
+  // 進化ボタンの状態
+  const turnCount = (st.logs||[]).filter(l=>l.role==='user').length;
+  evolveBtn.style.opacity = (turnCount>=10)?'1':'0.5';
+})();
 </script>
 </body>
 </html>
