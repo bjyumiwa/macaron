@@ -25,6 +25,16 @@
   .next{background:var(--accent);color:#222}
   .next:disabled{opacity:.6;cursor:not-allowed}
   .clear{background:#444;color:#fff}
+  .page-id {
+    position: fixed;
+    bottom: 4px;
+    right: 8px;
+    font-size: 0.8rem;
+    opacity: 0.6;
+    color: #fff;
+    pointer-events: none;
+    user-select: none;
+  }
 </style>
 </head>
 <body>
@@ -37,6 +47,8 @@
     <button id="clearBtn" class="clear">クリア</button>
     <button id="goBtn" class="next" disabled>決定する</button>
   </div>
+
+  <div class="page-id">macaron_select.html</div>
 
 <script>
   const ASSETS_BASE = "public/assets/stage1";
