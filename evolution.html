@@ -2,13 +2,14 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>evolution.html - マカロン進化＆会話（完全版・デバッグ付）</title>
+  <title>evolution.html - マカロン進化＆会話（完全版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,"Helvetica Neue",Arial;
       color:#fff;
+      background-image:url("public/assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
       display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px
     }
@@ -16,7 +17,7 @@
     h1{margin:8px 0 4px;text-shadow:0 2px 10px rgba(0,0,0,.5)}
     .subtitle{opacity:.9;margin-bottom:8px}
     .wrap{width:min(820px,94vw)}
-    .panel{background:rgba(255,255,255,.12);backdrop-filter:blur(2px);border-radius:16px;padding:14px;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+    .panel{background:rgba(255,255,255,.12);border-radius:16px;padding:14px;margin-top:8px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
     .row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
     #characterImg{width:150px;height:150px;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(0,0,0,.6))}
     #macaronImg{width:130px;height:130px;object-fit:contain;cursor:pointer;transition:transform .15s ease}
@@ -38,14 +39,6 @@
     .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.35);font-size:12px;margin-left:6px}
     .grid2{display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:start}
     .small{font-size:12px;opacity:.85}
-
-    /* デバッグボックス */
-    details.debug{width:min(820px,94vw)}
-    details.debug summary{cursor:pointer;opacity:.9}
-    .dbg{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-         font-size:12px;white-space:pre-wrap;background:rgba(0,0,0,.35);
-         padding:10px;border-radius:10px;margin-top:6px}
-    .ok{color:#b7ffb7}.ng{color:#ffd1d1}
   </style>
 </head>
 <body>
@@ -56,7 +49,7 @@
     <!-- 上部：キャラ＆ランダムマカロン -->
     <div class="panel grid2">
       <div class="col" style="align-items:center">
-        <img id="characterImg" alt="キャラクター">
+        <img id="characterImg" src="public/assets/stage1/miwacchi_close.png" alt="キャラクター">
         <div class="small" id="charCaption">タネ（未選択）</div>
       </div>
       <div class="col">
@@ -86,89 +79,31 @@
     </div>
   </div>
 
-  <!-- デバッグ（解決した実パスを表示） -->
-  <details class="debug">
-    <summary>🛠 画像パスデバッグ（クリックで開閉）</summary>
-    <div class="dbg" id="dbgBox">初期化中…</div>
-  </details>
-
   <div class="page-tag" id="pageTag"></div>
 
 <script>
-/* =========================
-   ページ名ラベル
-   ========================= */
+/* =============== 設定（ファイル名に合わせ済み） =============== */
+const PATH = 'public/assets/stage1';
+const IMG = {
+  seed:        `${PATH}/miwacchi_close.png`,
+  character:   (c)=> `${PATH}/${c}_open.png`,            // pink_open.png など
+  macaron:     (c)=> `${PATH}/macaron_${c}.png`,         // macaron_pink.png など
+};
+const KEY = 'whoaiState';
+const COLORS = ['pink','blue','green','purple'];
+const COLOR_META = {
+  pink:{label:'情熱'}, blue:{label:'静寂'}, green:{label:'元気'}, purple:{label:'創造'}
+};
+
+/* =============== ページ名ラベル =============== */
 document.getElementById('pageTag').textContent =
   (location.pathname.split('/').pop() || 'index.html');
 
-/* =========================
-   自動パス解決ユーティリティ
-   ========================= */
-// 探索するルート候補（上から順に試す）
-const ROOT_CANDIDATES = [
-  '.',               // evolution.html と同階層
-  './assets',
-  '../assets',
-  'assets',
-  './public/assets',
-  'public/assets'
-];
-// 許容拡張子
-const EXT_CANDIDATES = ['png','webp','jpg','jpeg'];
+/* =============== 状態ヘルパ =============== */
+const loadState = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+const saveState = (s) => localStorage.setItem(KEY, JSON.stringify(s));
 
-// 成功/失敗ログ（デバッグ表示用）
-const dbg = [];
-function logOK(msg){ dbg.push(`✅ ${msg}`); }
-function logNG(msg){ dbg.push(`❌ ${msg}`); }
-function flushDbg(){ document.getElementById('dbgBox').textContent = dbg.join('\n'); }
-
-function tryLoadImage(url) {
-  return new Promise((resolve, reject)=>{
-    const img = new Image();
-    img.onload = ()=> resolve(url);
-    img.onerror = ()=> reject(url);
-    img.src = url + `?v=${Date.now()}`; // キャッシュ回避
-  });
-}
-
-/** 例: resolveAsset('characters/peakuru_tane') → 最初に見つかったURL */
-async function resolveAsset(relativeWithoutExt){
-  for (const root of ROOT_CANDIDATES){
-    for (const ext of EXT_CANDIDATES){
-      const url = `${root}/${relativeWithoutExt}.${ext}`;
-      try {
-        await tryLoadImage(url);
-        logOK(`found: ${url}`);
-        return url;
-      } catch {
-        logNG(`miss : ${url}`);
-      }
-    }
-  }
-  throw new Error(`Asset not found: ${relativeWithoutExt}`);
-}
-
-/* =========================
-   状態・定数
-   ========================= */
-const KEY = 'whoaiState';
-const COLORS = ['pink','blue','green','purple']; // 赤は無し
-const COLOR_META = {
-  pink:   { label:'情熱' },
-  blue:   { label:'静寂' },
-  green:  { label:'元気' },
-  purple: { label:'創造' }
-};
-
-function loadState(){
-  try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
-  catch { return {}; }
-}
-function saveState(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-
-/* =========================
-   UI 参照
-   ========================= */
+/* =============== UI要素 =============== */
 const characterImg = document.getElementById('characterImg');
 const charCaption  = document.getElementById('charCaption');
 const macaronImg   = document.getElementById('macaronImg');
@@ -182,102 +117,56 @@ const appearanceBtn= document.getElementById('appearanceBtn');
 const colorTitle   = document.getElementById('colorTitle');
 const stageBadge   = document.getElementById('stageBadge');
 
-/* =========================
-   表示更新
-   ========================= */
-async function setBackground(){
-  try {
-    const bg = await resolveAsset('stage1/space_background');
-    document.body.style.backgroundImage = `url("${bg}")`;
-  } catch(e){
-    logNG(e.message + '（背景）');
-  }
-  flushDbg();
-}
-
-async function applyColor(color){
+/* =============== 表示更新 =============== */
+function applyColor(color){
   if(!color || !COLOR_META[color]){
-    try{
-      characterImg.src = await resolveAsset('characters/peakuru_tane');
-    }catch(e){
-      logNG(e.message + '（tane）');
-      characterImg.removeAttribute('src');
-      characterImg.alt = '画像が見つかりません（tane）';
-    }
+    characterImg.src = IMG.seed;
     charCaption.textContent = 'タネ（未選択）';
     colorTitle.textContent = '未選択';
-    flushDbg();
     return;
   }
-  try{
-    characterImg.src = await resolveAsset(`characters/peakuru_${color}`);
-  }catch(e){
-    logNG(e.message + `（${color}）`);
-    characterImg.removeAttribute('src');
-    characterImg.alt = `画像が見つかりません（${color}）`;
-  }
-  const meta = COLOR_META[color];
-  charCaption.textContent = `ピークる（${meta.label}）`;
-  colorTitle.textContent = `${meta.label}・${color}`;
-  flushDbg();
+  characterImg.src = IMG.character(color);
+  charCaption.textContent = `ピークる（${COLOR_META[color].label}）`;
+  colorTitle.textContent = `${COLOR_META[color].label}・${color}`;
 }
-
 function setStage(stage){ stageBadge.textContent = stage || 'tane'; }
-
-async function showRandomMacaron(){
+function showRandomMacaron(){
   const color = COLORS[Math.floor(Math.random()*COLORS.length)];
-  try {
-    macaronImg.src = await resolveAsset(`macarons/${color}`);
-  } catch(e){
-    logNG(e.message + `（macaron:${color}）`);
-    macaronImg.removeAttribute('src');
-    macaronImg.alt = `マカロン画像が見つかりません`;
-  }
+  macaronImg.src = IMG.macaron(color);
   macaronImg.alt = `マカロン (${color})`;
   macaronImg.dataset.color = color;
-  flushDbg();
 }
-
 function renderLogs(logs){
   chatArea.innerHTML = '';
-  (logs||[]).forEach(addBubble);
+  (logs||[]).forEach(item=>{
+    const div = document.createElement('div');
+    div.className = `bubble ${item.role==='user'?'user':item.role==='bot'?'bot':'sys'}`;
+    div.textContent = item.text;
+    chatArea.appendChild(div);
+  });
   chatArea.scrollTop = chatArea.scrollHeight;
 }
-function addBubble(item){
-  const div = document.createElement('div');
-  div.className = `bubble ${item.role==='user'?'user':item.role==='bot'?'bot':'sys'}`;
-  div.textContent = item.text;
-  chatArea.appendChild(div);
-}
 
-/* =========================
-   会話ロジック（簡易BOT）
-   ========================= */
+/* =============== 簡易ボット =============== */
 function botReply(userText, color){
   const tone = {
-    pink:   ['情熱が湧いてくるね！','わくわくする！','その勢い、最高！'],
-    blue:   ['落ち着いて考えてみよう。','澄んだ視点だね。','静かに深めていこう。'],
-    green:  ['元気でいこう！','よし、やってみよう！','パワー出てきた！'],
-    purple: ['ひらめきが来たかも。','発想を広げよう。','創造の時間だね。']
+    pink:['情熱が湧いてくるね！','わくわくする！','その勢い、最高！'],
+    blue:['落ち着いて考えてみよう。','澄んだ視点だね。','静かに深めていこう。'],
+    green:['元気でいこう！','よし、やってみよう！','パワー出てきた！'],
+    purple:['ひらめきが来たかも。','発想を広げよう。','創造の時間だね。']
   };
   const list = tone[color] || ['うん、なるほど。','わかったよ！','いいね！'];
   const pick = list[Math.floor(Math.random()*list.length)];
-  if(/アイ(ン|ンシュタイン|ンシュタイン)/.test(userText)) {
-    return 'はい、アインシュタインは有名な物理学者ですね。相対性理論で知られています。';
-    }
-  if(/こんにちは|こんちは|はろ|hello/i.test(userText)) {
-    return 'こんにちは！何かお手伝いできることがある？';
-  }
+  if(/アイ(ン|ンシュタイン|ンシュタイン)/.test(userText)) return 'はい、アインシュタインは有名な物理学者ですね。相対性理論で知られています。';
+  if(/こんにちは|こんちは|はろ|hello/i.test(userText)) return 'こんにちは！何かお手伝いできることがある？';
   return `${pick}「${userText}」の続き、もう少し教えて！`;
 }
 
-/* =========================
-   イベント
-   ========================= */
+/* =============== イベント =============== */
 macaronImg.addEventListener('click', ()=>{
   const color = macaronImg.dataset.color;
   const st = loadState();
-  st.color = color;           // 選択後は固定
+  st.color = color;
   st.stage = 'evolved';
   st.logs = st.logs || [];
   st.logs.push({role:'sys', text:`マカロン（${color}）を選択。性格が固定されました。`});
@@ -296,18 +185,14 @@ sendBtn.addEventListener('click', ()=>{
   const reply = botReply(text, st.color);
   st.logs.push({role:'bot', text: reply});
   saveState(st);
-  addBubble({role:'user', text});
-  addBubble({role:'bot', text: reply});
+  renderLogs(st.logs);
   msgInput.value = '';
   chatArea.scrollTop = chatArea.scrollHeight;
-
   const turnCount = st.logs.filter(l=>l.role==='user').length;
   evolveBtn.style.opacity = (turnCount>=10)?'1':'0.5';
 });
 
-msgInput.addEventListener('keydown', e=>{
-  if(e.key==='Enter') sendBtn.click();
-});
+msgInput.addEventListener('keydown', e=>{ if(e.key==='Enter') sendBtn.click(); });
 
 evolveBtn.addEventListener('click', ()=>{
   const st = loadState();
@@ -315,69 +200,59 @@ evolveBtn.addEventListener('click', ()=>{
   if(turns<10){
     st.logs = st.logs || [];
     st.logs.push({role:'sys', text:`進化イベントはあと${10-turns}ターン後に解放されます。`});
-    saveState(st); addBubble(st.logs[st.logs.length-1]); chatArea.scrollTop=chatArea.scrollHeight; 
-    return;
+    saveState(st); renderLogs(st.logs); return;
   }
   choiceArea.style.display = 'flex';
 });
 
-memoryBtn.addEventListener('click', async ()=>{
+memoryBtn.addEventListener('click', ()=>{
   const st = loadState();
   st.logs = st.logs || [];
   st.logs.push({role:'sys', text:'リバース：記憶を選択。見た目はタネに戻ります。'});
-  delete st.color;     // ★色を消す→デフォルト代入しない
+  delete st.color;     // 色を消す→未選択に戻る
   st.stage = 'tane';
   saveState(st);
-  await applyColor(st.color);
+  applyColor(st.color);
   setStage(st.stage);
   renderLogs(st.logs);
-  showRandomMacaron();           // 次のマカロンは再びランダム
+  showRandomMacaron();
   choiceArea.style.display = 'none';
 });
 
-appearanceBtn.addEventListener('click', async ()=>{
+appearanceBtn.addEventListener('click', ()=>{
   const st = loadState();
   st.logs = st.logs || [];
   st.logs.push({role:'sys', text:'リバース：容姿を選択。見た目はそのまま維持します。'});
   st.stage = 'final';
   saveState(st);
-  await applyColor(st.color);
+  applyColor(st.color);
   setStage(st.stage);
   renderLogs(st.logs);
-  if(st.color){
-    try{ macaronImg.src = await resolveAsset(`macarons/${st.color}`); }catch{}
-    macaronImg.dataset.color = st.color;
-  }
+  if(st.color){ macaronImg.src = IMG.macaron(st.color); macaronImg.dataset.color = st.color; }
   choiceArea.style.display = 'none';
 });
 
 document.getElementById('resetBtn').addEventListener('click', ()=>{
   if(!confirm('保存された会話と状態を初期化します。よろしいですか？')) return;
   localStorage.removeItem(KEY);
-  init(); // 再初期化
+  init();
 });
 
-/* =========================
-   初期化
-   ========================= */
-async function init(){
-  dbg.length = 0; flushDbg();
-  await setBackground();
+/* =============== 初期化 =============== */
+function init(){
   const st = loadState();
-  await applyColor(st.color);                 // ★勝手に緑にしない
+  applyColor(st.color);                 // 未選択ならタネ
   setStage(st.stage || 'tane');
   renderLogs(st.logs || []);
   if(st.color){
-    try{ macaronImg.src = await resolveAsset(`macarons/${st.color}`); }catch(e){ logNG(e.message); }
+    macaronImg.src = IMG.macaron(st.color);
     macaronImg.dataset.color = st.color;
   }else{
-    showRandomMacaron();
+    showRandomMacaron();                // ランダム表示
   }
   const turnCount = (st.logs||[]).filter(l=>l.role==='user').length;
   evolveBtn.style.opacity = (turnCount>=10)?'1':'0.5';
-  flushDbg();
 }
-
 init();
 </script>
 </body>
