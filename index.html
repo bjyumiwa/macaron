@@ -100,7 +100,10 @@
     buttons.forEach(b=>b.addEventListener('click',()=>applyI18n(b.dataset.lang)));
     applyI18n(localStorage.getItem('lang')||'ja');
 
-    document.getElementById('startBtn').addEventListener('click', ()=>{ location.href='macaron.html'; });
+    // ← ここだけ変更：スタート先を macaron_select.html に
+    document.getElementById('startBtn').addEventListener('click', ()=>{
+      location.href='macaron_select.html';
+    });
   </script>
 </body>
 </html>
