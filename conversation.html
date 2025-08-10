@@ -1,54 +1,82 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<title>conversation.html - 会話</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<style>
-  body {
-    font-family: "Noto Sans JP", sans-serif;
-    background-image: url("public/assets/stage1/space_background.png");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    color: white;
-    text-align: center;
-    padding: 20px;
-  }
-  #characterImg {
-    width: 200px;
-    margin-bottom: 12px;
-  }
-  #chatArea {
-    background: rgba(255,255,255,0.1);
-    padding: 16px;
-    margin-top: 16px;
-    border-radius: 12px;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-    height: 300px;
-    overflow-y: auto;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>conversation.html - 会話ページ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    h1 {
+      margin-top: 20px;
+      text-shadow: 0 0 8px rgba(0,0,0,0.6);
+    }
+    #characterImg {
+      width: 180px;
+      margin: 20px 0;
+    }
+    #chatArea {
+      background: rgba(0,0,0,0.4);
+      padding: 16px;
+      margin-top: 16px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 100%;
+      min-height: 150px;
+      overflow-y: auto;
+    }
+    .macaron-holder {
+      margin-top: 24px;
+    }
+    .macaron {
+      width: 200px; /* 大きくしたサイズ */
+      height: auto;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .macaron:hover {
+      transform: scale(1.1);
+    }
+  </style>
 </head>
 <body>
-  <h2>会話ページ</h2>
-  <img id="characterImg" src="" alt="キャラクター">
-  <div id="chatArea">
-    <p>キャラクターがここに表示されます。</p>
+  <h1>会話ページ</h1>
+
+  <!-- キャラクター画像 -->
+  <img id="characterImg" src="public/assets/characters/default.png" alt="キャラクター">
+
+  <!-- チャットエリア -->
+  <div id="chatArea">キャラクターがここに表示されます</div>
+
+  <!-- マカロン表示 -->
+  <div class="macaron-holder">
+    <img class="macaron" id="macaronImg" src="public/assets/macaron/pink.png" alt="マカロン">
   </div>
 
   <script>
-    // マカロン色に応じてキャラクター画像を表示
-    const color = localStorage.getItem("macaronColor");
-    const charImg = document.getElementById("characterImg");
-
-    if (color) {
-      charImg.src = `public/assets/characters/${color}_char.png`;
-    } else {
-      charImg.src = "public/assets/characters/default_char.png";
-    }
+    // マカロンをクリックしたら進化イベントへ
+    document.getElementById("macaronImg").addEventListener("click", function(){
+      alert("マカロンを食べました！キャラクターが進化します！");
+      // 進化処理へ遷移
+      window.location.href = "evolution.html";
+    });
   </script>
 </body>
 </html>
