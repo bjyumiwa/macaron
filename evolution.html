@@ -15,6 +15,7 @@
   h1{margin:0 0 6px}
   .img{height:160px; display:flex; align-items:center; justify-content:center; margin:10px auto 2px}
   .img img{max-height:160px; max-width:80%; filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
+  .fallback{width:120px;height:120px;border-radius:50%;border:4px solid rgba(255,255,255,.8)}
   .btn{margin-top:12px; border:none; border-radius:14px; padding:12px 18px; font-weight:700; cursor:pointer; background:#ffd1ec; color:#222}
 </style>
 </head>
@@ -30,20 +31,16 @@
   const ASSETS = "public/assets/stage1";
   const state = JSON.parse(localStorage.getItem('whoai_state')||"{}");
   const lang = localStorage.getItem('lang') || 'ja';
+  if(!state || !state.color){ location.href = "macaron_select.html"; }
 
-  if(!state || !state.color){
-    location.href = "macaron_select.html";
-  }
-
-  // 画像パス決定
-  // 種キャラ：tane_<color>.png（例: tane_pink.png）
-  // 進化版：<color>_<variant>.png（例: green_open.png / blue_close.png）
   function charSrc(s){
     if(s.variant === "tane") return `${ASSETS}/tane_${s.color}.png`;
     return `${ASSETS}/${s.color}_${s.variant}.png`;
   }
 
-  document.getElementById('char').src = charSrc(state);
+  const img = document.getElementById('char');
+  img.src = charSrc(state);
+  img.onerror = ()=>{ img.remove(); const d=document.createElement('div'); d.className='fallback'; d.style.background=state.color; document.querySelector('.img').appendChild(d); };
 
   const N = state.name || "WHOAI";
   const colorName = {pink:"ピンク",blue:"ブルー",green:"グリーン",purple:"パープル"}[state.color] || state.color;
@@ -60,9 +57,7 @@
   document.getElementById('title').textContent = (state.variant==="tane") ? "進化（種）" : "進化（次形態）";
   document.getElementById('desc').textContent = text;
 
-  document.getElementById('go').addEventListener('click', ()=>{
-    location.href = "whoai_talk.html";
-  });
+  document.getElementById('go').addEventListener('click', ()=>{ location.href = "whoai_talk.html"; });
 </script>
 </body>
 </html>
