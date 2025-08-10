@@ -8,7 +8,8 @@
   :root{ --glass: rgba(255,255,255,.10); --accent:#ffd1ec; }
   html,body{height:100%;margin:0}
   body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
+    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    color:#fff;
     background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
     display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px;text-align:center
   }
@@ -48,7 +49,6 @@
 </style>
 </head>
 <body>
-  <!-- 言語スイッチ（index/aboutと共有） -->
   <div class="lang" aria-label="Language Switch">
     <button type="button" data-lang="ja" class="active">日本語</button>
     <button type="button" data-lang="en">English</button>
@@ -100,8 +100,7 @@
     document.querySelectorAll('[data-i18n]').forEach(el=>{
       const k = el.getAttribute('data-i18n'); el.textContent = I18N[lang][k] ?? el.textContent;
     });
-    // カード内の名前・説明は生成時に反映するので再描画
-    renderCards(lang);
+    renderCards(lang); // 言語に合わせてカード再描画
     localStorage.setItem('lang', lang);
   }
   langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
@@ -126,31 +125,24 @@
     grid.innerHTML = "";
     OPTIONS.forEach(opt=>{
       const card = document.createElement("button");
-      card.className = "card";
-      card.type = "button";
-      card.dataset.key = opt.key;
+      card.className = "card"; card.type = "button"; card.dataset.key = opt.key;
 
-      // 画像 or Fallback dot
       const fig = document.createElement("div");
       fig.className = "figure";
       const img = document.createElement("img");
-      img.src = opt.img;
-      img.alt = I18N[lang].items[opt.key].name;
+      img.src = opt.img; img.alt = I18N[lang].items[opt.key].name;
       img.addEventListener("error", ()=>{
         img.remove();
         const dot = document.createElement("div");
-        dot.className = `dot ${opt.key}`;
-        fig.appendChild(dot);
+        dot.className = `dot ${opt.key}`; fig.appendChild(dot);
       });
       fig.appendChild(img);
 
       const name = document.createElement("div");
-      name.className = "label";
-      name.textContent = I18N[lang].items[opt.key].name;
+      name.className = "label"; name.textContent = I18N[lang].items[opt.key].name;
 
       const desc = document.createElement("div");
-      desc.className = "desc";
-      desc.textContent = I18N[lang].items[opt.key].desc;
+      desc.className = "desc"; desc.textContent = I18N[lang].items[opt.key].desc;
 
       card.append(fig, name, desc);
       card.addEventListener("click", ()=>{
@@ -166,24 +158,33 @@
 
   clearBtn.addEventListener("click", ()=>{
     document.querySelectorAll(".card").forEach(el=>el.classList.remove("selected"));
-    selectedKey = null;
-    goBtn.disabled = true;
-    localStorage.removeItem("macaron_choice");
+    selectedKey = null; goBtn.disabled = true;
     localStorage.removeItem("selectedMacaron");
+    localStorage.removeItem("macaron_choice");
+    // whoai_state は残す（名前など継続のため）
   });
 
-  const NEXT_PAGE = "whoai_talk.html"; // 必要ならここを変更
+  // ===== ここから進化・状態保存 =====
+  const NEXT_PAGE = "evolution.html";
+  const existing = JSON.parse(localStorage.getItem('whoai_state') || "{}");
+  const isSecondPick = existing && existing.stage === 'seed' && (existing.turns || 0) >= 5;
 
-  goBtn.addEventListener("click", ()=>{
+  document.getElementById("goBtn").addEventListener("click", ()=>{
     if(!selectedKey) return;
-    const lang = localStorage.getItem('lang') || 'ja';
-    // 互換のため2種類のキーに保存
+    const name = localStorage.getItem('whoai_name') || existing.name || "WHOAI";
+
+    // 互換キー
     localStorage.setItem("selectedMacaron", selectedKey);
-    localStorage.setItem("macaron_choice", JSON.stringify({
-      macaron: selectedKey,
-      macaronLabel: I18N[lang].items[selectedKey].name,
-      decidedAt: new Date().toISOString()
-    }));
+
+    const state = {
+      name,
+      color: selectedKey,
+      stage: isSecondPick ? "evolved" : "seed",
+      variant: isSecondPick ? "open" : "tane",
+      turns: 0
+    };
+    localStorage.setItem("whoai_state", JSON.stringify(state));
+
     location.href = NEXT_PAGE;
   });
 
