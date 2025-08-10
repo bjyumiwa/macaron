@@ -5,138 +5,100 @@
   <title>conversation.html - 会話</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-color: #000;
-      color: white;
-      padding: 20px;
-      text-align: center;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+    @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap");
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px
     }
-    #characterImg {
-      width: 140px;
-      margin-bottom: 12px;
+    header{display:flex;gap:12px;align-items:center;margin:10px 0 12px}
+    #avatar{width:88px;height:88px;border-radius:16px;object-fit:contain;box-shadow:0 0 14px rgba(255,255,255,.55)}
+    #meta{line-height:1.4}
+    #meta .name{font-weight:700}
+    #meta .badge{font-size:12px;opacity:.9}
+    .chat{
+      width:min(880px,92vw);flex:1;overflow:auto;background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:14px
     }
-    #chatArea {
-      background: rgba(255,255,255,0.1);
-      padding: 16px;
-      margin-top: 16px;
-      border-radius: 12px;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-      height: 300px;
-      overflow-y: auto;
-      text-align: left;
+    .row{margin:8px 0;display:flex}
+    .bot{justify-content:flex-start}
+    .me{justify-content:flex-end}
+    .bubble{
+      max-width:72%;padding:10px 14px;border-radius:14px;line-height:1.5
     }
-    .message {
-      margin-bottom: 12px;
-    }
-    .user { color: #ffd1ec; }
-    .ai { color: #80dfff; }
-    #inputArea {
-      margin-top: 20px;
-    }
-    #messageInput {
-      width: 70%;
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
-    }
-    #sendBtn {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-left: 8px;
-      background: #ffd1ec;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    .bot .bubble{background:rgba(255,255,255,.85);color:#222}
+    .me .bubble{background:#ffd1ec;color:#111}
+    .inputbar{width:min(880px,92vw);display:flex;gap:8px;margin-top:12px}
+    .inputbar input{flex:1;padding:10px;border-radius:12px;border:none}
+    .inputbar button{padding:10px 16px;border:none;border-radius:12px;background:#ffd1ec;color:#111;cursor:pointer}
+    .inputbar button:hover{background:#ff90d2;color:#fff}
   </style>
 </head>
 <body>
-  <h2 id="characterName"></h2>
-  <img id="characterImg" src="" alt="キャラクター" />
-  <div id="chatArea"></div>
-  <div id="inputArea">
-    <input type="text" id="messageInput" placeholder="話しかけてみよう！" />
-    <button id="sendBtn">送信</button>
+  <header>
+    <img id="avatar" src="" alt="キャラ">
+    <div id="meta">
+      <div class="name" id="charName">???</div>
+      <div class="badge" id="charTrait">trait: -</div>
+    </div>
+  </header>
+
+  <div class="chat" id="chat">
+    <div class="row bot"><div class="bubble">こんにちは！選んだマカロンの力で進化したよ。今日、何から話す？</div></div>
+  </div>
+
+  <div class="inputbar">
+    <input id="msg" placeholder="メッセージを入力..." />
+    <button id="send">送信</button>
   </div>
 
   <script>
-    // ======== 設定 ========
-    const API_URL = "https://macaron-one.vercel.app/api/talk"; // VercelのURL
-    const name = localStorage.getItem("whoai_name") || "ともだち";
-    const img = localStorage.getItem("characterImage") || "public/assets/stage1/tane_green.png";
-    const maxTurns = 3;
-    let turnCount = 0;
+    // 進化後の見た目 & 特性を読み込む
+    const img = localStorage.getItem("characterImage");
+    const trait = localStorage.getItem("whoai_trait") || "-";
+    let name = localStorage.getItem("whoai_name") || "タネ";
 
-    // ======== 要素参照 ========
-    const chatArea = document.getElementById("chatArea");
-    const input = document.getElementById("messageInput");
-    const sendBtn = document.getElementById("sendBtn");
+    // 必須データが無い場合は選択へ戻す
+    if(!img){
+      window.location.href = "appearance.html";
+    }else{
+      document.getElementById("avatar").src = img;
+    }
+    document.getElementById("charName").textContent = name;
+    document.getElementById("charTrait").textContent = `trait: ${trait}`;
 
-    document.getElementById("characterName").textContent = `${name} と話そう`;
-    document.getElementById("characterImg").src = img;
-
-    // ======== メッセージ追加 ========
-    function addMessage(sender, text) {
-      const div = document.createElement("div");
-      div.className = "message " + (sender === "user" ? "user" : "ai");
-      div.textContent = `${sender === "user" ? "あなた" : name}：${text}`;
-      chatArea.appendChild(div);
-      chatArea.scrollTop = chatArea.scrollHeight;
+    // 簡易チャット（APIなしローカル応答）
+    const chat = document.getElementById("chat");
+    function addRow(who, text){
+      const row = document.createElement("div");
+      row.className = `row ${who}`;
+      const b = document.createElement("div");
+      b.className = "bubble"; b.textContent = text;
+      row.appendChild(b); chat.appendChild(row);
+      chat.scrollTop = chat.scrollHeight;
+    }
+    function replyLocal(input){
+      // traitに合わせて返答の色を少し変える
+      const tone = {
+        passion:"ワクワクするね！",
+        calm:"落ち着いて考えてみよう。",
+        energy:"元気いっぱい！やってみよう！",
+        creative:"面白い発想だね、もっと広げよう。"
+      }[trait] || "なるほど！";
+      return `${tone}「${input}」のこと、もう少し教えて？`;
     }
 
-    // ======== AIと会話 ========
-    async function sendMessage() {
-      const message = (input.value || "").trim();
-      if (!message) return;
-
-      addMessage("user", message);
-      input.value = "";
-      sendBtn.disabled = true;
-      turnCount++;
-
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: [
-              { role: "system", content: "あなたはやさしい相棒AI。短く優しく答えて。" },
-              { role: "user", content: message }
-            ]
-          })
-        });
-
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch { throw new Error(text); }
-
-        if (!res.ok) throw new Error(data.error || text);
-
-        addMessage("ai", data.reply || "(返答なし)");
-
-        if (turnCount >= maxTurns) {
-          setTimeout(() => { window.location.href = "evolution.html"; }, 2000);
-        }
-      } catch (err) {
-        console.error(err);
-        addMessage("ai", "サーバーエラー: " + err.message);
-      } finally {
-        sendBtn.disabled = false;
-      }
-    } // ← ここが抜けていた
-
-    // ======== イベント設定 ========
-    sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendMessage();
+    document.getElementById("send").addEventListener("click", ()=>{
+      const val = document.getElementById("msg").value.trim();
+      if(!val) return;
+      addRow("me", val);
+      document.getElementById("msg").value = "";
+      setTimeout(()=> addRow("bot", replyLocal(val)), 300);
+    });
+    document.getElementById("msg").addEventListener("keydown",(e)=>{
+      if(e.key==="Enter") document.getElementById("send").click();
     });
   </script>
 </body>
