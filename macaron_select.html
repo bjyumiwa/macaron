@@ -127,8 +127,7 @@
       const card = document.createElement("button");
       card.className = "card"; card.type = "button"; card.dataset.key = opt.key;
 
-      const fig = document.createElement("div");
-      fig.className = "figure";
+      const fig = document.createElement("div"); fig.className = "figure";
       const img = document.createElement("img");
       img.src = opt.img; img.alt = I18N[lang].items[opt.key].name;
       img.addEventListener("error", ()=>{
@@ -164,18 +163,22 @@
     // whoai_state は残す（名前など継続のため）
   });
 
-  // ===== ここから進化・状態保存 =====
+  // ===== 進化・状態保存 =====
   const NEXT_PAGE = "evolution.html";
   const existing = JSON.parse(localStorage.getItem('whoai_state') || "{}");
-  const isSecondPick = existing && existing.stage === 'seed' && (existing.turns || 0) >= 5;
+
+  // ★ 2回目の選択か？（seed段階で3回トーク済みなら2回目）
+  const isSecondPick =
+    existing && existing.stage === 'seed' && (existing.turns || 0) >= 3;
 
   document.getElementById("goBtn").addEventListener("click", ()=>{
     if(!selectedKey) return;
     const name = localStorage.getItem('whoai_name') || existing.name || "WHOAI";
 
-    // 互換キー
+    // 互換キー（古いコード用）
     localStorage.setItem("selectedMacaron", selectedKey);
 
+    // 初回→tane / 2回目→open
     const state = {
       name,
       color: selectedKey,
