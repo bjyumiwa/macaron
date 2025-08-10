@@ -30,7 +30,7 @@
 <img id="result-img" src="" alt="seed character">
 <h2 id="result-name"></h2>
 <p id="result-desc"></p>
-<button id="start-btn">このキャラと話す</button>
+<button id="next-btn">名前をつける</button>
 
 <script>
 const seedCharacters = [
@@ -47,10 +47,10 @@ document.getElementById("result-img").src = result.img;
 document.getElementById("result-name").textContent = result.name;
 document.getElementById("result-desc").textContent = result.desc;
 
-document.getElementById("start-btn").addEventListener("click", () => {
+// 次の画面（名前付け）へ
+document.getElementById("next-btn").addEventListener("click", () => {
   localStorage.setItem("seedCharacter", JSON.stringify(result));
-  localStorage.setItem("conversationCount", "0");
-  window.location.href = "conversation.html";
+  window.location.href = "naming.html";
 });
 </script>
 </body>
