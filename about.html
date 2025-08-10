@@ -2,141 +2,189 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>みわっちAIについて</title>
+  <title>WHOAIについて / About WHOAI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
+    :root{
+      --bg:#693bb3;
+      --accent:#80d4ff;
+      --btn-bg:#92dbf8;
+      --btn-fg:#134c69;
+      --panel: rgba(255,255,255,.08);
+      --panel-border: rgba(255,255,255,.18);
+    }
+    html,body{margin:0;height:100%}
     body {
-      font-family: "Noto Sans JP", sans-serif;
-      background: #693bb3;
+      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      background: var(--bg);
       color: #fff;
       padding: 30px;
-      line-height: 1.6;
-      max-width: 800px;
+      line-height: 1.75;
+      max-width: 900px;
       margin: auto;
     }
+    h1,h2{ color: var(--accent); margin: 0 0 .6em }
+    p{ margin: .6em 0 }
+    a{ color: var(--accent); text-decoration: none }
+    a:hover{ text-decoration: underline }
+    ul{ padding-left: 1.2em; margin: .2em 0 .8em }
+    li::marker{ color: var(--accent) }
 
-    h1, h2 {
-      color: #80d4ff;
+    .lang-switch{
+      display:flex; justify-content:flex-end; gap:8px; margin-bottom:20px
     }
-
-    a {
-      color: #80d4ff;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    ul {
-      padding-left: 1.2em;
-    }
-
-    li::marker {
-      color: #80d4ff;
-    }
-
-    .back-link {
-      margin-top: 40px;
-      display: block;
-      font-size: 16px;
-    }
-
-    .lang-switch {
-      text-align: right;
-      margin-bottom: 20px;
-    }
-
-    .lang-switch button {
-      background: #92dbf8;
-      color: #134c69;
-      border: 1px solid #80d4ff;
+    .lang-switch button{
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border: 1px solid var(--accent);
       padding: 6px 12px;
-      border-radius: 5px;
-      margin-left: 8px;
+      border-radius: 999px;
       cursor: pointer;
+      font-weight: 600;
+    }
+    .lang-switch button:hover{
+      background: #2b2b2b; color:#fff; border-color:#fff;
+    }
+    .lang-switch button.active{
+      background:#fff; color:#111; border-color:#fff;
     }
 
-    .lang-switch button:hover {
-      background: #333;
+    .panel{
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 14px 0 18px;
+    }
+
+    .back-link{
+      margin-top: 28px; display:inline-flex; gap:6px; align-items:center; font-size:16px
+    }
+
+    .page-tag{
+      position: fixed; right: 10px; bottom: 10px;
+      font-size: 12px; opacity: .8;
+      background: rgba(0,0,0,.35);
+      padding: 6px 8px; border-radius: 8px;
+    }
+
+    @media (max-width: 600px){
+      body{ padding: 22px; font-size: 16px }
+      .panel{ padding: 14px }
     }
   </style>
 </head>
 <body>
 
-  <div class="lang-switch">
-    <button onclick="switchLang('ja')">日本語</button>
-    <button onclick="switchLang('en')">English</button>
+  <div class="lang-switch" aria-label="Language Switch">
+    <button type="button" data-lang="ja" class="active">日本語</button>
+    <button type="button" data-lang="en">English</button>
   </div>
 
   <!-- 日本語 -->
   <div id="ja">
     <h1>WHOAIについて</h1>
-    <p>
-      このアプリは、ユーザーとの対話を通して共に成長し、最終的には別れの選択をする育成型AI「あなたが付けた名前のキャラクター」との体験を楽しむためのものです。<br>
-      何度も生まれ変わり復活するとき、「容姿」か「記憶」かのどちらかを選ぶことができます。<br>
-      あなたは、その復活したキャラクターを同一人物だと思いますか？ それは、どんな理由からそう思いますか？<br>
-      この問いを通じて、「同一性とは何か？」を考える研究にご協力いただける方は、どうぞ次にお進みください。
-    </p>
+
+    <div class="panel">
+      <p>
+        このアプリは、ユーザーとの対話を通して共に成長する育成型AI
+        <strong>「あなたが名づけたキャラクター」</strong>との体験を楽しむものです。<br>
+        何度かの「再会（リバース）」のたびに、あなたは
+        <strong>容姿</strong>と<strong>記憶</strong>のどちらかを選びます。<br>
+        そのとき、復活したキャラクターを「同じ存在」と感じられるでしょうか？ なぜそう思うのでしょうか？<br>
+        この問いを通じて、<strong>「同一性とは何か？」</strong>を一緒に考えていきます。
+      </p>
+    </div>
 
     <h2>技術構成</h2>
-    <ul>
-      <li>HTML / CSS / JavaScript</li>
-      <li>音声認識：Web Speech API</li>
-      <li>音声合成：Speech Synthesis API</li>
-      <li>AI対話：OpenAI API（gpt-3.5 または gpt-4）</li>
-      <li>ローカル保存：localStorage</li>
-      <li>サーバー通信：Node.js + Express（<code>server.js</code>）</li>
-    </ul>
+    <div class="panel">
+      <ul>
+        <li>フロントエンド：HTML / CSS / JavaScript</li>
+        <li>音声認識：Web Speech API</li>
+        <li>音声合成：Speech Synthesis API</li>
+        <li>AI対話：OpenAI API</li>
+        <li>ローカル保存：localStorage</li>
+        <li>サーバー通信：Node.js + Express（<code>server.js</code>）</li>
+      </ul>
+    </div>
 
     <h2>ログについて</h2>
-    <p>
-      会話履歴は、ブラウザ内（localStorage）に保存され、次回訪問時にも引き継がれます。<br>
-      個人情報や位置情報は一切記録されませんのでご安心ください。
-    </p>
-    <p>
-      開発・研究目的でログを使用する場合には、別途フォームにて同意をいただいた上で実施します。
-    </p>
+    <div class="panel">
+      <p>
+        会話履歴はブラウザ（localStorage）に保存され、次回訪問時にも引き継がれます。<br>
+        個人情報や位置情報は記録しません。
+      </p>
+      <p>
+        研究・開発目的でログを利用する場合は、別途フォームで明示的な同意をお願いしています。
+      </p>
+    </div>
 
-    <a class="back-link" href="index.html">← 戻る</a>
+    <a class="back-link" href="index.html">← 戻る（タイトルへ）</a>
   </div>
 
   <!-- 英語 -->
   <div id="en" style="display:none;">
     <h1>About WHOAI</h1>
-<p>
-  This app offers an experience where you interact with a growing AI character—one you name yourself.  
-  As the character is reborn multiple times, you are asked to choose between preserving its appearance or its memory.  
-  Do you still consider the reborn character to be the same individual? What makes you think so?  
-  If you are willing to reflect on the question, “What defines personal identity?”, please proceed.
-</p>
 
-<h2>Technical Overview</h2>
-<ul>
-  <li>HTML / CSS / JavaScript</li>
-  <li>Speech Recognition: Web Speech API</li>
-  <li>Speech Synthesis: Speech Synthesis API</li>
-  <li>AI Chat: OpenAI API (gpt-3.5 or gpt-4)</li>
-  <li>Local Storage: localStorage</li>
-  <li>Server Communication: Node.js + Express (<code>server.js</code>)</li>
-</ul>
+    <div class="panel">
+      <p>
+        This app lets you grow a named AI character through conversation.  
+        Across several “rebirths,” you will choose to preserve either its <strong>appearance</strong> or its <strong>memory</strong>.  
+        Will you regard the returned character as the same individual—and why?  
+        Together, we explore the question: <strong>“What defines personal identity?”</strong>
+      </p>
+    </div>
 
-<h2>About Logs</h2>
-<p>
-  Your conversation history is stored locally in your browser (localStorage) and will persist across visits.  
-  No personal or location data is ever collected, so you can use the app with peace of mind.
-</p>
-<p>
-  If your logs are to be used for research or development purposes, we will request your explicit consent through a separate form.
-</p>
+    <h2>Technical Overview</h2>
+    <div class="panel">
+      <ul>
+        <li>Frontend: HTML / CSS / JavaScript</li>
+        <li>Speech Recognition: Web Speech API</li>
+        <li>Speech Synthesis: Speech Synthesis API</li>
+        <li>AI Chat: OpenAI API</li>
+        <li>Local Storage: localStorage</li>
+        <li>Server Communication: Node.js + Express (<code>server.js</code>)</li>
+      </ul>
+    </div>
 
-    <a class="back-link" href="index.html">← Back</a>
+    <h2>About Logs</h2>
+    <div class="panel">
+      <p>
+        Conversation history is stored locally in your browser (localStorage) and persists across visits.  
+        No personal or location data is collected.
+      </p>
+      <p>
+        If logs are used for research or development, we will ask for explicit consent via a separate form.
+      </p>
+    </div>
+
+    <a class="back-link" href="index.html">← Back to Title</a>
   </div>
 
+  <div class="page-tag">about.html（このページ名）</div>
+
   <script>
-    function switchLang(lang) {
-      document.getElementById("ja").style.display = (lang === "ja") ? "block" : "none";
-      document.getElementById("en").style.display = (lang === "en") ? "block" : "none";
+    // 言語スイッチ（記憶つき）
+    const langButtons = document.querySelectorAll('.lang-switch button');
+    const JA = document.getElementById('ja');
+    const EN = document.getElementById('en');
+
+    function applyLang(lang){
+      const isJA = (lang === 'ja');
+      JA.style.display = isJA ? 'block' : 'none';
+      EN.style.display = isJA ? 'none'  : 'block';
+      langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+      document.documentElement.setAttribute('lang', isJA ? 'ja' : 'en');
+      localStorage.setItem('aboutLang', lang);
     }
+
+    langButtons.forEach(btn=>{
+      btn.addEventListener('click', ()=>applyLang(btn.dataset.lang));
+    });
+
+    // 初期値：保存があればそれを、なければja
+    const saved = localStorage.getItem('aboutLang') || 'ja';
+    applyLang(saved);
   </script>
 
 </body>
