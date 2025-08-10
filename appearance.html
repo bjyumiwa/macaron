@@ -2,196 +2,78 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>appearance.html - キャラクター登場</title>
+  <title>appearance.html - マカロン選択</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap");
-
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
     }
-
-    #characterArea {
-      margin-top: 60px;
-      animation: roll-in 1.2s ease-out;
+    .card{
+      backdrop-filter: blur(6px);
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 18px;
+      padding: 22px;
+      width:min(92vw,760px);
+      box-shadow:0 10px 40px rgba(0,0,0,.35);
     }
-
-    @keyframes roll-in {
-      0% {
-        transform: translateX(-100vw) rotate(-720deg);
-        opacity: 0;
-      }
-      100% {
-        transform: translateX(0) rotate(0deg);
-        opacity: 1;
-      }
+    h1{margin:0 0 6px;font-size:clamp(20px,4.6vw,28px)}
+    p{margin:0 0 18px;line-height:1.7}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:12px}
+    .macaron{
+      background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);
+      border-radius:16px;padding:12px 10px;cursor:pointer;transition:.15s;
     }
-
-    #characterImg {
-      width: 180px;
-      max-width: 80vw;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
-      animation: float 4s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-12px);
-      }
-    }
-
-    .description {
-      margin-top: 20px;
-      background: rgba(255, 255, 255, 0.4);
-      color: #222;
-      padding: 16px;
-      border-radius: 16px;
-      max-width: 340px;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 1.1em;
-      line-height: 1.4;
-    }
-
-    #nameInput {
-      margin-top: 20px;
-      padding: 10px;
-      font-size: 16px;
-      width: 80vw;
-      max-width: 300px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      outline: none;
-    }
-
-    #nameInput:focus {
-      border-color: #ff70c1;
-      box-shadow: 0 0 5px #ff70c1;
-    }
-
-    #nextBtn {
-      margin-top: 30px;
-      padding: 12px 28px;
-      font-size: 18px;
-      border-radius: 12px;
-      border: none;
-      background: #ffd1ec;
-      color: #111;
-      cursor: pointer;
-      transition: background 0.3s, color 0.3s;
-      width: 80vw;
-      max-width: 320px;
-    }
-
-    #nextBtn:hover {
-      background: #ff90d2;
-      color: white;
-    }
-
-    @media screen and (max-width: 480px) {
-      .description {
-        font-size: 1em;
-        max-width: 90vw;
-      }
-      #nameInput {
-        width: 90vw;
-        max-width: none;
-      }
-      #nextBtn {
-        width: 90vw;
-        max-width: none;
-        font-size: 16px;
-        padding: 10px 20px;
-      }
-    }
+    .macaron:hover{transform:translateY(-4px) scale(1.03);background:rgba(255,255,255,.24)}
+    .macaron img{width:74px;height:74px;object-fit:contain;display:block;margin:0 auto 6px}
+    .label{font-weight:700;font-size:14px}
+    .trait{opacity:.9;font-size:12px}
+    @media (max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
   </style>
 </head>
 <body>
-  <div id="characterArea">
-    <img id="characterImg" src="" alt="キャラクター" />
+  <div class="card">
+    <h1>これから、もっとお話しよう。</h1>
+    <p>マカロンをクリックしてね。選んだ色の性格で進化して、会話に行くよ。</p>
+
+    <div class="grid" id="macaronGrid">
+      <!-- 画像パスは必要なら変更：public/assets/macaron/*.png -->
+      <div class="macaron" data-color="pink"  data-trait="passion"><img src="public/assets/macaron/pink.png"  alt="ピンク"><div class="label">pink</div><div class="trait">情熱</div></div>
+      <div class="macaron" data-color="blue"  data-trait="calm"><img src="public/assets/macaron/blue.png"  alt="青"><div class="label">blue</div><div class="trait">静寂</div></div>
+      <div class="macaron" data-color="green" data-trait="energy"><img src="public/assets/macaron/green.png" alt="緑"><div class="label">green</div><div class="trait">元気</div></div>
+      <div class="macaron" data-color="purple" data-trait="creative"><img src="public/assets/macaron/purple.png" alt="紫"><div class="label">purple</div><div class="trait">創造</div></div>
+    </div>
   </div>
-  <div class="description" id="characterDesc"></div>
-  <input
-    type="text"
-    id="nameInput"
-    placeholder="この子の名前を入力してください"
-    aria-label="名前入力"
-  />
-  <button id="nextBtn" onclick="goToNext()">次へ ▶</button>
 
   <script>
-    // fortune.html で保存された性格タイプを取得
-    const type = localStorage.getItem("whoai_type") || "funny";
-
-    // タイプごとのキャラクター情報
-    const characters = {
-      cool: {
-        name: "ピンぷく",
-        img: "public/assets/stage1/tane_pink.png",
-        desc:
-          "ピンぷくは冷静沈着で、リーダーシップにあふれたぷく族です。何事にも真っ直ぐに取り組み、みんなから一目置かれています。"
-      },
-      kind: {
-        name: "ぶるぷく",
-        img: "public/assets/stage1/tane_blue.png",
-        desc:
-          "ぶるぷくは優しくて、誰かを思いやる気持ちを忘れないぷく族です。困っている仲間をそっと助けてくれる存在です。"
-      },
-      funny: {
-        name: "ぐりぷく",
-        img: "public/assets/stage1/tane_green.png",
-        desc:
-          "ぐりぷくはユーモアたっぷりで、みんなを笑顔にするのが得意です。ちょっと不思議な動きをすることも？"
-      },
-      free: {
-        name: "ぱーぷく",
-        img: "public/assets/stage1/tane_purple.png",
-        desc:
-          "ぱーぷくは自由奔放。いつも新しいことにチャレンジして、世界を旅しています。少しマイペースだけど魅力的。"
-      }
+    // 進化後キャラ画像（必要ならパス変更：public/assets/stage2/evolved_*.png）
+    const EVOLVED = {
+      pink:   "public/assets/stage2/evolved_pink.png",
+      blue:   "public/assets/stage2/evolved_blue.png",
+      green:  "public/assets/stage2/evolved_green.png",
+      purple: "public/assets/stage2/evolved_purple.png"
     };
+    const TYPE_BY = { pink:"passion", blue:"calm", green:"energy", purple:"creative" };
 
-    // 指定がなければ funny にする
-    const c = characters[type] || characters.funny;
+    document.getElementById("macaronGrid").addEventListener("click",(e)=>{
+      const card = e.target.closest(".macaron"); if(!card) return;
+      const color = card.dataset.color;
+      const trait = card.dataset.trait;
 
-    // キャラクター情報を画面に反映
-    document.getElementById("characterImg").src = c.img;
-    document.getElementById("characterImg").alt = c.name;
-    document.getElementById("characterDesc").textContent = c.desc;
+      // 会話ページで使う情報を保存
+      localStorage.setItem("whoai_macaron", color);
+      localStorage.setItem("whoai_trait", trait);
+      localStorage.setItem("whoai_type", TYPE_BY[color]);     // 互換
+      localStorage.setItem("characterImage", EVOLVED[color]);  // 進化後の見た目
 
-    // キャラクター画像のパスも保存して、conversation.htmlに引き継ぐ
-    localStorage.setItem("characterImage", c.img);
-
-    // 名前入力後に次のページへ進む
-    function goToNext() {
-      const nameInput = document.getElementById("nameInput").value.trim();
-      if (!nameInput) {
-        alert("名前を入力してください");
-        return;
-      }
-      // 名前を保存
-      localStorage.setItem("whoai_name", nameInput);
-      // 会話ページへ移動
-      location.href = "conversation.html";
-    }
+      // 会話ページへ
+      window.location.href = "conversation.html";
+    });
   </script>
 </body>
 </html>
