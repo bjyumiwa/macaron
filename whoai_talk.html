@@ -54,9 +54,8 @@
 
 <script>
   // ====== 設定 ======
-  // Vercelで /api/talk を置いたならそのまま。別ドメインにあるならフルURLを入れてね。
-  const TALK_ENDPOINT = '/api/talk'; // 例: 'https://your-vercel-app.vercel.app/api/talk'
-  const USE_API = true; // APIが落ちたら自動フォールバックします
+  const TALK_ENDPOINT = '/api/talk';   // 同ドメインならこのまま
+  const USE_API = true;                // API失敗時は自動フォールバック
 
   // ====== i18n ======
   const I18N = {
@@ -69,7 +68,7 @@
       },
       greet:{pink:"こんにちは！一緒に走り出そう。",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"},
       you:"あなた", ai:"WHOAI", send:"送信", placeholder:"メッセージを入力",
-      done:"5回の会話が完了！もう一度マカロンを選んで、次の形態に進化させよう。",
+      done3:"3回の会話が完了！もう一度マカロンを選んで、次の形態に進化させよう。",
       typing:"入力中…", err:"通信に失敗しました。ローカル応答に切り替えます。"
     },
     en:{
@@ -81,7 +80,7 @@
       },
       greet:{pink:"Hey! Let’s get rolling.",blue:"Hello. Let’s think this through.",green:"Yo! Let’s take the first step!",purple:"Welcome—let’s weave a story."},
       you:"You", ai:"WHOAI", send:"Send", placeholder:"Type a message",
-      done:"Five messages done! Choose another macaron to evolve to the next form.",
+      done3:"Three messages done! Choose another macaron to evolve to the next form.",
       typing:"typing…", err:"API failed. Falling back to local reply."
     }
   };
@@ -143,10 +142,8 @@
   }
 
   // ====== 会話履歴（APIに渡す用）======
-  function loadChat(){
-    try{ return JSON.parse(localStorage.getItem('whoai_chat')||'[]'); }catch{ return []; }
-  }
-  function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-12))); } // 直近12件だけ
+  function loadChat(){ try{ return JSON.parse(localStorage.getItem('whoai_chat')||'[]'); }catch{ return []; } }
+  function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-12))); }
   let chat = loadChat();
 
   // ====== API呼び出し ======
@@ -168,7 +165,7 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and e
 
     const payload = {
       userMessage: userText,
-      history: chat,              // [{role, content}...]
+      history: chat,
       systemPrompt,
       language: lang,
       temperature: 0.7,
@@ -187,7 +184,7 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and e
     return data.reply?.trim() || "";
   }
 
-  // ====== ターン数カウント（5回で再選択）======
+  // ====== ターン数カウント（★3回で次へ）======
   function bumpTurns(){
     const s = JSON.parse(localStorage.getItem('whoai_state') || "{}");
     s.turns = (s.turns || 0) + 1;
@@ -195,7 +192,6 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and e
     return s;
   }
 
-  // ====== 送信処理 ======
   async function handleSend(){
     const v = textEl.value.trim(); if(!v) return;
     const lang = currentLang();
@@ -208,25 +204,22 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and e
     // タイピング表示
     const typing = addMsg('ai', I18N[lang].typing, 'typing');
 
-    // まずAPIトライ → 失敗したらローカル応答
+    // API → 失敗ならローカル
     let reply = "";
-    try{
-      if(USE_API) reply = await talkAPI(v);
-    }catch(e){
-      console.warn(e);
-      typing.querySelector('.b').innerHTML = `<strong>${I18N[lang].ai}</strong><br>${I18N[lang].err}`;
+    try{ if(USE_API) reply = await talkAPI(v); }catch(e){
+      console.warn(e); typing.querySelector('.b').innerHTML = `<strong>${I18N[lang].ai}</strong><br>${I18N[lang].err}`;
     }
     if(!reply) reply = toneReply(v, lang);
 
-    // タイピングを置き換え
+    // タイピング置換
     typing.remove();
     addMsg('ai', reply);
     chat.push({role:"assistant", content:reply}); saveChat(chat);
 
-    // ターン数
+    // ★3回到達で再選択へ
     const s = bumpTurns();
-    if(s.stage === 'seed' && s.turns >= 5){
-      alert(I18N[lang].done);
+    if(s.stage === 'seed' && s.turns >= 3){
+      alert(I18N[lang].done3);
       location.href = 'macaron_select.html';
     }
   }
