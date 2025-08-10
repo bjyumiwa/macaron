@@ -1,70 +1,61 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>evolution.html - マカロン進化</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    h2 {
-      margin-bottom: 24px;
-      font-size: 1.8em;
-      text-shadow: 0 0 8px rgba(0,0,0,0.5);
-    }
-    .macaron-holder {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .macaron-holder img {
-      width: 120px;
-      height: 120px;
-      cursor: pointer;
-      border-radius: 12px;
-      transition: transform 0.2s ease;
-      background: rgba(255,255,255,0.2);
-      padding: 8px;
-    }
-    .macaron-holder img:hover {
-      transform: scale(1.1);
-      background: rgba(255,255,255,0.4);
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>evolution.html - マカロン進化</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: "Noto Sans JP", sans-serif;
+    background-image: url("public/assets/stage1/space_background.png");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: white;
+    text-align: center;
+  }
+  h2 {
+    margin-top: 20px;
+    text-shadow: 0 0 8px rgba(0,0,0,0.5);
+  }
+  .macaron-holder {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+  }
+  .macaron {
+    width: 200px; /* ← 大きくした */
+    height: 200px;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  .macaron:hover {
+    transform: scale(1.1);
+  }
+</style>
 </head>
 <body>
-  <h2>好きなマカロンを選んでね</h2>
+  <h2>好きなマカロンを選んでください</h2>
   <div class="macaron-holder">
-    <img src="public/assets/macaron_pink.png" alt="ピンク" onclick="selectMacaron('pink')" />
-    <img src="public/assets/macaron_blue.png" alt="ブルー" onclick="selectMacaron('blue')" />
-    <img src="public/assets/macaron_green.png" alt="グリーン" onclick="selectMacaron('green')" />
-    <img src="public/assets/macaron_purple.png" alt="パープル" onclick="selectMacaron('purple')" />
+    <img src="public/assets/macaron/pink.png" class="macaron" data-color="pink" alt="ピンクマカロン">
+    <img src="public/assets/macaron/blue.png" class="macaron" data-color="blue" alt="青マカロン">
+    <img src="public/assets/macaron/green.png" class="macaron" data-color="green" alt="緑マカロン">
+    <img src="public/assets/macaron/purple.png" class="macaron" data-color="purple" alt="紫マカロン">
   </div>
 
   <script>
-    function selectMacaron(color) {
-      localStorage.setItem('macaronColor', color);
-      alert(color + " マカロンを選びました！");
-      window.location.href = "conversation.html";
-    }
+    document.querySelectorAll(".macaron").forEach(macaron => {
+      macaron.addEventListener("click", () => {
+        const color = macaron.dataset.color;
+        localStorage.setItem("macaronColor", color);
+        window.location.href = "conversation.html";
+      });
+    });
   </script>
 </body>
 </html>
