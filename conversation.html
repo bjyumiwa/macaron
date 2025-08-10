@@ -1,72 +1,268 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>conversation.html - 会話ページ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #characterImg {
-      width: 150px;
-      height: auto;
-      margin-bottom: 16px;
-    }
-    #chatArea {
-      background: rgba(0,0,0,0.4);
-      border-radius: 12px;
-      padding: 16px;
-      max-width: 500px;
-      width: 100%;
-      text-align: left;
-      overflow-y: auto;
-      flex: 1;
-    }
-    .message {
-      background: rgba(255,255,255,0.2);
-      padding: 8px;
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>conversation.html - 会話</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap");
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",sans-serif;
+    background-image:url("public/assets/stage1/space_background.png");
+    background-size:cover;background-position:center;background-attachment:fixed;
+    color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px
+  }
+
+  /* ヘッダー（キャラ表示） */
+  header{display:flex;gap:12px;align-items:center;margin:0 0 12px}
+  #avatar{
+    width:96px;height:96px;border-radius:16px;object-fit:contain;
+    box-shadow:0 0 14px rgba(255,255,255,.55);background:rgba(255,255,255,.08)
+  }
+  #meta{line-height:1.4}
+  #meta .name{font-weight:700}
+  #meta .badge{font-size:12px;opacity:.9}
+
+  /* チャット */
+  .chat{
+    width:min(960px,92vw);flex:1;overflow:auto;background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:14px
+  }
+  .row{margin:8px 0;display:flex}
+  .bot{justify-content:flex-start}
+  .me{justify-content:flex-end}
+  .bubble{max-width:72%;padding:10px 14px;border-radius:14px;line-height:1.5}
+  .bot .bubble{background:rgba(255,255,255,.88);color:#222}
+  .me .bubble{background:#ffd1ec;color:#111}
+
+  .inputbar{width:min(960px,92vw);display:flex;gap:8px;margin-top:12px}
+  .inputbar input{flex:1;padding:12px;border-radius:12px;border:none;outline:none;font-size:16px}
+  .inputbar button{padding:12px 16px;border:none;border-radius:12px;background:#ffd1ec;color:#111;cursor:pointer;font-weight:700}
+  .inputbar button:hover{background:#ff90d2;color:#fff}
+
+  /* フローティング：復活の儀／マカロン */
+  .floating{
+    position:fixed; right:18px; bottom:18px; display:flex; gap:8px; z-index:20;
+  }
+  .floating button{
+    border:none;border-radius:999px;padding:10px 14px;background:rgba(255,255,255,.18);
+    color:#fff;border:1px solid rgba(255,255,255,.4);cursor:pointer;backdrop-filter:blur(6px)
+  }
+  .floating button:hover{background:rgba(255,255,255,.28)}
+
+  /* 進化エフェクト */
+  .evolve{animation:pulse .6s ease}
+  @keyframes pulse{0%{transform:scale(.9)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+
+  /* マカロン選択オーバーレイ */
+  #macaronOverlay{
+    position:fixed; inset:0; display:none; place-items:center; z-index:100;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,.35), rgba(0,0,0,.75));
+    animation:fadeIn .25s ease;
+  }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  #macaronCard{
+    width:min(92vw,760px);
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
+    border-radius:20px; padding:28px; text-align:center; backdrop-filter:blur(6px);
+    box-shadow:0 10px 40px rgba(0,0,0,.35)
+  }
+  #macaronCard h2{font-size:clamp(22px,5vw,34px); margin:0 0 8px}
+  #macaronCard p{font-size:clamp(14px,3.2vw,18px); margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:18px}
+  .card{
+    background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.4);
+    border-radius:18px; padding:16px 14px; cursor:pointer; transition:.15s
+  }
+  .card:hover{transform:translateY(-4px) scale(1.03);background:rgba(255,255,255,.24)}
+  .card img{width:108px;height:108px;object-fit:contain;display:block;margin:0 auto 6px}
+  .label{font-weight:700;font-size:15px}
+  .trait{opacity:.9;font-size:13px}
+  @media (max-width:640px){ .grid{grid-template-columns:repeat(2,1fr)} .card img{width:96px;height:96px}}
+
+  /* 歓迎バブル */
+  #welcomeBubble{
+    position:fixed; top:72px; left:50%; transform:translateX(-50%);
+    z-index:110; padding:10px 14px; border-radius:14px;
+    background:rgba(255,255,255,.92); color:#222; font-weight:600;
+    box-shadow:0 8px 30px rgba(0,0,0,.25); backdrop-filter:blur(6px);
+  }
+</style>
 </head>
 <body>
-  <h2>進化後の会話</h2>
-  <img id="characterImg" src="" alt="キャラクター" />
-  <div id="chatArea">
-    <div class="message">進化したよ！これからもよろしくね。</div>
+  <header>
+    <img id="avatar" src="public/assets/stage1/miwacchi_close.png" alt="キャラ">
+    <div id="meta">
+      <div class="name" id="charName">PI変換</div>
+      <div class="badge" id="charTrait">trait: energy（元気）</div>
+      <div class="badge" id="turnInfo">talks: 0</div>
+    </div>
+  </header>
+
+  <div class="chat" id="chat"></div>
+
+  <div class="inputbar">
+    <input id="msg" placeholder="メッセージを入力..." />
+    <button id="send">送信</button>
   </div>
 
-  <script>
-    const color = localStorage.getItem('macaronColor');
-    const imgMap = {
-      pink: "public/assets/miwacchi_open.png",
-      blue: "public/assets/miwacchi_open.png",
-      green: "public/assets/miwacchi_open.png",
-      purple: "public/assets/miwacchi_open.png"
-    };
+  <div class="floating">
+    <button id="openMacaron">マカロン</button>
+    <button id="revivalBtn" style="display:none">復活の儀式へ</button>
+  </div>
 
-    if (color && imgMap[color]) {
-      document.getElementById('characterImg').src = imgMap[color];
-    } else {
-      document.getElementById('characterImg').alt = "キャラが選ばれていません";
+  <!-- マカロン選択 -->
+  <div id="macaronOverlay" role="dialog" aria-modal="true">
+    <div id="macaronCard">
+      <h2>これから、もっとお話しよう。</h2>
+      <p>マカロンをクリックしてね。選んだ色の性格で進化して、会話に行くよ。</p>
+      <div class="grid" id="macaronGrid"></div>
+    </div>
+  </div>
+
+<script>
+  /* 画像パス（あなたのファイル名に合わせ済み） */
+  const MACARON_SRC = {
+    pink:   "public/assets/stage1/macaron_pink.png",
+    blue:   "public/assets/stage1/macaron_blue.png",
+    green:  "public/assets/stage1/macaron_green.png",
+    purple: "public/assets/stage1/macaron_purple.png",
+  };
+  // キャラ表示：緑だけ専用（green_open.png）。他は miwacchi_open.png を使う
+  function charFor(color){
+    if (color === "green") return "public/assets/stage1/green_open.png";
+    return "public/assets/stage1/miwacchi_open.png";
+  }
+  const TRAIT = { pink:"passion", blue:"calm", green:"energy", purple:"creative" };
+  const TRAIT_JA = { passion:"情熱", calm:"静寂", energy:"元気", creative:"創造" };
+
+  /* 状態 */
+  let color  = localStorage.getItem("macaronColor") || ""; // 直前に選んだ色
+  let img    = color ? charFor(color) : "public/assets/stage1/miwacchi_close.png";
+  let trait  = TRAIT[color] || "energy";
+  let talks  = parseInt(localStorage.getItem("whoai_turnCount") || "0",10);
+
+  /* 参照 */
+  const avatar = document.getElementById("avatar");
+  const nameEl = document.getElementById("charName");
+  const traitEl= document.getElementById("charTrait");
+  const turnEl = document.getElementById("turnInfo");
+  const chat   = document.getElementById("chat");
+  const inputEl= document.getElementById("msg");
+  const sendEl = document.getElementById("send");
+  const revivalBtn = document.getElementById("revivalBtn");
+  const macaronBtn = document.getElementById("openMacaron");
+  const overlay = document.getElementById("macaronOverlay");
+  const grid    = document.getElementById("macaronGrid");
+
+  function renderMeta(){
+    avatar.src = img;
+    traitEl.textContent = `trait: ${trait}（${TRAIT_JA[trait]||"-"}）`;
+    turnEl.textContent  = `talks: ${talks}`;
+    if (Math.floor(talks/10) >= 2) revivalBtn.style.display = "inline-block";
+  }
+  renderMeta();
+
+  /* チャット */
+  function addRow(who, text){
+    const row = document.createElement("div");
+    row.className = `row ${who}`;
+    const b = document.createElement("div");
+    b.className = "bubble";
+    b.textContent = text;
+    row.appendChild(b);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function toneByTrait(){
+    return {
+      passion:"ワクワクするね！",
+      calm:"落ち着いて考えてみよう。",
+      energy:"元気いっぱい！やってみよう！",
+      creative:"面白い発想だね、もっと広げよう。"
+    }[trait] || "なるほど！";
+  }
+  function replyLocal(input){ return `${toneByTrait()}「${input}」のこと、もう少し教えて？`; }
+
+  addRow("bot","来てくれてありがとう！まずはマカロンを選んでね。");
+
+  function saveTalks(){ localStorage.setItem("whoai_turnCount", String(talks)); }
+  function checkMilestone(){
+    if (talks > 0 && talks % 10 === 0) openMacaronOverlay();
+    if (Math.floor(talks/10) >= 2) revivalBtn.style.display = "inline-block";
+  }
+
+  function send(){
+    const val = inputEl.value.trim();
+    if(!val) return;
+    addRow("me", val);
+    inputEl.value = "";
+    talks += 1; saveTalks(); renderMeta(); checkMilestone();
+    setTimeout(()=> addRow("bot", replyLocal(val)), 250);
+  }
+  sendEl.addEventListener("click", send);
+  inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") send(); });
+
+  /* マカロンUI */
+  function card(color){
+    const wrap = document.createElement("div");
+    wrap.className = "card"; wrap.dataset.color = color; wrap.dataset.trait = TRAIT[color];
+    wrap.innerHTML = `
+      <img src="${MACARON_SRC[color]}" alt="${color}">
+      <div class="label">${color}</div>
+      <div class="trait">${{pink:"情熱",blue:"静寂",green:"元気",purple:"創造"}[color]}</div>
+    `;
+    return wrap;
+  }
+  function renderGrid(){
+    grid.innerHTML = "";
+    ["pink","blue","green","purple"].forEach(c=> grid.appendChild(card(c)));
+  }
+  function openMacaronOverlay(){ overlay.style.display = "grid"; }
+  function closeMacaronOverlay(){ overlay.style.display = "none"; }
+
+  grid.addEventListener("click", (e)=>{
+    const c = e.target.closest(".card")?.dataset.color;
+    if(!c) return;
+    color = c;
+    img   = charFor(color);
+    trait = TRAIT[color];
+
+    localStorage.setItem("macaronColor", color);
+    localStorage.setItem("characterImage", img);
+    localStorage.setItem("whoai_trait", trait);
+    localStorage.setItem("whoai_type", trait);
+
+    avatar.src = img;
+    avatar.classList.remove("evolve"); void avatar.offsetWidth; avatar.classList.add("evolve");
+    renderMeta(); closeMacaronOverlay();
+    addRow("bot", `マカロン（${color}）で進化したよ！ これからもよろしくね。`);
+    inputEl.focus();
+  });
+
+  macaronBtn.addEventListener("click", openMacaronOverlay);
+  revivalBtn.addEventListener("click", ()=>{ window.location.href = "rebirth.html"; });
+
+  /* 歓迎バブル */
+  function showWelcome(text="来てくれてありがとう！まずはマカロンを選んでね。"){
+    const old = document.getElementById('welcomeBubble'); if (old) old.remove();
+    const div = document.createElement('div');
+    div.id = 'welcomeBubble'; div.textContent = text; document.body.appendChild(div);
+    setTimeout(()=> div.remove(), 3500);
+  }
+
+  /* 初期表示：マカロンを即表示（②の画面） */
+  function init(){
+    renderGrid();
+    openMacaronOverlay();
+    showWelcome();
+    // すでに選択済みならヘッダに反映しておく
+    if (color){
+      img = charFor(color); trait = TRAIT[color]; renderMeta();
     }
-  </script>
+  }
+  init();
+</script>
 </body>
 </html>
