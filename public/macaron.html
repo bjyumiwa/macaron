@@ -1,128 +1,141 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>macaron.html - マカロン選択</title>
-<style>
-  body {
-    font-family: "Noto Sans JP", sans-serif;
-    background: url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    color: white;
-    text-align: center;
-    padding: 20px;
-  }
-  #character {
-    width: 160px;
-    margin: 20px auto;
-    display: block;
-  }
-  #chatArea {
-    background: rgba(255,255,255,0.1);
-    padding: 16px;
-    margin: 16px auto;
-    border-radius: 12px;
-    max-width: 500px;
-    height: 300px;
-    overflow-y: auto;
-    text-align: left;
-  }
-  .message {
-    margin: 8px 0;
-  }
-  .user { color: #ffd1ec; }
-  .ai { color: #a3e4ff; }
-  #macaronArea {
-    display: none;
-    margin-top: 20px;
-  }
-  .macaron {
-    width: 140px;
-    margin: 10px;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-  }
-  .macaron:hover {
-    transform: scale(1.1);
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WHOAI - マカロン選択</title>
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+      color:#fff;
+      background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
+    }
+    .lang{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:2}
+    .lang button{border:none;border-radius:999px;padding:8px 14px;cursor:pointer;background:rgba(255,255,255,.14);color:#fff}
+    .lang button.active{background:#fff;color:#111}
+    .wrap{width:min(980px,94vw)}
+    h1{font-size:36px;margin:0 0 10px;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+    p.lead{opacity:.95;margin:0 0 16px}
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(160px,1fr));
+      gap:16px; margin-top:14px
+    }
+    .card{
+      background:rgba(0,0,0,.38); border:1px solid rgba(255,255,255,.18);
+      border-radius:18px; padding:16px; cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+      display:flex;flex-direction:column;align-items:center;gap:10px
+    }
+    .card:hover{ transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,0,0,.35) }
+    .dot{
+      width:84px;height:84px;border-radius:50%;
+      border:3px solid rgba(255,255,255,.75); box-shadow:0 6px 16px rgba(0,0,0,.4)
+    }
+    .pink{   background:#ff8fb1 }
+    .blue{   background:#88a7ff }
+    .green{  background:#85f3b0 }
+    .purple{ background:#c59bff }
+    .name{font-weight:800;letter-spacing:.02em}
+    .desc{font-size:14px;opacity:.95;line-height:1.6}
+    .back{margin-top:14px}
+    .back a{color:#cfe8ff}
+    .page-tag{
+      position:fixed;right:10px;bottom:10px;font-size:12px;opacity:.8;background:rgba(0,0,0,.35);
+      padding:6px 8px;border-radius:8px
+    }
+    @media (max-width:760px){
+      .grid{grid-template-columns: repeat(2, minmax(160px,1fr))}
+    }
+  </style>
 </head>
 <body>
+  <div class="lang" aria-label="Language Switch">
+    <button type="button" data-lang="ja" class="active">日本語</button>
+    <button type="button" data-lang="en">English</button>
+  </div>
 
-<h2>ぴーぷくと会話しよう</h2>
-<img id="character" src="public/assets/character/peepuku.png" alt="ぴーぷく">
+  <main class="wrap">
+    <h1 data-i18n="title">マカロンを選んでください</h1>
+    <p class="lead" data-i18n="lead">色によって性格やストーリーが少し変わります。</p>
 
-<div id="chatArea"></div>
+    <section class="grid" aria-label="Macaron Choices">
+      <button class="card" data-color="pink">
+        <div class="dot pink" aria-hidden="true"></div>
+        <div class="name" data-i18n="pinkName">ピンク</div>
+        <div class="desc" data-i18n="pinkDesc">情熱。前向きで、相手を励ます言葉が増えます。</div>
+      </button>
 
-<input type="text" id="userInput" placeholder="メッセージを入力" style="width:70%;padding:8px;">
-<button id="sendBtn">送信</button>
+      <button class="card" data-color="blue">
+        <div class="dot blue" aria-hidden="true"></div>
+        <div class="name" data-i18n="blueName">ブルー</div>
+        <div class="desc" data-i18n="blueDesc">静寂。落ち着いて、丁寧に考える会話になります。</div>
+      </button>
 
-<div id="macaronArea">
-  <h3>マカロンを選んでね</h3>
-  <img class="macaron" src="public/assets/macaron/pink.png" data-color="pink" alt="情熱のマカロン">
-  <img class="macaron" src="public/assets/macaron/blue.png" data-color="blue" alt="静寂のマカロン">
-  <img class="macaron" src="public/assets/macaron/green.png" data-color="green" alt="元気のマカロン">
-  <img class="macaron" src="public/assets/macaron/purple.png" data-color="purple" alt="創造のマカロン">
-</div>
+      <button class="card" data-color="green">
+        <div class="dot green" aria-hidden="true"></div>
+        <div class="name" data-i18n="greenName">グリーン</div>
+        <div class="desc" data-i18n="greenDesc">元気。テンポがよく、行動を促す返答になります。</div>
+      </button>
 
-<script>
-let turnCount = 0;
-const chatArea = document.getElementById("chatArea");
-const userInput = document.getElementById("userInput");
-const sendBtn = document.getElementById("sendBtn");
-const macaronArea = document.getElementById("macaronArea");
+      <button class="card" data-color="purple">
+        <div class="dot purple" aria-hidden="true"></div>
+        <div class="name" data-i18n="purpleName">パープル</div>
+        <div class="desc" data-i18n="purpleDesc">創造。比喩や発想の飛躍が少し増えます。</div>
+      </button>
+    </section>
 
-// メッセージ追加
-function addMessage(text, sender) {
-  const div = document.createElement("div");
-  div.classList.add("message", sender);
-  div.textContent = text;
-  chatArea.appendChild(div);
-  chatArea.scrollTop = chatArea.scrollHeight;
-}
+    <div class="back"><a href="index.html" data-i18n="back">← タイトルにもどる</a></div>
+  </main>
 
-// APIで会話
-async function sendMessage() {
-  const text = userInput.value.trim();
-  if (!text) return;
-  addMessage(text, "user");
-  userInput.value = "";
+  <div class="page-tag">macaron.html（4色選択）</div>
 
-  try {
-    const res = await fetch("/api/talk", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
+  <script>
+    // i18n
+    const I18N = {
+      ja:{
+        title:"マカロンを選んでください",
+        lead:"色によって性格やストーリーが少し変わります。",
+        pinkName:"ピンク",  pinkDesc:"情熱。前向きで、相手を励ます言葉が増えます。",
+        blueName:"ブルー",  blueDesc:"静寂。落ち着いて、丁寧に考える会話になります。",
+        greenName:"グリーン",greenDesc:"元気。テンポがよく、行動を促す返答になります。",
+        purpleName:"パープル",purpleDesc:"創造。比喩や発想の飛躍が少し増えます。",
+        back:"← タイトルにもどる"
+      },
+      en:{
+        title:"Choose a macaron",
+        lead:"Each color slightly shapes the trait and story.",
+        pinkName:"Pink",  pinkDesc:"Passion. Upbeat tone that cheers you on.",
+        blueName:"Blue",  blueDesc:"Calm. Thoughtful, measured responses.",
+        greenName:"Green",greenDesc:"Energy. Snappier replies nudging action.",
+        purpleName:"Purple",purpleDesc:"Creativity. More metaphors and leaps of idea.",
+        back:"← Back to Title"
+      }
+    };
+
+    const langBtns = document.querySelectorAll('.lang button');
+    function applyLang(lang){
+      document.documentElement.lang = (lang==='ja'?'ja':'en');
+      langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
+      document.querySelectorAll('[data-i18n]').forEach(el=>{
+        const k = el.getAttribute('data-i18n'); el.textContent = I18N[lang][k] ?? el.textContent;
+      });
+      localStorage.setItem('lang', lang);
+    }
+    langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
+    applyLang(localStorage.getItem('lang') || 'ja');
+
+    // 選択処理
+    document.querySelectorAll('.card').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const color = btn.dataset.color;
+        localStorage.setItem('selectedMacaron', color);
+        // ここで次のページへ（会話ページなど）
+        location.href = 'conversation.html';
+      });
     });
-    const data = await res.json();
-    addMessage(data.reply, "ai");
-  } catch (e) {
-    addMessage("通信に失敗しました", "ai");
-  }
-
-  turnCount++;
-  if (turnCount >= 3) {
-    userInput.disabled = true;
-    sendBtn.disabled = true;
-    macaronArea.style.display = "block";
-  }
-}
-
-sendBtn.addEventListener("click", sendMessage);
-userInput.addEventListener("keypress", e => {
-  if (e.key === "Enter") sendMessage();
-});
-
-// マカロン選択処理
-document.querySelectorAll(".macaron").forEach(macaron => {
-  macaron.addEventListener("click", () => {
-    const color = macaron.dataset.color;
-    macaronArea.style.display = "none"; // 残らないように消す
-    localStorage.setItem("selectedMacaron", color);
-    window.location.href = "evolution.html";
-  });
-});
-</script>
-
+  </script>
 </body>
 </html>
