@@ -2,14 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>conversation.html - 会話ページ</title>
+  <title>conversation.html - 会話</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
     body {
       font-family: "Noto Sans JP", sans-serif;
       background-image: url("public/assets/stage1/space_background.png");
@@ -19,64 +14,81 @@
       color: white;
       text-align: center;
       padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
-    }
-    h1 {
-      margin-top: 20px;
-      text-shadow: 0 0 8px rgba(0,0,0,0.6);
     }
     #characterImg {
       width: 180px;
-      margin: 20px 0;
+      margin-bottom: 12px;
     }
     #chatArea {
-      background: rgba(0,0,0,0.4);
+      background: rgba(255,255,255,0.1);
       padding: 16px;
       margin-top: 16px;
       border-radius: 12px;
       max-width: 500px;
-      width: 100%;
-      min-height: 150px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 300px;
       overflow-y: auto;
     }
-    .macaron-holder {
-      margin-top: 24px;
+    #userInput {
+      width: 80%;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
     }
-    .macaron {
-      width: 200px; /* 大きくしたサイズ */
-      height: auto;
+    button {
+      padding: 8px 16px;
+      margin-top: 8px;
+      border-radius: 8px;
+      background-color: #ffccff;
+      border: none;
       cursor: pointer;
-      transition: transform 0.2s ease;
     }
-    .macaron:hover {
-      transform: scale(1.1);
+    button:hover {
+      background-color: #ff99cc;
     }
   </style>
 </head>
 <body>
-  <h1>会話ページ</h1>
+  <h2>ぴーぷくと会話しよう</h2>
+  <img id="characterImg" src="public/assets/character/pee_puku.png" alt="ぴーぷく">
 
-  <!-- キャラクター画像 -->
-  <img id="characterImg" src="public/assets/characters/default.png" alt="キャラクター">
+  <div id="chatArea"></div>
 
-  <!-- チャットエリア -->
-  <div id="chatArea">キャラクターがここに表示されます</div>
-
-  <!-- マカロン表示 -->
-  <div class="macaron-holder">
-    <img class="macaron" id="macaronImg" src="public/assets/macaron/pink.png" alt="マカロン">
-  </div>
+  <input type="text" id="userInput" placeholder="メッセージを入力...">
+  <br>
+  <button onclick="sendMessage()">送信</button>
 
   <script>
-    // マカロンをクリックしたら進化イベントへ
-    document.getElementById("macaronImg").addEventListener("click", function(){
-      alert("マカロンを食べました！キャラクターが進化します！");
-      // 進化処理へ遷移
-      window.location.href = "evolution.html";
-    });
+    let talkCount = 0;
+
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendMessage("あなた", text);
+      input.value = "";
+
+      // API風ダミー応答（実際はfetchでAI APIに送信）
+      setTimeout(() => {
+        appendMessage("ぴーぷく", "それは面白いね！");
+        talkCount++;
+        if (talkCount >= 3) {
+          setTimeout(() => {
+            window.location.href = "macaron.html";
+          }, 1000);
+        }
+      }, 500);
+    }
+
+    function appendMessage(sender, text) {
+      const chatArea = document.getElementById("chatArea");
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      chatArea.appendChild(p);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
   </script>
 </body>
 </html>
