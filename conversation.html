@@ -102,37 +102,55 @@
   <!-- マカロン選択オーバーレイ -->
   <div id="macaronOverlay" role="dialog" aria-modal="true">
     <div id="macaronCard">
-      <h2>どのマカロンを食べる？</h2>
-      <p>選んだ色の性格で進化するよ。</p>
+      <h2>これから、もっとお話しよう。</h2>
+      <p>マカロンをクリックしてね。選んだ色の性格で進化して、会話に行くよ。</p>
       <div class="grid" id="macaronGrid"></div>
     </div>
   </div>
 
 <script>
-  /* ===== 設定（パスはユーザー確認済み） ===== */
+  /* ===== 設定（進化後の画像パス） ===== */
   const EVOLVED = {
     pink:   "public/assets/stage2/evolved_pink.png",
     blue:   "public/assets/stage2/evolved_blue.png",
     green:  "public/assets/stage2/evolved_green.png",
     purple: "public/assets/stage2/evolved_purple.png"
   };
-  const MACARON_IMG = {
-    pink:   "public/assets/stage1/macaron_pink.png",
-    blue:   "public/assets/stage1/macaron_blue.png",
-    green:  "public/assets/stage1/macaron_green.png",
-    purple: "public/assets/stage1/macaron_purple.png"
-  };
   const TYPE_BY = { pink:"passion", blue:"calm", green:"energy", purple:"creative" };
   const TRAIT_JA = { passion:"情熱", calm:"静寂", energy:"元気", creative:"創造" };
 
-  /* ===== 状態読み込み ===== */
+  /* ===== 画像パス自動探索（マカロン画像） ===== */
+  function candidatePaths(color){
+    return [
+      `public/assets/stage1/macaron_${color}.png`,
+      `public/assets/stage1/macaron_${color}.webp`,
+      `public/assets/stage1/${color}_macaron.png`,
+      `public/assets/macaron/${color}.png`,
+      `public/assets/macaron/${color}.webp`,
+      `assets/stage1/macaron_${color}.png`,
+      `assets/macaron/${color}.png`,
+      `public/assets/stage1/macaron_${color}.PNG`,
+    ];
+  }
+  function resolveSrc(paths){
+    return new Promise((resolve)=>{
+      let i = 0;
+      const img = new Image();
+      const next = ()=>{
+        if(i >= paths.length){ resolve(null); return; }
+        img.onload = ()=> resolve(paths[i]);
+        img.onerror = ()=>{ i++; next(); };
+        img.src = paths[i];
+      };
+      next();
+    });
+  }
+
+  /* ===== 状態 ===== */
   let img   = localStorage.getItem("characterImage");            // 現在の見た目
-  let trait = localStorage.getItem("whoai_trait") || "energy";   // 既定トーン
+  let trait = localStorage.getItem("whoai_trait") || "energy";   // 既定
   let name  = localStorage.getItem("whoai_name") || "タネ";
   let talks = parseInt(localStorage.getItem("whoai_turnCount") || "0", 10); // 総会話数
-
-  // 進化後画像が無い = まだ選んでいない → 最初にマカロンを出すため、imgチェックはスキップ
-  // （初回に appearance.html を経由していなくてもここで選べる）
 
   /* ===== UI参照 ===== */
   const avatar = document.getElementById("avatar");
@@ -150,12 +168,11 @@
     nameEl.textContent = name;
     traitEl.textContent = `trait: ${trait}（${TRAIT_JA[trait]||"-"}）`;
     turnEl.textContent  = `talks: ${talks}`;
-    // 2サイクル(=20回)以上で「復活の儀式」を出す
     if (Math.floor(talks/10) >= 2) revivalBtn.style.display = "inline-block";
   }
   renderMeta();
 
-  /* ===== チャット最小実装（ローカル応答） ===== */
+  /* ===== チャット（ローカル応答） ===== */
   function addRow(who, text){
     const row = document.createElement("div");
     row.className = `row ${who}`;
@@ -177,17 +194,11 @@
   addRow("bot","来てくれてありがとう！まずはマカロンを選んでね。");
 
   function saveTalks(){ localStorage.setItem("whoai_turnCount", String(talks)); }
-
   function checkMilestone(){
-    // 10回ごとにマカロン再出現
     if (talks > 0 && talks % 10 === 0) openMacaronOverlay();
-    // 20回以上で復活の儀式ボタン表示
     if (Math.floor(talks/10) >= 2) revivalBtn.style.display = "inline-block";
   }
-
-  function replyLocal(input){
-    return `${toneByTrait()}「${input}」のこと、もう少し教えて？`;
-  }
+  function replyLocal(input){ return `${toneByTrait()}「${input}」のこと、もう少し教えて？`; }
 
   const inputEl = document.getElementById("msg");
   const sendEl  = document.getElementById("send");
@@ -205,20 +216,41 @@
   sendEl.addEventListener("click", send);
   inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") send(); });
 
-  /* ===== マカロン選択オーバーレイ ===== */
-  function renderMacaronGrid(){
+  /* ===== マカロンUI ===== */
+  async function makeCard(color){
+    const card = document.createElement("div");
+    card.className = "card";
+    card.dataset.color = color;
+    card.dataset.trait = TYPE_BY[color];
+
+    const imgEl = document.createElement("img");
+    const src = await resolveSrc(candidatePaths(color));
+    if(src){ imgEl.src = src; }
+    else {
+      // 最終手段：プレースホルダ（色丸）
+      imgEl.style.width="78px"; imgEl.style.height="78px"; imgEl.style.borderRadius="50%";
+      imgEl.style.display="block"; imgEl.style.margin="0 auto 6px";
+      imgEl.style.background = {pink:"#ff9ac1",blue:"#7fb4ff",green:"#6be08b",purple:"#b58bff"}[color];
+      imgEl.alt = color;
+    }
+
+    const label = document.createElement("div");
+    label.className = "label"; label.textContent = color;
+
+    const trait = document.createElement("div");
+    trait.className = "trait";
+    trait.textContent = {pink:"情熱",blue:"静寂",green:"元気",purple:"創造"}[color];
+
+    card.appendChild(imgEl); card.appendChild(label); card.appendChild(trait);
+    return card;
+  }
+
+  async function renderMacaronGrid(){
     grid.innerHTML = "";
-    ["pink","blue","green","purple"].forEach(color=>{
-      const card = document.createElement("div");
-      card.className = "card";
-      card.dataset.color = color;
-      card.dataset.trait = TYPE_BY[color];
-      card.innerHTML =
-        `<img src="${MACARON_IMG[color]}" alt="${color}">
-         <div class="label">${color}</div>
-         <div class="trait">${TRAIT_JA[TYPE_BY[color]]}</div>`;
+    for (const color of ["pink","blue","green","purple"]) {
+      const card = await makeCard(color);
       grid.appendChild(card);
-    });
+    }
   }
 
   function openMacaronOverlay(){ overlay.style.display = "grid"; }
@@ -242,7 +274,7 @@
     // 見た目更新＆エフェクト
     avatar.src = img;
     avatar.classList.remove("evolve");
-    void avatar.offsetWidth; // reflow for animation restart
+    void avatar.offsetWidth; // restart animation
     avatar.classList.add("evolve");
     renderMeta();
     closeMacaronOverlay();
@@ -252,22 +284,15 @@
     inputEl.focus();
   });
 
-  // 任意タイミングでも開ける
   macaronBtn.addEventListener("click", openMacaronOverlay);
 
-  // 復活の儀式へ
   document.getElementById("revivalBtn").addEventListener("click", ()=>{
     localStorage.setItem("whoai_entry","to_revival");
-    window.location.href = "rebirth.html"; // 必要に応じてファイル名調整
+    window.location.href = "rebirth.html"; // 必要ならファイル名変更
   });
 
-  // ---- 初期表示：必ずマカロンを開く ----
-  renderMacaronGrid();
-  openMacaronOverlay();
-  // --------------------------------------
-
-  // フォーカス
-  inputEl.focus();
+  // 初期表示：マカロングリッドを描画して即表示
+  renderMacaronGrid().then(openMacaronOverlay);
 </script>
 </body>
 </html>
