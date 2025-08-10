@@ -1,10 +1,142 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>Empty</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WHOAI - Talk</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    color:#fff; display:flex; flex-direction:column; gap:12px; padding:18px
+  }
+  .top{display:flex;justify-content:space-between;align-items:center}
+  .badge{display:inline-flex;gap:8px;align-items:center;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:999px}
+  .dot{width:14px;height:14px;border-radius:50%}
+  .dot.pink{background:#ff8fb1}.dot.blue{background:#88a7ff}.dot.green{background:#85f3b0}.dot.purple{background:#c59bff}
+  .lang{display:flex;gap:8px}
+  .lang button{border:none;border-radius:999px;padding:6px 12px;background:rgba(255,255,255,.15);color:#fff;cursor:pointer}
+  .lang button.active{background:#fff;color:#111}
+  .panel{background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.18);border-radius:16px}
+  #hint{padding:10px 14px}
+  #log{flex:1;overflow:auto;padding:14px}
+  .msg{margin:10px 0;max-width:80%}
+  .me{margin-left:auto}
+  .b{background:rgba(255,255,255,.1);padding:10px 12px;border-radius:14px}
+  .input{display:flex;gap:8px;padding:10px}
+  .input input{flex:1;border:none;border-radius:12px;padding:12px}
+  .input button{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
+</style>
 </head>
 <body>
-<!-- 空ページ -->
+  <div class="top">
+    <div class="badge">
+      <span class="dot" id="dot"></span>
+      <span id="traitLabel">—</span>
+    </div>
+    <div class="lang">
+      <button type="button" data-lang="ja" class="active">日本語</button>
+      <button type="button" data-lang="en">English</button>
+    </div>
+  </div>
+
+  <div id="hint" class="panel"></div>
+
+  <div id="log" class="panel" aria-live="polite"></div>
+
+  <div class="input panel">
+    <input id="text" type="text" placeholder="メッセージを入力 / Type a message" />
+    <button id="send">送信</button>
+  </div>
+
+<script>
+  // ===== i18n =====
+  const I18N = {
+    ja:{
+      hint:{
+        pink:"ピンク：情熱。前向きで励ますトーン。",
+        blue:"ブルー：静寂。落ち着いて丁寧に考える。",
+        green:"グリーン：元気。テンポよく行動を促す。",
+        purple:"パープル：創造。比喩や発想の飛躍が増える。"
+      },
+      greet:{pink:"こんにちは！一緒に走り出そう。",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"},
+      you:"あなた", ai:"WHOAI", send:"送信", placeholder:"メッセージを入力"
+    },
+    en:{
+      hint:{
+        pink:"Pink: Passion. Upbeat, encouraging tone.",
+        blue:"Blue: Calm. Thoughtful and measured.",
+        green:"Green: Energy. Snappy, action-nudging.",
+        purple:"Purple: Creativity. More metaphors and leaps."
+      },
+      greet:{pink:"Hey! Let’s get rolling.",blue:"Hello. Let’s think this through.",green:"Yo! Let’s take the first step!",purple:"Welcome—let’s weave a story."},
+      you:"You", ai:"WHOAI", send:"Send", placeholder:"Type a message"
+    }
+  };
+
+  const langBtns = document.querySelectorAll('.lang button');
+  function currentLang(){ return (document.documentElement.lang==='ja'?'ja':'en'); }
+  function applyLang(lang){
+    document.documentElement.lang = (lang==='ja'?'ja':'en');
+    langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
+    document.getElementById('send').textContent = I18N[lang].send;
+    document.getElementById('text').placeholder = I18N[lang].placeholder + " / " + (lang==='ja'?'Type a message':'メッセージを入力');
+    document.getElementById('hint').textContent = I18N[lang].hint[color] || "";
+    localStorage.setItem('lang', lang);
+  }
+  langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
+
+  // ===== マカロン選択の読み込み（なければ戻す）=====
+  const color = localStorage.getItem('selectedMacaron')
+    || (JSON.parse(localStorage.getItem('macaron_choice')||'{}').macaron);
+  if(!color){ location.href = 'macaron_select.html'; }
+
+  // バッジ表示
+  document.getElementById('dot').classList.add(color);
+  document.getElementById('traitLabel').textContent = (color.charAt(0).toUpperCase()+color.slice(1));
+
+  // 初期言語
+  applyLang(localStorage.getItem('lang') || 'ja');
+
+  // ===== チャット（ダミー応答・API未接続）=====
+  const log = document.getElementById('log');
+  const text = document.getElementById('text');
+  const send = document.getElementById('send');
+
+  function addMsg(who, content){
+    const lang = currentLang();
+    const label = (who==='me') ? I18N[lang].you : I18N[lang].ai;
+    const div = document.createElement('div');
+    div.className = 'msg ' + (who==='me'?'me':'');
+    div.innerHTML = `<div class="b"><strong>${label}</strong><br>${content}</div>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // 挨拶
+  addMsg('ai', I18N[currentLang()].greet[color]);
+
+  function toneReply(input, lang){
+    return {
+      pink:  (lang==='ja'?"うん！":"Yes! ") + "I’m rooting for you.",
+      blue:  (lang==='ja'?"なるほど。":"I see. ") + "Let’s consider it step by step.",
+      green: (lang==='ja'?"いいね！":"Nice! ") + "Try one small action?",
+      purple:(lang==='ja'?"ふむ。":"Hmm. ") + "What if we imagine it differently?"
+    }[color];
+  }
+
+  send.addEventListener('click', ()=>{
+    const v = text.value.trim(); if(!v) return;
+    const lang = currentLang();
+    addMsg('me', v);
+    text.value='';
+    setTimeout(()=> addMsg('ai', toneReply(v, lang)), 300); // ダミー応答
+  });
+
+  text.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send.click(); }
+  });
+</script>
 </body>
 </html>
