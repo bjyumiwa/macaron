@@ -54,7 +54,7 @@
 
 <script>
   // ====== 設定 ======
-  const TALK_ENDPOINT = '/api/talk';   // 同ドメインならこのまま
+  const TALK_ENDPOINT = '/api/talk';   // 同ドメインで動かす場合はこのまま
   const USE_API = true;                // API失敗時は自動フォールバック
 
   // ====== i18n ======
@@ -69,6 +69,7 @@
       greet:{pink:"こんにちは！一緒に走り出そう。",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"},
       you:"あなた", ai:"WHOAI", send:"送信", placeholder:"メッセージを入力",
       done3:"3回の会話が完了！もう一度マカロンを選んで、次の形態に進化させよう。",
+      done10:"10回の会話が完了！次の進化のために、もう一度マカロンを選ぼう。",
       typing:"入力中…", err:"通信に失敗しました。ローカル応答に切り替えます。"
     },
     en:{
@@ -81,6 +82,7 @@
       greet:{pink:"Hey! Let’s get rolling.",blue:"Hello. Let’s think this through.",green:"Yo! Let’s take the first step!",purple:"Welcome—let’s weave a story."},
       you:"You", ai:"WHOAI", send:"Send", placeholder:"Type a message",
       done3:"Three messages done! Choose another macaron to evolve to the next form.",
+      done10:"Ten messages done! Pick another macaron for the next evolution.",
       typing:"typing…", err:"API failed. Falling back to local reply."
     }
   };
@@ -104,6 +106,9 @@
   document.getElementById('traitLabel').textContent = state.name || "WHOAI";
   applyLang(localStorage.getItem('lang') || 'ja');
 
+  // ★ 目標回数：seed=3 / evolved=10
+  const TALK_TARGET = (state.stage === 'seed') ? 3 : 10;
+
   // ====== チャットUI ======
   const logEl = document.getElementById('log');
   const textEl = document.getElementById('text');
@@ -120,11 +125,11 @@
     return div;
   }
 
-  // 挨拶
+  // 挨拶 & ヒント
   addMsg('ai', I18N[currentLang()].greet[color]);
   document.getElementById('hint').textContent = I18N[currentLang()].hint[color];
 
-  // ====== ローカル応答（フォールバック）======
+  // ====== フォールバック返信 ======
   function toneReply(input, lang){
     const ja = {
       pink:  "うん！応援してるよ。",
@@ -141,7 +146,7 @@
     return (lang==='ja') ? ja : en;
   }
 
-  // ====== 会話履歴（APIに渡す用）======
+  // ====== 会話履歴 ======
   function loadChat(){ try{ return JSON.parse(localStorage.getItem('whoai_chat')||'[]'); }catch{ return []; } }
   function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-12))); }
   let chat = loadChat();
@@ -155,13 +160,13 @@
 - ブルー: 落ち着いて丁寧に考える
 - グリーン: テンポよく行動を促す
 - パープル: 比喩や発想の飛躍を少し入れる
-必ず日本語で、1〜2文で返答。最後に次の行動や問いかけを1つだけ。`
+必ず日本語で、1〜2文で返答。最後に次の行動を1つだけ提案して。`
       : `You are WHOAI. Name: ${state.name||'WHOAI'}. Color: ${color}, Form: ${state.variant||'tane'}. Tone:
 - Pink: upbeat encouragement
 - Blue: calm, thoughtful
 - Green: snappy, action-nudging
 - Purple: creative, a bit metaphorical
-Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and end with exactly one prompt for a next step.`;
+Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, ending with exactly one next-step prompt.`;
 
     const payload = {
       userMessage: userText,
@@ -184,7 +189,7 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and e
     return data.reply?.trim() || "";
   }
 
-  // ====== ターン数カウント（★3回で次へ）======
+  // ====== ターン数カウント ======
   function bumpTurns(){
     const s = JSON.parse(localStorage.getItem('whoai_state') || "{}");
     s.turns = (s.turns || 0) + 1;
@@ -192,34 +197,30 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and e
     return s;
   }
 
+  // ====== 送信処理 ======
   async function handleSend(){
     const v = textEl.value.trim(); if(!v) return;
     const lang = currentLang();
 
-    // 表示 & ログ
     addMsg('me', v);
     textEl.value='';
     chat.push({role:"user", content:v}); saveChat(chat);
 
-    // タイピング表示
     const typing = addMsg('ai', I18N[lang].typing, 'typing');
 
-    // API → 失敗ならローカル
     let reply = "";
     try{ if(USE_API) reply = await talkAPI(v); }catch(e){
       console.warn(e); typing.querySelector('.b').innerHTML = `<strong>${I18N[lang].ai}</strong><br>${I18N[lang].err}`;
     }
     if(!reply) reply = toneReply(v, lang);
 
-    // タイピング置換
     typing.remove();
     addMsg('ai', reply);
     chat.push({role:"assistant", content:reply}); saveChat(chat);
 
-    // ★3回到達で再選択へ
     const s = bumpTurns();
-    if(s.stage === 'seed' && s.turns >= 3){
-      alert(I18N[lang].done3);
+    if(s.turns >= TALK_TARGET){
+      alert(TALK_TARGET===3 ? I18N[lang].done3 : I18N[lang].done10);
       location.href = 'macaron_select.html';
     }
   }
