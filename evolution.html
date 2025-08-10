@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>conversation.html - 会話</title>
+  <meta charset="UTF-8" />
+  <title>evolution.html - マカロン進化</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
     body {
       font-family: "Noto Sans JP", sans-serif;
       background-image: url("public/assets/stage1/space_background.png");
@@ -14,127 +19,52 @@
       color: white;
       text-align: center;
       padding: 20px;
-    }
-    #characterImg {
-      width: 140px;
-      margin-bottom: 12px;
-    }
-    #chatArea {
-      background: rgba(255,255,255,0.1);
-      padding: 16px;
-      margin-top: 16px;
-      border-radius: 12px;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-      height: 300px;
-      overflow-y: auto;
-      text-align: left;
-    }
-    #macaronSelection {
       display: flex;
+      flex-direction: column;
       justify-content: center;
+      align-items: center;
+    }
+    h2 {
+      margin-bottom: 24px;
+      font-size: 1.8em;
+      text-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .macaron-holder {
+      display: flex;
       gap: 20px;
-      margin-top: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
-    .macaron {
-      width: 80px;
+    .macaron-holder img {
+      width: 120px;
+      height: 120px;
       cursor: pointer;
-      transition: transform 0.2s;
-    }
-    .macaron:hover {
-      transform: scale(1.2);
-    }
-    #inputArea {
-      margin-top: 16px;
-    }
-    input[type="text"] {
-      width: 70%;
+      border-radius: 12px;
+      transition: transform 0.2s ease;
+      background: rgba(255,255,255,0.2);
       padding: 8px;
-      border-radius: 8px;
-      border: none;
     }
-    button {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 8px;
-      background: #ffd1ec;
-      color: #000;
-      cursor: pointer;
+    .macaron-holder img:hover {
+      transform: scale(1.1);
+      background: rgba(255,255,255,0.4);
     }
   </style>
 </head>
 <body>
-
-  <h2 id="instruction">これから、もっとお話しよう。好きなマカロンをクリックしてね</h2>
-
-  <div id="macaronSelection">
-    <img src="public/assets/stage1/macaron_pink.png" alt="ピンク" class="macaron" onclick="selectMacaron('pink')">
-    <img src="public/assets/stage1/macaron_blue.png" alt="青" class="macaron" onclick="selectMacaron('blue')">
-    <img src="public/assets/stage1/macaron_green.png" alt="緑" class="macaron" onclick="selectMacaron('green')">
-    <img src="public/assets/stage1/macaron_purple.png" alt="紫" class="macaron" onclick="selectMacaron('purple')">
+  <h2>好きなマカロンを選んでね</h2>
+  <div class="macaron-holder">
+    <img src="public/assets/macaron_pink.png" alt="ピンク" onclick="selectMacaron('pink')" />
+    <img src="public/assets/macaron_blue.png" alt="ブルー" onclick="selectMacaron('blue')" />
+    <img src="public/assets/macaron_green.png" alt="グリーン" onclick="selectMacaron('green')" />
+    <img src="public/assets/macaron_purple.png" alt="パープル" onclick="selectMacaron('purple')" />
   </div>
 
-  <img id="characterImg" src="" style="display:none;">
-  <div id="chatArea" style="display:none;"></div>
-
-  <div id="inputArea" style="display:none;">
-    <input type="text" id="userInput" placeholder="メッセージを入力">
-    <button onclick="sendMessage()">送信</button>
-  </div>
-
-<script>
-  let turnCount = 0;
-  let selectedColor = "";
-  const chatArea = document.getElementById("chatArea");
-
-  function selectMacaron(color) {
-    selectedColor = color;
-    let charImgPath = "";
-    switch(color) {
-      case 'pink': charImgPath = "public/assets/stage1/char_pink.png"; break;
-      case 'blue': charImgPath = "public/assets/stage1/char_blue.png"; break;
-      case 'green': charImgPath = "public/assets/stage1/char_green.png"; break;
-      case 'purple': charImgPath = "public/assets/stage1/char_purple.png"; break;
+  <script>
+    function selectMacaron(color) {
+      localStorage.setItem('macaronColor', color);
+      alert(color + " マカロンを選びました！");
+      window.location.href = "conversation.html";
     }
-
-    document.getElementById("instruction").textContent = "進化したキャラと会話しよう！";
-    document.getElementById("macaronSelection").style.display = "none";
-    const charImg = document.getElementById("characterImg");
-    charImg.src = charImgPath;
-    charImg.style.display = "block";
-    chatArea.style.display = "block";
-    document.getElementById("inputArea").style.display = "block";
-
-    addMessage("system", "こんにちは！これからよろしくね。");
-  }
-
-  function addMessage(sender, text) {
-    const msg = document.createElement("div");
-    msg.textContent = (sender === "user" ? "あなた: " : "AI: ") + text;
-    chatArea.appendChild(msg);
-    chatArea.scrollTop = chatArea.scrollHeight;
-  }
-
-  function sendMessage() {
-    const input = document.getElementById("userInput");
-    const text = input.value.trim();
-    if (!text) return;
-    addMessage("user", text);
-    input.value = "";
-    turnCount++;
-
-    // 簡易AI応答
-    setTimeout(() => {
-      addMessage("ai", "なるほど〜");
-      if (turnCount >= 10) {
-        addMessage("system", "またマカロンが出てきたよ！好きなのを選んでね。");
-        document.getElementById("macaronSelection").style.display = "flex";
-        turnCount = 0;
-      }
-    }, 500);
-  }
-</script>
-
+  </script>
 </body>
 </html>
