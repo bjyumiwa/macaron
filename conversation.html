@@ -1,201 +1,72 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>conversation.html - 会話</title>
-<style>
-html,body{
-  height:100%;
-  margin:0;
-  padding:0;
-}
-body{
-  font-family:"Noto Sans JP",sans-serif;
-  background-image:url("public/assets/stage1/space_background.png");
-  background-size:cover;
-  background-position:center;
-  background-attachment:fixed;
-  color:#fff;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  padding:20px;
-}
-
-/* 吹き出し（歓迎メッセージ） */
-#welcomeBubble{
-  position:fixed; 
-  top:72px; 
-  left:50%; 
-  transform:translateX(-50%);
-  z-index:110; 
-  padding:10px 14px; 
-  border-radius:14px;
-  background:rgba(255,255,255,.92); 
-  color:#222; 
-  font-weight:600;
-  box-shadow:0 8px 30px rgba(0,0,0,.25); 
-  backdrop-filter:blur(6px);
-}
-
-/* オーバーレイ背景 */
-.overlay{
-  display:none;
-  position:fixed;
-  top:0; left:0;
-  width:100%; height:100%;
-  background:rgba(0,0,0,0.8);
-  backdrop-filter:blur(4px);
-  z-index:100;
-  justify-content:center;
-  align-items:center;
-}
-
-/* マカロンカード */
-#macaronCard{ 
-  background:rgba(255,255,255,0.15);
-  padding:28px; 
-  border-radius:20px; 
-  text-align:center;
-  max-width:600px;
-  width:90%;
-}
-#macaronCard h2{ 
-  font-size:clamp(22px,5vw,34px); 
-  margin-bottom:8px;
-}
-#macaronCard p{ 
-  font-size:clamp(14px,3.2vw,18px); 
-  margin-bottom:20px;
-}
-.grid{ 
-  display:grid; 
-  grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); 
-  gap:18px; 
-}
-.card{ 
-  background:rgba(255,255,255,0.1); 
-  padding:16px 14px; 
-  border-radius:18px; 
-  cursor:pointer;
-  transition:transform 0.2s, background 0.2s;
-}
-.card:hover{
-  transform:scale(1.05);
-  background:rgba(255,255,255,0.2);
-}
-.card img{ 
-  width:108px; 
-  height:108px; 
-  border-radius:50%;
-}
-.label{ font-size:15px; margin-top:8px; }
-.trait{ font-size:13px; opacity:0.85; }
-
-@media (max-width:640px){
-  .card img{ width:96px; height:96px; }
-}
-
-/* チャットエリア */
-#chatArea{
-  background:rgba(255,255,255,0.1);
-  padding:16px;
-  margin-top:16px;
-  border-radius:12px;
-  max-width:500px;
-  width:100%;
-  height:300px;
-  overflow-y:auto;
-}
-.message{ margin:8px 0; }
-.user{ color:#ffd1ec; }
-.bot{ color:#aee1ff; }
-</style>
+  <meta charset="UTF-8" />
+  <title>conversation.html - 会話ページ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #characterImg {
+      width: 150px;
+      height: auto;
+      margin-bottom: 16px;
+    }
+    #chatArea {
+      background: rgba(0,0,0,0.4);
+      border-radius: 12px;
+      padding: 16px;
+      max-width: 500px;
+      width: 100%;
+      text-align: left;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .message {
+      background: rgba(255,255,255,0.2);
+      padding: 8px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+  </style>
 </head>
 <body>
-
-<h1>会話ページ</h1>
-<div id="characterImgArea">
-  <img id="characterImg" src="public/assets/stage1/character.png" alt="キャラクター" width="140" />
-</div>
-<div id="chatArea"></div>
-
-<!-- マカロン選択オーバーレイ -->
-<div id="macaronOverlay" class="overlay">
-  <div id="macaronCard">
-    <h2>これから、もっとお話しよう。</h2>
-    <p>マカロンをクリックしてね。選んだ色の性格で進化して、会話に行くよ。</p>
-    <div class="grid" id="macaronGrid"></div>
+  <h2>進化後の会話</h2>
+  <img id="characterImg" src="" alt="キャラクター" />
+  <div id="chatArea">
+    <div class="message">進化したよ！これからもよろしくね。</div>
   </div>
-</div>
 
-<script>
-// マカロンデータ
-const macarons = [
-  { color:"pink",   label:"ピンク", trait:"情熱", img:"public/assets/macarons/pink.png" },
-  { color:"blue",   label:"青",     trait:"静寂", img:"public/assets/macarons/blue.png" },
-  { color:"green",  label:"緑",     trait:"元気", img:"public/assets/macarons/green.png" },
-  { color:"purple", label:"紫",     trait:"創造", img:"public/assets/macarons/purple.png" }
-];
+  <script>
+    const color = localStorage.getItem('macaronColor');
+    const imgMap = {
+      pink: "public/assets/miwacchi_open.png",
+      blue: "public/assets/miwacchi_open.png",
+      green: "public/assets/miwacchi_open.png",
+      purple: "public/assets/miwacchi_open.png"
+    };
 
-// マカロン描画
-async function renderMacaronGrid(){
-  const grid = document.getElementById("macaronGrid");
-  grid.innerHTML = "";
-  macarons.forEach(m=>{
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <img src="${m.img}" alt="${m.label}" />
-      <div class="label">${m.label}</div>
-      <div class="trait">${m.trait}</div>
-    `;
-    div.addEventListener("click", ()=> selectMacaron(m));
-    grid.appendChild(div);
-  });
-}
-
-// マカロン選択処理
-function selectMacaron(m){
-  document.getElementById("macaronOverlay").style.display = "none";
-  addMessage("bot", `${m.label}のマカロンを選んだね！これから${m.trait}な会話になるよ。`);
-}
-
-// オーバーレイ開く
-function openMacaronOverlay(){
-  document.getElementById("macaronOverlay").style.display = "flex";
-}
-
-// 吹き出し表示
-function showWelcome(text="来てくれてありがとう！まずはマカロンを選んでね。"){
-  const old = document.getElementById('welcomeBubble');
-  if (old) old.remove();
-  const div = document.createElement('div');
-  div.id = 'welcomeBubble';
-  div.textContent = text;
-  document.body.appendChild(div);
-  setTimeout(()=> div.remove(), 3500);
-}
-
-// チャットに追加
-function addMessage(sender, text){
-  const chat = document.getElementById("chatArea");
-  const div = document.createElement("div");
-  div.className = `message ${sender}`;
-  div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-// 初期処理
-window.addEventListener("DOMContentLoaded", async ()=>{
-  await renderMacaronGrid();
-  openMacaronOverlay();
-  showWelcome();
-});
-</script>
-
+    if (color && imgMap[color]) {
+      document.getElementById('characterImg').src = imgMap[color];
+    } else {
+      document.getElementById('characterImg').alt = "キャラが選ばれていません";
+    }
+  </script>
 </body>
 </html>
