@@ -24,9 +24,11 @@
   .msg{margin:10px 0;max-width:80%}
   .me{margin-left:auto}
   .b{background:rgba(255,255,255,.1);padding:10px 12px;border-radius:14px}
+  .typing{opacity:.75;font-style:italic}
   .input{display:flex;gap:8px;padding:10px}
   .input input{flex:1;border:none;border-radius:12px;padding:12px}
   .input button{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
+  .footer{opacity:.6;font-size:12px;text-align:right}
 </style>
 </head>
 <body>
@@ -42,16 +44,21 @@
   </div>
 
   <div id="hint" class="panel"></div>
-
   <div id="log" class="panel" aria-live="polite"></div>
 
   <div class="input panel">
     <input id="text" type="text" placeholder="メッセージを入力 / Type a message" />
     <button id="send">送信</button>
   </div>
+  <div class="footer">whoai_talk.html</div>
 
 <script>
-  // ===== i18n =====
+  // ====== 設定 ======
+  // Vercelで /api/talk を置いたならそのまま。別ドメインにあるならフルURLを入れてね。
+  const TALK_ENDPOINT = '/api/talk'; // 例: 'https://your-vercel-app.vercel.app/api/talk'
+  const USE_API = true; // APIが落ちたら自動フォールバックします
+
+  // ====== i18n ======
   const I18N = {
     ja:{
       hint:{
@@ -61,7 +68,9 @@
         purple:"パープル：創造。比喩や発想の飛躍が増える。"
       },
       greet:{pink:"こんにちは！一緒に走り出そう。",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"},
-      you:"あなた", ai:"WHOAI", send:"送信", placeholder:"メッセージを入力"
+      you:"あなた", ai:"WHOAI", send:"送信", placeholder:"メッセージを入力",
+      done:"5回の会話が完了！もう一度マカロンを選んで、次の形態に進化させよう。",
+      typing:"入力中…", err:"通信に失敗しました。ローカル応答に切り替えます。"
     },
     en:{
       hint:{
@@ -71,10 +80,11 @@
         purple:"Purple: Creativity. More metaphors and leaps."
       },
       greet:{pink:"Hey! Let’s get rolling.",blue:"Hello. Let’s think this through.",green:"Yo! Let’s take the first step!",purple:"Welcome—let’s weave a story."},
-      you:"You", ai:"WHOAI", send:"Send", placeholder:"Type a message"
+      you:"You", ai:"WHOAI", send:"Send", placeholder:"Type a message",
+      done:"Five messages done! Choose another macaron to evolve to the next form.",
+      typing:"typing…", err:"API failed. Falling back to local reply."
     }
   };
-
   const langBtns = document.querySelectorAll('.lang button');
   function currentLang(){ return (document.documentElement.lang==='ja'?'ja':'en'); }
   function applyLang(lang){
@@ -82,60 +92,148 @@
     langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
     document.getElementById('send').textContent = I18N[lang].send;
     document.getElementById('text').placeholder = I18N[lang].placeholder + " / " + (lang==='ja'?'Type a message':'メッセージを入力');
-    document.getElementById('hint').textContent = I18N[lang].hint[color] || "";
+    if(window.color){ document.getElementById('hint').textContent = I18N[lang].hint[color] || ""; }
     localStorage.setItem('lang', lang);
   }
   langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
 
-  // ===== マカロン選択の読み込み（なければ戻す）=====
-  const color = localStorage.getItem('selectedMacaron')
-    || (JSON.parse(localStorage.getItem('macaron_choice')||'{}').macaron);
+  // ====== 状態読み込み ======
+  const state = JSON.parse(localStorage.getItem('whoai_state') || "{}");
+  const color = state.color || localStorage.getItem('selectedMacaron');
   if(!color){ location.href = 'macaron_select.html'; }
-
-  // バッジ表示
   document.getElementById('dot').classList.add(color);
-  document.getElementById('traitLabel').textContent = (color.charAt(0).toUpperCase()+color.slice(1));
-
-  // 初期言語
+  document.getElementById('traitLabel').textContent = state.name || "WHOAI";
   applyLang(localStorage.getItem('lang') || 'ja');
 
-  // ===== チャット（ダミー応答・API未接続）=====
-  const log = document.getElementById('log');
-  const text = document.getElementById('text');
-  const send = document.getElementById('send');
+  // ====== チャットUI ======
+  const logEl = document.getElementById('log');
+  const textEl = document.getElementById('text');
+  const sendEl = document.getElementById('send');
 
-  function addMsg(who, content){
+  function addMsg(who, content, extraClass=''){
     const lang = currentLang();
     const label = (who==='me') ? I18N[lang].you : I18N[lang].ai;
     const div = document.createElement('div');
-    div.className = 'msg ' + (who==='me'?'me':'');
+    div.className = 'msg ' + (who==='me'?'me':'') + ' ' + extraClass;
     div.innerHTML = `<div class="b"><strong>${label}</strong><br>${content}</div>`;
-    log.appendChild(div);
-    log.scrollTop = log.scrollHeight;
+    logEl.appendChild(div);
+    logEl.scrollTop = logEl.scrollHeight;
+    return div;
   }
 
   // 挨拶
   addMsg('ai', I18N[currentLang()].greet[color]);
+  document.getElementById('hint').textContent = I18N[currentLang()].hint[color];
 
+  // ====== ローカル応答（フォールバック）======
   function toneReply(input, lang){
-    return {
-      pink:  (lang==='ja'?"うん！":"Yes! ") + "I’m rooting for you.",
-      blue:  (lang==='ja'?"なるほど。":"I see. ") + "Let’s consider it step by step.",
-      green: (lang==='ja'?"いいね！":"Nice! ") + "Try one small action?",
-      purple:(lang==='ja'?"ふむ。":"Hmm. ") + "What if we imagine it differently?"
+    const ja = {
+      pink:  "うん！応援してるよ。",
+      blue:  "なるほど。順番に考えてみよう。",
+      green: "いいね！小さく一歩、どう？",
+      purple:"ふむ。別の想像をしてみたらどう？"
     }[color];
+    const en = {
+      pink:  "Yes! I’m rooting for you.",
+      blue:  "I see. Let’s consider it step by step.",
+      green: "Nice! How about one small action?",
+      purple:"Hmm. What if we imagine it differently?"
+    }[color];
+    return (lang==='ja') ? ja : en;
   }
 
-  send.addEventListener('click', ()=>{
-    const v = text.value.trim(); if(!v) return;
-    const lang = currentLang();
-    addMsg('me', v);
-    text.value='';
-    setTimeout(()=> addMsg('ai', toneReply(v, lang)), 300); // ダミー応答
-  });
+  // ====== 会話履歴（APIに渡す用）======
+  function loadChat(){
+    try{ return JSON.parse(localStorage.getItem('whoai_chat')||'[]'); }catch{ return []; }
+  }
+  function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-12))); } // 直近12件だけ
+  let chat = loadChat();
 
-  text.addEventListener('keydown', e=>{
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send.click(); }
+  // ====== API呼び出し ======
+  async function talkAPI(userText){
+    const lang = currentLang();
+    const systemPrompt = (lang==='ja')
+      ? `あなたはWHOAIのキャラクター。名前は「${state.name||'WHOAI'}」。色は${color}、形態は${state.variant||'tane'}。口調は次の方針：
+- ピンク: 前向きに励ます
+- ブルー: 落ち着いて丁寧に考える
+- グリーン: テンポよく行動を促す
+- パープル: 比喩や発想の飛躍を少し入れる
+必ず日本語で、1〜2文で返答。最後に次の行動や問いかけを1つだけ。`
+      : `You are WHOAI. Name: ${state.name||'WHOAI'}. Color: ${color}, Form: ${state.variant||'tane'}. Tone:
+- Pink: upbeat encouragement
+- Blue: calm, thoughtful
+- Green: snappy, action-nudging
+- Purple: creative, a bit metaphorical
+Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, and end with exactly one prompt for a next step.`;
+
+    const payload = {
+      userMessage: userText,
+      history: chat,              // [{role, content}...]
+      systemPrompt,
+      language: lang,
+      temperature: 0.7,
+      max_tokens: 220,
+      model: "gpt-4o-mini"
+    };
+
+    const r = await fetch(TALK_ENDPOINT, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    if(!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    return data.reply?.trim() || "";
+  }
+
+  // ====== ターン数カウント（5回で再選択）======
+  function bumpTurns(){
+    const s = JSON.parse(localStorage.getItem('whoai_state') || "{}");
+    s.turns = (s.turns || 0) + 1;
+    localStorage.setItem('whoai_state', JSON.stringify(s));
+    return s;
+  }
+
+  // ====== 送信処理 ======
+  async function handleSend(){
+    const v = textEl.value.trim(); if(!v) return;
+    const lang = currentLang();
+
+    // 表示 & ログ
+    addMsg('me', v);
+    textEl.value='';
+    chat.push({role:"user", content:v}); saveChat(chat);
+
+    // タイピング表示
+    const typing = addMsg('ai', I18N[lang].typing, 'typing');
+
+    // まずAPIトライ → 失敗したらローカル応答
+    let reply = "";
+    try{
+      if(USE_API) reply = await talkAPI(v);
+    }catch(e){
+      console.warn(e);
+      typing.querySelector('.b').innerHTML = `<strong>${I18N[lang].ai}</strong><br>${I18N[lang].err}`;
+    }
+    if(!reply) reply = toneReply(v, lang);
+
+    // タイピングを置き換え
+    typing.remove();
+    addMsg('ai', reply);
+    chat.push({role:"assistant", content:reply}); saveChat(chat);
+
+    // ターン数
+    const s = bumpTurns();
+    if(s.stage === 'seed' && s.turns >= 5){
+      alert(I18N[lang].done);
+      location.href = 'macaron_select.html';
+    }
+  }
+
+  sendEl.addEventListener('click', handleSend);
+  textEl.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); }
   });
 </script>
 </body>
