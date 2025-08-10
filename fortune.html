@@ -5,10 +5,17 @@
   <title>fortune.html - 占い</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    const lang = localStorage.getItem('whoai_lang') || 'ja';
+    html, body { height:100%; margin:0; }
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
+      /* 画像が読めなかったときの予備背景 */
+      background:
+        radial-gradient(ellipse at center, rgba(0,0,0,0.25), rgba(0,0,0,0.6)),
+        linear-gradient(135deg, #0a0e27, #2d1b69 60%, #000428);
+      /* 背景画像 */
+      background-image: url("public/assets/stage1/space_background.png"),
+                        radial-gradient(ellipse at center, rgba(0,0,0,0.25), rgba(0,0,0,0.6)),
+                        linear-gradient(135deg, #0a0e27, #2d1b69 60%, #000428);
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
@@ -20,59 +27,26 @@
       flex-direction: column;
       justify-content: center;
     }
-    .question {
-      margin-bottom: 40px;
-    }
-    .question h2 {
-      margin-bottom: 24px;
-      font-size: 1.8em;
-    }
+    .question { margin-bottom: 40px; }
+    .question h2 { margin-bottom: 24px; font-size: 1.8em; }
     .options-ring {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      margin-top: 20px;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px; margin-top: 20px;
     }
     .option {
-      width: 80%;
-      max-width: 360px;
-      height: auto;
-      padding: 12px;
-      border-radius: 24px;
-      background: rgba(255, 255, 255, 0.25);
-      border: 2px solid #fff;
-      color: white;
-      font-size: 13px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s, color 0.3s;
-      word-wrap: break-word;
+      width: 80%; max-width: 360px; padding: 12px; border-radius: 24px;
+      background: rgba(255,255,255,0.25); border: 2px solid #fff;
+      color: #fff; font-size: 13px; font-weight: bold; cursor: pointer;
+      transition: background .3s, color .3s; word-wrap: break-word;
     }
-    .option:hover {
-      background: #fff;
-      color: #000;
-    }
+    .option:hover { background:#fff; color:#000; }
     #nextBtn {
-      margin: 24px auto 0 auto;
-      padding: 8px 16px;
-      font-size: 14px;
-      border-radius: 16px;
-      border: none;
-      background: #ffd1ec;
-      color: #111;
-      cursor: pointer;
-      display: block;
+      margin: 24px auto 0; padding: 8px 16px; font-size: 14px;
+      border-radius: 16px; border: none; background:#ffd1ec; color:#111;
+      cursor: pointer; display: block;
     }
-    #nextBtn:disabled {
-      background: #aaa;
-      color: #444;
-      cursor: not-allowed;
-    }
-    #nextBtn:hover:enabled {
-      background: #ff70c1;
-      color: white;
-    }
+    #nextBtn:disabled { background:#aaa; color:#444; cursor:not-allowed; }
+    #nextBtn:hover:enabled { background:#ff70c1; color:#fff; }
   </style>
 </head>
 <body>
@@ -80,34 +54,21 @@
   <button id="nextBtn" onclick="nextQuestion()">▶</button>
 
   <script>
-    // 占いの質問内容
+    // 言語（必要なら使ってください）
+    const lang = localStorage.getItem('whoai_lang') || 'ja';
+
+    // 占いの質問
     const questions = [
-      {
-        text: "好きな時間帯は？",
-        options: ["朝", "昼", "夕方", "夜", "深夜"]
-      },
-      {
-        text: "友達に言われたい言葉は？",
-        options: ["かっこいい！", "やさしいね", "おもしろい！", "がんばってるね", "センスある！"]
-      },
-      {
-        text: "よくする行動は？",
-        options: ["すぐ動く", "みんなを気づかう", "場をなごませる", "マイペース", "新しいことが好き"]
-      },
-      {
-        text: "どの動物が好き？",
-        options: ["ライオン", "イルカ", "サル", "ネコ", "フクロウ"]
-      },
-      {
-        text: "大事にしたいことは？",
-        options: ["リーダーシップ", "思いやり", "ユーモア", "自由", "知識"]
-      }
+      { text: "好きな時間帯は？", options: ["朝","昼","夕方","夜","深夜"] },
+      { text: "友達に言われたい言葉は？", options: ["かっこいい！","やさしいね","おもしろい！","がんばってるね","センスある！"] },
+      { text: "よくする行動は？", options: ["すぐ動く","みんなを気づかう","場をなごませる","マイペース","新しいことが好き"] },
+      { text: "どの動物が好き？", options: ["ライオン","イルカ","サル","ネコ","フクロウ"] },
+      { text: "大事にしたいことは？", options: ["リーダーシップ","思いやり","ユーモア","自由","知識"] }
     ];
 
     let current = 0;
     let score = { cool: 0, kind: 0, funny: 0, free: 0 };
 
-    // 質問を表示
     function renderQuestion() {
       const q = questions[current];
       let html = `<h2>${q.text}</h2><div class="options-ring">`;
@@ -118,64 +79,42 @@
       document.getElementById("quiz").innerHTML = html;
     }
 
-    // 選択肢がクリックされたときにスコア加算
     function selectOption(index) {
-      switch (index) {
-        case 0: score.cool++; break;
-        case 1: score.kind++; break;
-        case 2: score.funny++; break;
-        case 3: score.free++; break;
-        default: score.cool++;
-      }
+      if (index === 0) score.cool++;
+      else if (index === 1) score.kind++;
+      else if (index === 2) score.funny++;
+      else if (index === 3) score.free++;
+      else score.cool++;
       document.getElementById("nextBtn").disabled = false;
     }
 
-    // 次の質問へ進む、または結果判定
     function nextQuestion() {
       current++;
       if (current < questions.length) {
         renderQuestion();
         document.getElementById("nextBtn").disabled = true;
       } else {
-        // 判定処理
         let resultType = "funny";
-        if (score.cool >= score.kind && score.cool >= score.funny && score.cool >= score.free) {
-          resultType = "cool";
-        } else if (score.kind >= score.cool && score.kind >= score.funny && score.kind >= score.free) {
-          resultType = "kind";
-        } else if (score.funny >= score.cool && score.funny >= score.kind && score.funny >= score.free) {
-          resultType = "funny";
-        } else {
-          resultType = "free";
-        }
+        if (score.cool >= score.kind && score.cool >= score.funny && score.cool >= score.free) resultType = "cool";
+        else if (score.kind >= score.cool && score.kind >= score.funny && score.kind >= score.free) resultType = "kind";
+        else if (score.funny >= score.cool && score.funny >= score.kind && score.funny >= score.free) resultType = "funny";
+        else resultType = "free";
 
-        // キャラクター画像パスをタイプに応じて保存
-        let imagePath = "";
-        if (resultType === "cool") {
-          imagePath = "public/assets/characters/cool.png";
-        } else if (resultType === "kind") {
-          imagePath = "public/assets/characters/kind.png";
-        } else if (resultType === "funny") {
-          imagePath = "public/assets/characters/funny.png";
-        } else {
-          imagePath = "public/assets/characters/free.png";
-        }
+        let imagePath = {
+          cool:  "public/assets/characters/cool.png",
+          kind:  "public/assets/characters/kind.png",
+          funny: "public/assets/characters/funny.png",
+          free:  "public/assets/characters/free.png"
+        }[resultType];
 
-        // localStorage に保存
         localStorage.setItem("whoai_type", resultType);
         localStorage.setItem("characterImage", imagePath);
-
-        // 次のページへ遷移
         window.location.href = "appearance.html";
       }
     }
 
-    // 初期化
     renderQuestion();
     document.getElementById("nextBtn").disabled = true;
   </script>
 </body>
 </html>
-
-
-
