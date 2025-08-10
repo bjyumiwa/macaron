@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>naming.html - 名前をつける</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>naming.html - キャラクター命名</title>
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
@@ -14,64 +14,70 @@
       color: white;
       text-align: center;
       padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-height: 100vh;
     }
     h2 {
-      font-size: 1.8em;
-      margin-bottom: 20px;
-      text-shadow: 0 0 8px rgba(0,0,0,0.5);
-    }
-    .input-area {
       margin-top: 20px;
+      text-shadow: 0 0 8px rgba(0,0,0,0.7);
     }
-    input[type="text"] {
-      padding: 10px;
-      font-size: 18px;
-      border-radius: 12px;
-      border: none;
-      width: 80%;
-      max-width: 300px;
-      text-align: center;
+    #character {
+      width: 200px;
+      margin: 20px 0;
     }
-    #confirmBtn {
-      margin-top: 24px;
-      padding: 12px 24px;
-      font-size: 18px;
-      border-radius: 12px;
+    input {
+      font-size: 1em;
+      padding: 8px;
+      border-radius: 8px;
       border: none;
-      background: #ffd1ec;
-      color: #111;
+      width: 60%;
+      margin-top: 10px;
+    }
+    button {
+      font-size: 1em;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      background-color: #ffb6c1;
+      margin-top: 15px;
       cursor: pointer;
-      transition: background 0.3s, color 0.3s;
     }
-    #confirmBtn:hover {
-      background: #ff90d2;
-      color: white;
+    button:hover {
+      background-color: #ff91a4;
     }
   </style>
 </head>
 <body>
-  <h2>この子に名前をつけてください</h2>
-  <div class="input-area">
-    <input type="text" id="nameInput" placeholder="名前を入力してください">
-  </div>
-  <button id="confirmBtn" onclick="saveName()">OK ▶</button>
+  <h2>あなたの種キャラが生まれました！</h2>
+  <img id="character" src="public/assets/stage1/seed_character.png" alt="種キャラ">
+  
+  <p>このキャラクターの名前をつけてください。</p>
+  <input type="text" id="nameInput" placeholder="名前を入力">
+  <br>
+  <button id="saveName">名前を決定</button>
 
   <script>
-    function saveName() {
+    document.getElementById("saveName").addEventListener("click", function() {
       const name = document.getElementById("nameInput").value.trim();
-      if (name === "") {
-        alert("名前を入力してください。");
+      if (!name) {
+        alert("名前を入力してください");
         return;
       }
-      // 名前を保存
-      localStorage.setItem("whoai_name", name);
+      // ローカルストレージに保存
+      localStorage.setItem("characterName", name);
+      // 次の画面へ
+      window.location.href = "conversation.html";
+    });
 
-      // 会話ページへ移動
-      window.location.href = "whoai_talk.html";
+    // 占い結果によってキャラクター画像を変更（例）
+    const fortuneResult = localStorage.getItem("fortuneResult");
+    if (fortuneResult) {
+      const img = document.getElementById("character");
+      if (fortuneResult === "lucky") {
+        img.src = "public/assets/stage1/seed_lucky.png";
+      } else if (fortuneResult === "normal") {
+        img.src = "public/assets/stage1/seed_normal.png";
+      } else {
+        img.src = "public/assets/stage1/seed_unlucky.png";
+      }
     }
   </script>
 </body>
