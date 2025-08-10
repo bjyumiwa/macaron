@@ -11,15 +11,27 @@
       font-family:"Noto Sans JP",sans-serif;
       background-image:url("public/assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
-      color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px
+      color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+      padding:20px
     }
-    header{display:flex;gap:12px;align-items:center;margin:10px 0 12px}
-    #avatar{width:88px;height:88px;border-radius:16px;object-fit:contain;box-shadow:0 0 14px rgba(255,255,255,.55)}
+
+    /* ---- 既存モーダルがあっても邪魔しない用（名称不明対策） ---- */
+    #continueModal, .continue-modal, [data-role="continue-modal"],
+    .modal-overlay, #modalOverlay, [data-role="modal-overlay"]{
+      /* from_macaron の時にJSで消すが、念のためデフォは表示可 */
+    }
+
+    header{display:flex;gap:12px;align-items:center;margin:4px 0 12px}
+    #avatar{
+      width:88px;height:88px;border-radius:16px;object-fit:contain;
+      box-shadow:0 0 14px rgba(255,255,255,.55)
+    }
     #meta{line-height:1.4}
     #meta .name{font-weight:700}
     #meta .badge{font-size:12px;opacity:.9}
+
     .chat{
-      width:min(880px,92vw);flex:1;overflow:auto;background:rgba(255,255,255,.12);
+      width:min(960px,92vw);flex:1;overflow:auto;background:rgba(255,255,255,.12);
       border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:14px
     }
     .row{margin:8px 0;display:flex}
@@ -28,11 +40,16 @@
     .bubble{
       max-width:72%;padding:10px 14px;border-radius:14px;line-height:1.5
     }
-    .bot .bubble{background:rgba(255,255,255,.85);color:#222}
+    .bot .bubble{background:rgba(255,255,255,.88);color:#222}
     .me .bubble{background:#ffd1ec;color:#111}
-    .inputbar{width:min(880px,92vw);display:flex;gap:8px;margin-top:12px}
-    .inputbar input{flex:1;padding:10px;border-radius:12px;border:none}
-    .inputbar button{padding:10px 16px;border:none;border-radius:12px;background:#ffd1ec;color:#111;cursor:pointer}
+
+    .inputbar{width:min(960px,92vw);display:flex;gap:8px;margin-top:12px}
+    .inputbar input{
+      flex:1;padding:12px;border-radius:12px;border:none;outline:none;font-size:16px
+    }
+    .inputbar button{
+      padding:12px 16px;border:none;border-radius:12px;background:#ffd1ec;color:#111;cursor:pointer;font-weight:700
+    }
     .inputbar button:hover{background:#ff90d2;color:#fff}
   </style>
 </head>
@@ -46,7 +63,7 @@
   </header>
 
   <div class="chat" id="chat">
-    <div class="row bot"><div class="bubble">こんにちは！選んだマカロンの力で進化したよ。今日、何から話す？</div></div>
+    <!-- 初回メッセージはJSで挿入 -->
   </div>
 
   <div class="inputbar">
@@ -55,32 +72,55 @@
   </div>
 
   <script>
-    // 進化後の見た目 & 特性を読み込む
-    const img = localStorage.getItem("characterImage");
-    const trait = localStorage.getItem("whoai_trait") || "-";
-    let name = localStorage.getItem("whoai_name") || "タネ";
+    // ===== 共通読み込み =====
+    const img   = localStorage.getItem("characterImage");      // 進化後アバター
+    const trait = localStorage.getItem("whoai_trait") || "-";  // passion/calm/energy/creative など
+    const name  = localStorage.getItem("whoai_name") || "タネ";
+    const entry = localStorage.getItem("whoai_entry");         // "from_macaron" ならモーダルスキップ
 
-    // 必須データが無い場合は選択へ戻す
-    if(!img){
-      window.location.href = "appearance.html";
-    }else{
-      document.getElementById("avatar").src = img;
-    }
-    document.getElementById("charName").textContent = name;
+    // 進化前で来た/データなしなら選択に戻す
+    if (!img) { window.location.href = "appearance.html"; }
+
+    // アバター・メタ情報を反映
+    document.getElementById("avatar").src = img;
+    document.getElementById("charName").textContent  = name;
     document.getElementById("charTrait").textContent = `trait: ${trait}`;
 
-    // 簡易チャット（APIなしローカル応答）
+    // ===== 進入元がマカロン選択なら、モーダルを自動スキップ =====
+    (function skipModalIfNeeded(){
+      if (entry === "from_macaron") {
+        // 想定される複数のID/クラス名に対応して削除
+        const qs = [
+          "#continueModal",".continue-modal","[data-role='continue-modal']",
+          ".modal-overlay","#modalOverlay","[data-role='modal-overlay']"
+        ];
+        qs.forEach(sel=>{
+          document.querySelectorAll(sel).forEach(el=>el.remove());
+        });
+        // モーダルを閉じる関数が定義されている場合は呼ぶ
+        if (typeof window.closeContinueModal === "function") window.closeContinueModal();
+
+        // 開始フラグ／ターン数などはリセット
+        localStorage.setItem("whoai_turnCount","0");
+        localStorage.removeItem("whoai_entry"); // 一度きり
+      }
+    })();
+
+    // ===== 簡易チャット（APIなしローカル応答） =====
     const chat = document.getElementById("chat");
     function addRow(who, text){
       const row = document.createElement("div");
       row.className = `row ${who}`;
       const b = document.createElement("div");
-      b.className = "bubble"; b.textContent = text;
-      row.appendChild(b); chat.appendChild(row);
+      b.className = "bubble";
+      b.textContent = text;
+      row.appendChild(b);
+      chat.appendChild(row);
       chat.scrollTop = chat.scrollHeight;
     }
+
+    // traitに合わせてトーンを変える
     function replyLocal(input){
-      // traitに合わせて返答の色を少し変える
       const tone = {
         passion:"ワクワクするね！",
         calm:"落ち着いて考えてみよう。",
@@ -90,16 +130,25 @@
       return `${tone}「${input}」のこと、もう少し教えて？`;
     }
 
-    document.getElementById("send").addEventListener("click", ()=>{
-      const val = document.getElementById("msg").value.trim();
+    // 初回の挨拶
+    addRow("bot", "こんにちは！選んだマカロンの力で進化したよ。今日、何から話す？");
+
+    // 入出力
+    const inputEl = document.getElementById("msg");
+    const sendEl  = document.getElementById("send");
+
+    function send(){
+      const val = inputEl.value.trim();
       if(!val) return;
       addRow("me", val);
-      document.getElementById("msg").value = "";
+      inputEl.value = "";
       setTimeout(()=> addRow("bot", replyLocal(val)), 300);
-    });
-    document.getElementById("msg").addEventListener("keydown",(e)=>{
-      if(e.key==="Enter") document.getElementById("send").click();
-    });
+    }
+    sendEl.addEventListener("click", send);
+    inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") send(); });
+
+    // フォーカス
+    inputEl.focus();
   </script>
 </body>
 </html>
