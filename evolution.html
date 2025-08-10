@@ -1,85 +1,68 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>evolution.html - マカロン進化</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    h2 {
-      margin-bottom: 24px;
-      font-size: 1.8em;
-      text-shadow: 0 0 8px rgba(0,0,0,0.5);
-    }
-    .macaron-holder {
-      display: flex;
-      gap: 30px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .macaron {
-      width: 180px; /* ← 大きめサイズ */
-      height: auto;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-    .macaron:hover {
-      transform: scale(1.15);
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WHOAI - Evolution</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    color:#fff; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px
+  }
+  .card{background:rgba(0,0,0,.38); border:1px solid rgba(255,255,255,.18); border-radius:20px; padding:20px; width:min(760px,92vw)}
+  h1{margin:0 0 6px}
+  .img{height:160px; display:flex; align-items:center; justify-content:center; margin:10px auto 2px}
+  .img img{max-height:160px; max-width:80%; filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
+  .btn{margin-top:12px; border:none; border-radius:14px; padding:12px 18px; font-weight:700; cursor:pointer; background:#ffd1ec; color:#222}
+</style>
 </head>
 <body>
-  <h2>好きなマカロンを選んでください</h2>
-  <div class="macaron-holder">
-    <img src="/assets/stage1/macaron_pink.png"   class="macaron" data-color="pink"   alt="ピンクマカロン">
-    <img src="/assets/stage1/macaron_blue.png"   class="macaron" data-color="blue"   alt="ブルーマカロン">
-    <img src="/assets/stage1/macaron_green.png"  class="macaron" data-color="green"  alt="グリーンマカロン">
-    <img src="/assets/stage1/macaron_purple.png" class="macaron" data-color="purple" alt="パープルマカロン">
+  <div class="card">
+    <h1 id="title">進化</h1>
+    <div class="img"><img id="char" alt=""></div>
+    <p id="desc"></p>
+    <button class="btn" id="go">会話へ進む</button>
   </div>
 
-  <script>
-    const CHAR_IMG = {
-      pink:   "/assets/stage1/miwacchi_open.png",
-      blue:   "/assets/stage1/miwacchi_open.png",
-      green:  "/assets/stage1/green_open.png",
-      purple: "/assets/stage1/miwacchi_open.png"
-    };
-    const TRAIT = {
-      pink: "passion",
-      blue: "calm",
-      green: "energy",
-      purple: "creative"
-    };
+<script>
+  const ASSETS = "public/assets/stage1";
+  const state = JSON.parse(localStorage.getItem('whoai_state')||"{}");
+  const lang = localStorage.getItem('lang') || 'ja';
 
-    document.querySelectorAll(".macaron").forEach(el => {
-      el.addEventListener("click", () => {
-        const color = el.dataset.color;
-        localStorage.setItem("whoai_macaron", color);
-        localStorage.setItem("whoai_trait", TRAIT[color]);
-        localStorage.setItem("characterImage", CHAR_IMG[color]);
-        // 互換用キー
-        localStorage.setItem("macaronColor", color);
-        location.href = "conversation.html";
-      });
-    });
-  </script>
+  if(!state || !state.color){
+    location.href = "macaron_select.html";
+  }
+
+  // 画像パス決定
+  // 種キャラ：tane_<color>.png（例: tane_pink.png）
+  // 進化版：<color>_<variant>.png（例: green_open.png / blue_close.png）
+  function charSrc(s){
+    if(s.variant === "tane") return `${ASSETS}/tane_${s.color}.png`;
+    return `${ASSETS}/${s.color}_${s.variant}.png`;
+  }
+
+  document.getElementById('char').src = charSrc(state);
+
+  const N = state.name || "WHOAI";
+  const colorName = {pink:"ピンク",blue:"ブルー",green:"グリーン",purple:"パープル"}[state.color] || state.color;
+
+  const text = {
+    ja: (state.variant==="tane")
+      ? `${N}は ${colorName} のマカロンを食べて「種（tane）」の姿になった！`
+      : `${N}は ${colorName} の力が芽吹き、${state.variant==="open"?"オープン":"クローズ"}形態へ進化した！`,
+    en: (state.variant==="tane")
+      ? `${N} ate the ${state.color} macaron and took on the seed (tane) form!`
+      : `${N}'s ${state.color} trait blossomed and evolved to the ${state.variant} form!`
+  }[lang];
+
+  document.getElementById('title').textContent = (state.variant==="tane") ? "進化（種）" : "進化（次形態）";
+  document.getElementById('desc').textContent = text;
+
+  document.getElementById('go').addEventListener('click', ()=>{
+    location.href = "whoai_talk.html";
+  });
+</script>
 </body>
 </html>
