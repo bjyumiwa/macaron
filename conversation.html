@@ -9,7 +9,7 @@
   html,body{height:100%;margin:0}
   body{
     font-family:"Noto Sans JP",sans-serif;
-    background-image:url("/assets/stage1/space_background.png"); /* ← publicを外す */
+    background-image:url("public/assets/stage1/space_background.png"); /* ← publicを外す */
     background-size:cover;background-position:center;background-attachment:fixed;
     color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px
   }
@@ -86,7 +86,7 @@
 </head>
 <body>
   <header>
-    <img id="avatar" src="/assets/stage1/miwacchi_close.png" alt="キャラ"><!-- ← publicを外す -->
+    <img id="avatar" src="public/assets/stage1/miwacchi_close.png" alt="キャラ"><!-- ← publicを外す -->
     <div id="meta">
       <div class="name" id="charName">PI変換</div>
       <div class="badge" id="charTrait">trait: energy（元気）</div>
@@ -117,22 +117,22 @@
 <script>
   /* 画像パス */
   const MACARON_SRC = {
-    pink:   "/assets/stage1/macaron_pink.png",
-    blue:   "/assets/stage1/macaron_blue.png",
-    green:  "/assets/stage1/macaron_green.png",
-    purple: "/assets/stage1/macaron_purple.png",
+    pink:   "public/assets/stage1/macaron_pink.png",
+    blue:   "public/assets/stage1/macaron_blue.png",
+    green:  "public/assets/stage1/macaron_green.png",
+    purple: "public/assets/stage1/macaron_purple.png",
   };
   // 緑だけ green_open.png / それ以外は miwacchi_open.png
   function charFor(color){
-    if (color === "green") return "/assets/stage1/green_open.png";
-    return "/assets/stage1/miwacchi_open.png";
+    if (color === "green") return "public/assets/stage1/green_open.png";
+    return "public/assets/stage1/miwacchi_open.png";
   }
   const TRAIT = { pink:"passion", blue:"calm", green:"energy", purple:"creative" };
   const TRAIT_JA = { passion:"情熱", calm:"静寂", energy:"元気", creative:"創造" };
 
   /* 状態（appearance.htmlとキーを合わせて whoai_macaron を優先） */
   let color  = localStorage.getItem("whoai_macaron") || localStorage.getItem("macaronColor") || "";
-  let img    = color ? charFor(color) : "/assets/stage1/miwacchi_close.png";
+  let img    = color ? charFor(color) : "public/assets/stage1/miwacchi_close.png";
   let trait  = localStorage.getItem("whoai_trait") || TRAIT[color] || "energy";
   let talks  = parseInt(localStorage.getItem("whoai_turnCount") || "0",10);
 
@@ -251,3 +251,4 @@
 </script>
 </body>
 </html>
+
