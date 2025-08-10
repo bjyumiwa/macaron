@@ -9,7 +9,7 @@
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;
-      background-image:url("/assets/stage1/space_background.png"); /* ← public を外す */
+      background-image:url("public/assets/stage1/space_background.png"); /* ← public を外す */
       background-size:cover;background-position:center;background-attachment:fixed;
       color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
     }
@@ -44,19 +44,19 @@
     <div class="grid" id="macaronGrid">
       <!-- 実ファイルに合わせて /assets/stage1/*.png を使用 -->
       <div class="macaron" data-color="pink"  data-trait="passion">
-        <img src="/assets/stage1/macaron_pink.png"  alt="ピンク">
+        <img src="public/assets/stage1/macaron_pink.png"  alt="ピンク">
         <div class="label">pink</div><div class="trait">情熱</div>
       </div>
       <div class="macaron" data-color="blue"  data-trait="calm">
-        <img src="/assets/stage1/macaron_blue.png"  alt="青">
+        <img src="public/assets/stage1/macaron_blue.png"  alt="青">
         <div class="label">blue</div><div class="trait">静寂</div>
       </div>
       <div class="macaron" data-color="green" data-trait="energy">
-        <img src="/assets/stage1/macaron_green.png" alt="緑">
+        <img src="public/assets/stage1/macaron_green.png" alt="緑">
         <div class="label">green</div><div class="trait">元気</div>
       </div>
       <div class="macaron" data-color="purple" data-trait="creative">
-        <img src="/assets/stage1/macaron_purple.png" alt="紫">
+        <img src="public/assets/stage1/macaron_purple.png" alt="紫">
         <div class="label">purple</div><div class="trait">創造</div>
       </div>
     </div>
@@ -66,10 +66,10 @@
     // あなたの実ファイルに合わせたキャラ画像（stage2 が無いので置き換え）
     // green は green_open.png、それ以外は miwacchi_open.png を使う
     const EVOLVED = {
-      pink:   "/assets/stage1/miwacchi_open.png",
-      blue:   "/assets/stage1/miwacchi_open.png",
-      green:  "/assets/stage1/green_open.png",
-      purple: "/assets/stage1/miwacchi_open.png"
+      pink:   "public/assets/stage1/miwacchi_open.png",
+      blue:   "public/assets/stage1/miwacchi_open.png",
+      green:  "public/assets/stage1/green_open.png",
+      purple: "public/assets/stage1/miwacchi_open.png"
     };
     const TYPE_BY = { pink:"passion", blue:"calm", green:"energy", purple:"creative" };
 
@@ -90,3 +90,4 @@
   </script>
 </body>
 </html>
+
