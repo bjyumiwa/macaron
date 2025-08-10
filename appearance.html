@@ -9,7 +9,7 @@
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;
-      background-image:url("public/assets/stage1/space_background.png");
+      background-image:url("/assets/stage1/space_background.png"); /* ← public を外す */
       background-size:cover;background-position:center;background-attachment:fixed;
       color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
     }
@@ -42,21 +42,34 @@
     <p>マカロンをクリックしてね。選んだ色の性格で進化して、会話に行くよ。</p>
 
     <div class="grid" id="macaronGrid">
-      <!-- 画像パスは必要なら変更：public/assets/macaron/*.png -->
-      <div class="macaron" data-color="pink"  data-trait="passion"><img src="public/assets/macaron/pink.png"  alt="ピンク"><div class="label">pink</div><div class="trait">情熱</div></div>
-      <div class="macaron" data-color="blue"  data-trait="calm"><img src="public/assets/macaron/blue.png"  alt="青"><div class="label">blue</div><div class="trait">静寂</div></div>
-      <div class="macaron" data-color="green" data-trait="energy"><img src="public/assets/macaron/green.png" alt="緑"><div class="label">green</div><div class="trait">元気</div></div>
-      <div class="macaron" data-color="purple" data-trait="creative"><img src="public/assets/macaron/purple.png" alt="紫"><div class="label">purple</div><div class="trait">創造</div></div>
+      <!-- 実ファイルに合わせて /assets/stage1/*.png を使用 -->
+      <div class="macaron" data-color="pink"  data-trait="passion">
+        <img src="/assets/stage1/macaron_pink.png"  alt="ピンク">
+        <div class="label">pink</div><div class="trait">情熱</div>
+      </div>
+      <div class="macaron" data-color="blue"  data-trait="calm">
+        <img src="/assets/stage1/macaron_blue.png"  alt="青">
+        <div class="label">blue</div><div class="trait">静寂</div>
+      </div>
+      <div class="macaron" data-color="green" data-trait="energy">
+        <img src="/assets/stage1/macaron_green.png" alt="緑">
+        <div class="label">green</div><div class="trait">元気</div>
+      </div>
+      <div class="macaron" data-color="purple" data-trait="creative">
+        <img src="/assets/stage1/macaron_purple.png" alt="紫">
+        <div class="label">purple</div><div class="trait">創造</div>
+      </div>
     </div>
   </div>
 
   <script>
-    // 進化後キャラ画像（必要ならパス変更：public/assets/stage2/evolved_*.png）
+    // あなたの実ファイルに合わせたキャラ画像（stage2 が無いので置き換え）
+    // green は green_open.png、それ以外は miwacchi_open.png を使う
     const EVOLVED = {
-      pink:   "public/assets/stage2/evolved_pink.png",
-      blue:   "public/assets/stage2/evolved_blue.png",
-      green:  "public/assets/stage2/evolved_green.png",
-      purple: "public/assets/stage2/evolved_purple.png"
+      pink:   "/assets/stage1/miwacchi_open.png",
+      blue:   "/assets/stage1/miwacchi_open.png",
+      green:  "/assets/stage1/green_open.png",
+      purple: "/assets/stage1/miwacchi_open.png"
     };
     const TYPE_BY = { pink:"passion", blue:"calm", green:"energy", purple:"creative" };
 
