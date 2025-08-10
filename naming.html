@@ -1,70 +1,41 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>キャラに名前をつけよう</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background: url("public/assets/stage1/space_background.png") center/cover no-repeat fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-    }
-    h1 {
-      margin-top: 40px;
-    }
-    #seedCharacter {
-      width: 200px;
-      margin: 20px auto;
-      display: block;
-    }
-    input {
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      width: 80%;
-      max-width: 300px;
-      margin-top: 10px;
-      font-size: 1em;
-    }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: pink;
-      border: none;
-      border-radius: 8px;
-      font-size: 1em;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #ffb6c1;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>名前をつける</title>
+<style>
+body {
+  font-family: "Noto Sans JP", sans-serif;
+  text-align: center;
+  background: url("public/assets/stage1/space_background.png") center/cover no-repeat;
+  color: white;
+  padding: 20px;
+}
+input, button {
+  font-size: 1.2em;
+  padding: 8px;
+  margin-top: 10px;
+}
+</style>
 </head>
 <body>
-  <h1>あなたの種キャラは…</h1>
-  <img id="seedCharacter" src="public/assets/characters/seed_green.png" alt="seed character">
-  <p id="seedType">緑種（元気いっぱい）</p>
-  <input type="text" id="characterName" placeholder="キャラの名前を入力">
-  <br>
-  <button id="startChat">このキャラと話す</button>
+<h1>キャラクターに名前をつけよう</h1>
+<input type="text" id="nameInput" placeholder="名前を入力">
+<br>
+<button id="okBtn">決定</button>
 
-  <script>
-    document.getElementById("startChat").addEventListener("click", () => {
-      const name = document.getElementById("characterName").value.trim();
-      if (!name) {
-        alert("キャラの名前を入力してください");
+<script>
+document.getElementById("okBtn").addEventListener("click", function() {
+    const name = document.getElementById("nameInput").value.trim();
+    if (!name) {
+        alert("名前を入力してください");
         return;
-      }
-      // 名前と画像URLを保存
-      localStorage.setItem("characterName", name);
-      localStorage.setItem("characterImg", document.getElementById("seedCharacter").src);
-      // 会話回数を初期化
-      localStorage.setItem("turnCount", 0);
-      window.location.href = "conversation.html";
-    });
-  </script>
+    }
+    localStorage.setItem("charName", name);
+    localStorage.setItem("talkCount", 0); // 会話回数リセット
+    location.href = "conversation.html"; // 会話へ
+});
+</script>
 </body>
 </html>
