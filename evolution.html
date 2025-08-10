@@ -1,59 +1,83 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<title>evolution.html - マカロン進化</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<style>
-  html, body {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    font-family: "Noto Sans JP", sans-serif;
-    background-image: url("public/assets/stage1/space_background.png");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    color: white;
-    text-align: center;
-  }
-  h2 {
-    margin-top: 20px;
-    text-shadow: 0 0 8px rgba(0,0,0,0.5);
-  }
-  .macaron-holder {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    margin-top: 40px;
-    flex-wrap: wrap;
-  }
-  .macaron {
-    width: 200px; /* ← 大きくした */
-    height: 200px;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-  }
-  .macaron:hover {
-    transform: scale(1.1);
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>evolution.html - マカロン進化</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-image: url("/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    h2 {
+      margin-bottom: 24px;
+      font-size: 1.8em;
+      text-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .macaron-holder {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .macaron {
+      width: 180px; /* ← 大きめサイズ */
+      height: auto;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .macaron:hover {
+      transform: scale(1.15);
+    }
+  </style>
 </head>
 <body>
   <h2>好きなマカロンを選んでください</h2>
   <div class="macaron-holder">
-    <img src="public/assets/macaron/pink.png" class="macaron" data-color="pink" alt="ピンクマカロン">
-    <img src="public/assets/macaron/blue.png" class="macaron" data-color="blue" alt="青マカロン">
-    <img src="public/assets/macaron/green.png" class="macaron" data-color="green" alt="緑マカロン">
-    <img src="public/assets/macaron/purple.png" class="macaron" data-color="purple" alt="紫マカロン">
+    <img src="/assets/stage1/macaron_pink.png"   class="macaron" data-color="pink"   alt="ピンクマカロン">
+    <img src="/assets/stage1/macaron_blue.png"   class="macaron" data-color="blue"   alt="ブルーマカロン">
+    <img src="/assets/stage1/macaron_green.png"  class="macaron" data-color="green"  alt="グリーンマカロン">
+    <img src="/assets/stage1/macaron_purple.png" class="macaron" data-color="purple" alt="パープルマカロン">
   </div>
 
   <script>
-    document.querySelectorAll(".macaron").forEach(macaron => {
-      macaron.addEventListener("click", () => {
-        const color = macaron.dataset.color;
+    const CHAR_IMG = {
+      pink:   "/assets/stage1/miwacchi_open.png",
+      blue:   "/assets/stage1/miwacchi_open.png",
+      green:  "/assets/stage1/green_open.png",
+      purple: "/assets/stage1/miwacchi_open.png"
+    };
+    const TRAIT = {
+      pink: "passion",
+      blue: "calm",
+      green: "energy",
+      purple: "creative"
+    };
+
+    document.querySelectorAll(".macaron").forEach(el => {
+      el.addEventListener("click", () => {
+        const color = el.dataset.color;
+        localStorage.setItem("whoai_macaron", color);
+        localStorage.setItem("whoai_trait", TRAIT[color]);
+        localStorage.setItem("characterImage", CHAR_IMG[color]);
+        // 互換用キー
         localStorage.setItem("macaronColor", color);
-        window.location.href = "conversation.html";
+        location.href = "conversation.html";
       });
     });
   </script>
