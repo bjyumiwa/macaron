@@ -2,83 +2,69 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <title>キャラに名前をつけよう</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>naming.html - キャラクター命名</title>
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
+      background: url("public/assets/stage1/space_background.png") center/cover no-repeat fixed;
       color: white;
       text-align: center;
       padding: 20px;
     }
-    h2 {
-      margin-top: 20px;
-      text-shadow: 0 0 8px rgba(0,0,0,0.7);
+    h1 {
+      margin-top: 40px;
     }
-    #character {
+    #seedCharacter {
       width: 200px;
-      margin: 20px 0;
+      margin: 20px auto;
+      display: block;
     }
     input {
-      font-size: 1em;
-      padding: 8px;
+      padding: 10px;
       border-radius: 8px;
       border: none;
-      width: 60%;
+      width: 80%;
+      max-width: 300px;
       margin-top: 10px;
+      font-size: 1em;
     }
     button {
-      font-size: 1em;
-      padding: 8px 16px;
-      border-radius: 8px;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: pink;
       border: none;
-      background-color: #ffb6c1;
-      margin-top: 15px;
+      border-radius: 8px;
+      font-size: 1em;
       cursor: pointer;
     }
     button:hover {
-      background-color: #ff91a4;
+      background-color: #ffb6c1;
     }
   </style>
 </head>
 <body>
-  <h2>あなたの種キャラが生まれました！</h2>
-  <img id="character" src="public/assets/stage1/seed_character.png" alt="種キャラ">
-  
-  <p>このキャラクターの名前をつけてください。</p>
-  <input type="text" id="nameInput" placeholder="名前を入力">
+  <h1>あなたの種キャラは…</h1>
+  <img id="seedCharacter" src="public/assets/characters/seed_green.png" alt="seed character">
+  <p id="seedType">緑種（元気いっぱい）</p>
+  <input type="text" id="characterName" placeholder="キャラの名前を入力">
   <br>
-  <button id="saveName">名前を決定</button>
+  <button id="startChat">このキャラと話す</button>
 
   <script>
-    document.getElementById("saveName").addEventListener("click", function() {
-      const name = document.getElementById("nameInput").value.trim();
+    document.getElementById("startChat").addEventListener("click", () => {
+      const name = document.getElementById("characterName").value.trim();
       if (!name) {
-        alert("名前を入力してください");
+        alert("キャラの名前を入力してください");
         return;
       }
-      // ローカルストレージに保存
+      // 名前と画像URLを保存
       localStorage.setItem("characterName", name);
-      // 次の画面へ
+      localStorage.setItem("characterImg", document.getElementById("seedCharacter").src);
+      // 会話回数を初期化
+      localStorage.setItem("turnCount", 0);
       window.location.href = "conversation.html";
     });
-
-    // 占い結果によってキャラクター画像を変更（例）
-    const fortuneResult = localStorage.getItem("fortuneResult");
-    if (fortuneResult) {
-      const img = document.getElementById("character");
-      if (fortuneResult === "lucky") {
-        img.src = "public/assets/stage1/seed_lucky.png";
-      } else if (fortuneResult === "normal") {
-        img.src = "public/assets/stage1/seed_normal.png";
-      } else {
-        img.src = "public/assets/stage1/seed_unlucky.png";
-      }
-    }
   </script>
 </body>
 </html>
