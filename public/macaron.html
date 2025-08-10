@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>macaron.html - マカロン選択</title>
+<style>
+  body {
+    font-family: "Noto Sans JP", sans-serif;
+    background: url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    color: white;
+    text-align: center;
+    padding: 20px;
+  }
+  #character {
+    width: 160px;
+    margin: 20px auto;
+    display: block;
+  }
+  #chatArea {
+    background: rgba(255,255,255,0.1);
+    padding: 16px;
+    margin: 16px auto;
+    border-radius: 12px;
+    max-width: 500px;
+    height: 300px;
+    overflow-y: auto;
+    text-align: left;
+  }
+  .message {
+    margin: 8px 0;
+  }
+  .user { color: #ffd1ec; }
+  .ai { color: #a3e4ff; }
+  #macaronArea {
+    display: none;
+    margin-top: 20px;
+  }
+  .macaron {
+    width: 140px;
+    margin: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .macaron:hover {
+    transform: scale(1.1);
+  }
+</style>
+</head>
+<body>
+
+<h2>ぴーぷくと会話しよう</h2>
+<img id="character" src="public/assets/character/peepuku.png" alt="ぴーぷく">
+
+<div id="chatArea"></div>
+
+<input type="text" id="userInput" placeholder="メッセージを入力" style="width:70%;padding:8px;">
+<button id="sendBtn">送信</button>
+
+<div id="macaronArea">
+  <h3>マカロンを選んでね</h3>
+  <img class="macaron" src="public/assets/macaron/pink.png" data-color="pink" alt="情熱のマカロン">
+  <img class="macaron" src="public/assets/macaron/blue.png" data-color="blue" alt="静寂のマカロン">
+  <img class="macaron" src="public/assets/macaron/green.png" data-color="green" alt="元気のマカロン">
+  <img class="macaron" src="public/assets/macaron/purple.png" data-color="purple" alt="創造のマカロン">
+</div>
+
+<script>
+let turnCount = 0;
+const chatArea = document.getElementById("chatArea");
+const userInput = document.getElementById("userInput");
+const sendBtn = document.getElementById("sendBtn");
+const macaronArea = document.getElementById("macaronArea");
+
+// メッセージ追加
+function addMessage(text, sender) {
+  const div = document.createElement("div");
+  div.classList.add("message", sender);
+  div.textContent = text;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+// APIで会話
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+  addMessage(text, "user");
+  userInput.value = "";
+
+  try {
+    const res = await fetch("/api/talk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text })
+    });
+    const data = await res.json();
+    addMessage(data.reply, "ai");
+  } catch (e) {
+    addMessage("通信に失敗しました", "ai");
+  }
+
+  turnCount++;
+  if (turnCount >= 3) {
+    userInput.disabled = true;
+    sendBtn.disabled = true;
+    macaronArea.style.display = "block";
+  }
+}
+
+sendBtn.addEventListener("click", sendMessage);
+userInput.addEventListener("keypress", e => {
+  if (e.key === "Enter") sendMessage();
+});
+
+// マカロン選択処理
+document.querySelectorAll(".macaron").forEach(macaron => {
+  macaron.addEventListener("click", () => {
+    const color = macaron.dataset.color;
+    macaronArea.style.display = "none"; // 残らないように消す
+    localStorage.setItem("selectedMacaron", color);
+    window.location.href = "evolution.html";
+  });
+});
+</script>
+
+</body>
+</html>
