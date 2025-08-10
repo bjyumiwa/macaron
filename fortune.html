@@ -3,54 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>fortune.html - 占い結果</title>
+<title>占い</title>
 <style>
-  body {
-    font-family: "Noto Sans JP", sans-serif;
-    background: url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    color: #fff;
-    text-align: center;
-    padding: 20px;
-  }
-  #result-img { width: 150px; margin-top: 20px; }
-  button {
-    padding: 10px 20px;
-    font-size: 1.2em;
-    margin-top: 20px;
-    background: #ffb6c1;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
+body {
+  font-family: "Noto Sans JP", sans-serif;
+  text-align: center;
+  background: url("public/assets/stage1/space_background.png") center/cover no-repeat;
+  color: white;
+  padding: 20px;
+}
+button {
+  padding: 10px 20px;
+  font-size: 1.2em;
+  cursor: pointer;
+}
 </style>
 </head>
 <body>
-
-<h1>あなたの種キャラは…</h1>
-<img id="result-img" src="" alt="seed character">
-<h2 id="result-name"></h2>
-<p id="result-desc"></p>
-<button id="next-btn">名前をつける</button>
+<h1>今日の占い</h1>
+<p>🌟 あなたの運勢は…最高！</p>
+<button id="nextBtn">次へ</button>
 
 <script>
-const seedCharacters = [
-  { name: "ピンク種", color: "pink", desc: "情熱的な心を持つ種キャラ", img: "public/assets/seeds/pink_seed.png" },
-  { name: "青種", color: "blue", desc: "静寂を愛する種キャラ", img: "public/assets/seeds/blue_seed.png" },
-  { name: "緑種", color: "green", desc: "元気いっぱいな種キャラ", img: "public/assets/seeds/green_seed.png" },
-  { name: "紫種", color: "purple", desc: "創造力豊かな種キャラ", img: "public/assets/seeds/purple_seed.png" }
-];
-
-// ランダムで1つ選ぶ（占い結果）
-const result = seedCharacters[Math.floor(Math.random() * seedCharacters.length)];
-
-document.getElementById("result-img").src = result.img;
-document.getElementById("result-name").textContent = result.name;
-document.getElementById("result-desc").textContent = result.desc;
-
-// 次の画面（名前付け）へ
-document.getElementById("next-btn").addEventListener("click", () => {
-  localStorage.setItem("seedCharacter", JSON.stringify(result));
-  window.location.href = "naming.html";
+document.getElementById("nextBtn").addEventListener("click", function() {
+    location.href = "naming.html"; // 名前付けへ
 });
 </script>
 </body>
