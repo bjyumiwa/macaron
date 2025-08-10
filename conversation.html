@@ -2,297 +2,200 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<title>conversation.html - 会話ループ</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>conversation.html - 会話</title>
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap");
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;
-    background-image:url("public/assets/stage1/space_background.png");
-    background-size:cover;background-position:center;background-attachment:fixed;
-    color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px
-  }
-  header{display:flex;gap:12px;align-items:center;margin:4px 0 12px}
-  #avatar{width:96px;height:96px;border-radius:16px;object-fit:contain;box-shadow:0 0 14px rgba(255,255,255,.55)}
-  #meta{line-height:1.4}
-  #meta .name{font-weight:700}
-  #meta .badge{font-size:12px;opacity:.9}
+html,body{
+  height:100%;
+  margin:0;
+  padding:0;
+}
+body{
+  font-family:"Noto Sans JP",sans-serif;
+  background-image:url("public/assets/stage1/space_background.png");
+  background-size:cover;
+  background-position:center;
+  background-attachment:fixed;
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  padding:20px;
+}
 
-  .chat{
-    width:min(960px,92vw);flex:1;overflow:auto;background:rgba(255,255,255,.12);
-    border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:14px
-  }
-  .row{margin:8px 0;display:flex}
-  .bot{justify-content:flex-start}
-  .me{justify-content:flex-end}
-  .bubble{max-width:72%;padding:10px 14px;border-radius:14px;line-height:1.5}
-  .bot .bubble{background:rgba(255,255,255,.88);color:#222}
-  .me .bubble{background:#ffd1ec;color:#111}
+/* 吹き出し（歓迎メッセージ） */
+#welcomeBubble{
+  position:fixed; 
+  top:72px; 
+  left:50%; 
+  transform:translateX(-50%);
+  z-index:110; 
+  padding:10px 14px; 
+  border-radius:14px;
+  background:rgba(255,255,255,.92); 
+  color:#222; 
+  font-weight:600;
+  box-shadow:0 8px 30px rgba(0,0,0,.25); 
+  backdrop-filter:blur(6px);
+}
 
-  .inputbar{width:min(960px,92vw);display:flex;gap:8px;margin-top:12px}
-  .inputbar input{flex:1;padding:12px;border-radius:12px;border:none;outline:none;font-size:16px}
-  .inputbar button{padding:12px 16px;border:none;border-radius:12px;background:#ffd1ec;color:#111;cursor:pointer;font-weight:700}
-  .inputbar button:hover{background:#ff90d2;color:#fff}
+/* オーバーレイ背景 */
+.overlay{
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.8);
+  backdrop-filter:blur(4px);
+  z-index:100;
+  justify-content:center;
+  align-items:center;
+}
 
-  /* フローティング：復活の儀／マカロン */
-  .floating{
-    position:fixed; right:18px; bottom:18px; display:flex; gap:8px; z-index:20;
-  }
-  .floating button{
-    border:none;border-radius:999px;padding:10px 14px;background:rgba(255,255,255,.18);
-    color:#fff;border:1px solid rgba(255,255,255,.4);cursor:pointer;backdrop-filter:blur(6px)
-  }
-  .floating button:hover{background:rgba(255,255,255,.28)}
+/* マカロンカード */
+#macaronCard{ 
+  background:rgba(255,255,255,0.15);
+  padding:28px; 
+  border-radius:20px; 
+  text-align:center;
+  max-width:600px;
+  width:90%;
+}
+#macaronCard h2{ 
+  font-size:clamp(22px,5vw,34px); 
+  margin-bottom:8px;
+}
+#macaronCard p{ 
+  font-size:clamp(14px,3.2vw,18px); 
+  margin-bottom:20px;
+}
+.grid{ 
+  display:grid; 
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); 
+  gap:18px; 
+}
+.card{ 
+  background:rgba(255,255,255,0.1); 
+  padding:16px 14px; 
+  border-radius:18px; 
+  cursor:pointer;
+  transition:transform 0.2s, background 0.2s;
+}
+.card:hover{
+  transform:scale(1.05);
+  background:rgba(255,255,255,0.2);
+}
+.card img{ 
+  width:108px; 
+  height:108px; 
+  border-radius:50%;
+}
+.label{ font-size:15px; margin-top:8px; }
+.trait{ font-size:13px; opacity:0.85; }
 
-  /* 進化エフェクト */
-  .evolve{animation:pulse .6s ease}
-  @keyframes pulse{0%{transform:scale(.9)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+@media (max-width:640px){
+  .card img{ width:96px; height:96px; }
+}
 
-  /* マカロン選択オーバーレイ */
-  #macaronOverlay{
-    position:fixed; inset:0; display:none; place-items:center; z-index:100;
-    background:radial-gradient(ellipse at center, rgba(0,0,0,.35), rgba(0,0,0,.75));
-    animation:fadeIn .25s ease;
-  }
-  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-  #macaronCard{
-    width:min(92vw,760px);
-    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
-    border-radius:18px; padding:22px; text-align:center; backdrop-filter:blur(6px);
-    box-shadow:0 10px 40px rgba(0,0,0,.35)
-  }
-  #macaronCard h2{margin:0 0 6px;font-size:clamp(20px,4.6vw,28px)}
-  #macaronCard p{margin:0 0 16px}
-  .grid{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:12px}
-  .card{
-    background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.4);
-    border-radius:16px; padding:12px 10px; cursor:pointer; transition:.15s
-  }
-  .card:hover{transform:translateY(-4px) scale(1.03);background:rgba(255,255,255,.24)}
-  .card img{width:78px;height:78px;object-fit:contain;display:block;margin:0 auto 6px}
-  .label{font-weight:700;font-size:14px}
-  .trait{opacity:.9;font-size:12px}
-  @media (max-width:640px){ .grid{grid-template-columns:repeat(2,1fr)} }
+/* チャットエリア */
+#chatArea{
+  background:rgba(255,255,255,0.1);
+  padding:16px;
+  margin-top:16px;
+  border-radius:12px;
+  max-width:500px;
+  width:100%;
+  height:300px;
+  overflow-y:auto;
+}
+.message{ margin:8px 0; }
+.user{ color:#ffd1ec; }
+.bot{ color:#aee1ff; }
 </style>
 </head>
 <body>
-  <header>
-    <img id="avatar" src="" alt="キャラ">
-    <div id="meta">
-      <div class="name" id="charName">???</div>
-      <div class="badge" id="charTrait">trait: -</div>
-      <div class="badge" id="turnInfo">talks: 0</div>
-    </div>
-  </header>
 
-  <div class="chat" id="chat"></div>
+<h1>会話ページ</h1>
+<div id="characterImgArea">
+  <img id="characterImg" src="public/assets/stage1/character.png" alt="キャラクター" width="140" />
+</div>
+<div id="chatArea"></div>
 
-  <div class="inputbar">
-    <input id="msg" placeholder="話しかけてみよう！" />
-    <button id="send">送信</button>
+<!-- マカロン選択オーバーレイ -->
+<div id="macaronOverlay" class="overlay">
+  <div id="macaronCard">
+    <h2>これから、もっとお話しよう。</h2>
+    <p>マカロンをクリックしてね。選んだ色の性格で進化して、会話に行くよ。</p>
+    <div class="grid" id="macaronGrid"></div>
   </div>
-
-  <!-- フローティング操作 -->
-  <div class="floating">
-    <button id="openMacaron">マカロン</button>
-    <button id="revivalBtn" style="display:none">復活の儀式へ</button>
-  </div>
-
-  <!-- マカロン選択オーバーレイ -->
-  <div id="macaronOverlay" role="dialog" aria-modal="true">
-    <div id="macaronCard">
-      <h2>これから、もっとお話しよう。</h2>
-      <p>マカロンをクリックしてね。選んだ色の性格で進化して、会話に行くよ。</p>
-      <div class="grid" id="macaronGrid"></div>
-    </div>
-  </div>
+</div>
 
 <script>
-  /* ===== 設定（進化後の画像パス） ===== */
-  const EVOLVED = {
-    pink:   "public/assets/stage2/evolved_pink.png",
-    blue:   "public/assets/stage2/evolved_blue.png",
-    green:  "public/assets/stage2/evolved_green.png",
-    purple: "public/assets/stage2/evolved_purple.png"
-  };
-  const TYPE_BY = { pink:"passion", blue:"calm", green:"energy", purple:"creative" };
-  const TRAIT_JA = { passion:"情熱", calm:"静寂", energy:"元気", creative:"創造" };
+// マカロンデータ
+const macarons = [
+  { color:"pink",   label:"ピンク", trait:"情熱", img:"public/assets/macarons/pink.png" },
+  { color:"blue",   label:"青",     trait:"静寂", img:"public/assets/macarons/blue.png" },
+  { color:"green",  label:"緑",     trait:"元気", img:"public/assets/macarons/green.png" },
+  { color:"purple", label:"紫",     trait:"創造", img:"public/assets/macarons/purple.png" }
+];
 
-  /* ===== 画像パス自動探索（マカロン画像） ===== */
-  function candidatePaths(color){
-    return [
-      `public/assets/stage1/macaron_${color}.png`,
-      `public/assets/stage1/macaron_${color}.webp`,
-      `public/assets/stage1/${color}_macaron.png`,
-      `public/assets/macaron/${color}.png`,
-      `public/assets/macaron/${color}.webp`,
-      `assets/stage1/macaron_${color}.png`,
-      `assets/macaron/${color}.png`,
-      `public/assets/stage1/macaron_${color}.PNG`,
-    ];
-  }
-  function resolveSrc(paths){
-    return new Promise((resolve)=>{
-      let i = 0;
-      const img = new Image();
-      const next = ()=>{
-        if(i >= paths.length){ resolve(null); return; }
-        img.onload = ()=> resolve(paths[i]);
-        img.onerror = ()=>{ i++; next(); };
-        img.src = paths[i];
-      };
-      next();
-    });
-  }
-
-  /* ===== 状態 ===== */
-  let img   = localStorage.getItem("characterImage");            // 現在の見た目
-  let trait = localStorage.getItem("whoai_trait") || "energy";   // 既定
-  let name  = localStorage.getItem("whoai_name") || "タネ";
-  let talks = parseInt(localStorage.getItem("whoai_turnCount") || "0", 10); // 総会話数
-
-  /* ===== UI参照 ===== */
-  const avatar = document.getElementById("avatar");
-  const chat   = document.getElementById("chat");
-  const nameEl = document.getElementById("charName");
-  const traitEl= document.getElementById("charTrait");
-  const turnEl = document.getElementById("turnInfo");
-  const revivalBtn = document.getElementById("revivalBtn");
-  const macaronBtn = document.getElementById("openMacaron");
-  const overlay = document.getElementById("macaronOverlay");
-  const grid    = document.getElementById("macaronGrid");
-
-  function renderMeta(){
-    if (img) avatar.src = img;
-    nameEl.textContent = name;
-    traitEl.textContent = `trait: ${trait}（${TRAIT_JA[trait]||"-"}）`;
-    turnEl.textContent  = `talks: ${talks}`;
-    if (Math.floor(talks/10) >= 2) revivalBtn.style.display = "inline-block";
-  }
-  renderMeta();
-
-  /* ===== チャット（ローカル応答） ===== */
-  function addRow(who, text){
-    const row = document.createElement("div");
-    row.className = `row ${who}`;
-    const b = document.createElement("div");
-    b.className = "bubble";
-    b.textContent = text;
-    row.appendChild(b);
-    chat.appendChild(row);
-    chat.scrollTop = chat.scrollHeight;
-  }
-  function toneByTrait(){
-    return {
-      passion:"ワクワクするね！",
-      calm:"落ち着いて考えてみよう。",
-      energy:"元気いっぱい！やってみよう！",
-      creative:"面白い発想だね、もっと広げよう。"
-    }[trait] || "なるほど！";
-  }
-  addRow("bot","来てくれてありがとう！まずはマカロンを選んでね。");
-
-  function saveTalks(){ localStorage.setItem("whoai_turnCount", String(talks)); }
-  function checkMilestone(){
-    if (talks > 0 && talks % 10 === 0) openMacaronOverlay();
-    if (Math.floor(talks/10) >= 2) revivalBtn.style.display = "inline-block";
-  }
-  function replyLocal(input){ return `${toneByTrait()}「${input}」のこと、もう少し教えて？`; }
-
-  const inputEl = document.getElementById("msg");
-  const sendEl  = document.getElementById("send");
-  function send(){
-    const val = inputEl.value.trim();
-    if(!val) return;
-    addRow("me", val);
-    inputEl.value = "";
-    talks += 1;
-    saveTalks();
-    renderMeta();
-    checkMilestone();
-    setTimeout(()=> addRow("bot", replyLocal(val)), 250);
-  }
-  sendEl.addEventListener("click", send);
-  inputEl.addEventListener("keydown", e=>{ if(e.key==="Enter") send(); });
-
-  /* ===== マカロンUI ===== */
-  async function makeCard(color){
-    const card = document.createElement("div");
-    card.className = "card";
-    card.dataset.color = color;
-    card.dataset.trait = TYPE_BY[color];
-
-    const imgEl = document.createElement("img");
-    const src = await resolveSrc(candidatePaths(color));
-    if(src){ imgEl.src = src; }
-    else {
-      // 最終手段：プレースホルダ（色丸）
-      imgEl.style.width="78px"; imgEl.style.height="78px"; imgEl.style.borderRadius="50%";
-      imgEl.style.display="block"; imgEl.style.margin="0 auto 6px";
-      imgEl.style.background = {pink:"#ff9ac1",blue:"#7fb4ff",green:"#6be08b",purple:"#b58bff"}[color];
-      imgEl.alt = color;
-    }
-
-    const label = document.createElement("div");
-    label.className = "label"; label.textContent = color;
-
-    const trait = document.createElement("div");
-    trait.className = "trait";
-    trait.textContent = {pink:"情熱",blue:"静寂",green:"元気",purple:"創造"}[color];
-
-    card.appendChild(imgEl); card.appendChild(label); card.appendChild(trait);
-    return card;
-  }
-
-  async function renderMacaronGrid(){
-    grid.innerHTML = "";
-    for (const color of ["pink","blue","green","purple"]) {
-      const card = await makeCard(color);
-      grid.appendChild(card);
-    }
-  }
-
-  function openMacaronOverlay(){ overlay.style.display = "grid"; }
-  function closeMacaronOverlay(){ overlay.style.display = "none"; }
-
-  grid.addEventListener("click", (e)=>{
-    const card = e.target.closest(".card");
-    if(!card) return;
-    const color = card.dataset.color;
-    const t = card.dataset.trait;
-
-    // 進化反映
-    img   = EVOLVED[color] || img;
-    trait = t || trait;
-
-    // 保存（会話継続のため）
-    localStorage.setItem("characterImage", img);
-    localStorage.setItem("whoai_trait", trait);
-    localStorage.setItem("whoai_type", trait); // 互換
-
-    // 見た目更新＆エフェクト
-    avatar.src = img;
-    avatar.classList.remove("evolve");
-    void avatar.offsetWidth; // restart animation
-    avatar.classList.add("evolve");
-    renderMeta();
-    closeMacaronOverlay();
-
-    // 進化ボイス
-    addRow("bot", `マカロン（${color}）で進化したよ！ これからもよろしくね。`);
-    inputEl.focus();
+// マカロン描画
+async function renderMacaronGrid(){
+  const grid = document.getElementById("macaronGrid");
+  grid.innerHTML = "";
+  macarons.forEach(m=>{
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <img src="${m.img}" alt="${m.label}" />
+      <div class="label">${m.label}</div>
+      <div class="trait">${m.trait}</div>
+    `;
+    div.addEventListener("click", ()=> selectMacaron(m));
+    grid.appendChild(div);
   });
+}
 
-  macaronBtn.addEventListener("click", openMacaronOverlay);
+// マカロン選択処理
+function selectMacaron(m){
+  document.getElementById("macaronOverlay").style.display = "none";
+  addMessage("bot", `${m.label}のマカロンを選んだね！これから${m.trait}な会話になるよ。`);
+}
 
-  document.getElementById("revivalBtn").addEventListener("click", ()=>{
-    localStorage.setItem("whoai_entry","to_revival");
-    window.location.href = "rebirth.html"; // 必要ならファイル名変更
-  });
+// オーバーレイ開く
+function openMacaronOverlay(){
+  document.getElementById("macaronOverlay").style.display = "flex";
+}
 
-  // 初期表示：マカロングリッドを描画して即表示
-  renderMacaronGrid().then(openMacaronOverlay);
+// 吹き出し表示
+function showWelcome(text="来てくれてありがとう！まずはマカロンを選んでね。"){
+  const old = document.getElementById('welcomeBubble');
+  if (old) old.remove();
+  const div = document.createElement('div');
+  div.id = 'welcomeBubble';
+  div.textContent = text;
+  document.body.appendChild(div);
+  setTimeout(()=> div.remove(), 3500);
+}
+
+// チャットに追加
+function addMessage(sender, text){
+  const chat = document.getElementById("chatArea");
+  const div = document.createElement("div");
+  div.className = `message ${sender}`;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// 初期処理
+window.addEventListener("DOMContentLoaded", async ()=>{
+  await renderMacaronGrid();
+  openMacaronOverlay();
+  showWelcome();
+});
 </script>
+
 </body>
 </html>
