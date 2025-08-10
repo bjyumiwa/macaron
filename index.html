@@ -1,99 +1,39 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI ?</title>
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;
-      background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      text-align:center;padding:24px
-    }
-    h1{font-size:48px;margin:10px 0 12px;text-shadow:0 2px 10px rgba(0,0,0,.4)}
-    p{max-width:720px;line-height:1.9;margin:0 auto 20px;text-shadow:0 2px 10px rgba(0,0,0,.35)}
-    img.hero{width:220px;filter:drop-shadow(0 12px 28px rgba(0,0,0,.45));margin:8px 0 16px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-    .btn{border:none;border-radius:14px;padding:14px 22px;cursor:pointer;font-size:18px}
-    .primary{background:#ffd1ec;color:#111}
-    .ghost{background:#fff;color:#111}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WhoAI - スタート</title>
+<style>
+body {
+  font-family: "Noto Sans JP", sans-serif;
+  text-align: center;
+  color: white;
+  background: url("public/assets/stage1/space_background.png") center/cover no-repeat;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+button {
+  padding: 12px 24px;
+  font-size: 1.2em;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background: #ffb6c1;
+  color: #111;
+}
+</style>
 </head>
 <body>
-  <h1 id="title">WhoAI ?</h1>
-  <img class="hero" src="public/assets/stage1/miwacchi_close.png" alt="キャラクター">
-
-  <p id="lead">
-    この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>
-    さあ、旅を始めましょう。
-  </p>
-
-  <div class="row" style="margin:12px 0 20px">
-    <button class="btn primary" id="startBtn">スタート ▶</button>
-  </div>
-
-  <div class="row">
-    <button class="btn ghost" id="jaBtn">日本語</button>
-    <button class="btn ghost" id="enBtn">English</button>
-    <button class="btn ghost" id="aboutBtn">このアプリについて</button>
-  </div>
+<h1>WhoAI</h1>
+<button id="startBtn">スタート</button>
 
 <script>
-  // ---- 言語定義（最小） ----
-  const L = {
-    ja: {
-      title: "WhoAI ?",
-      lead: "この世界では、あなたとの対話を通じて成長するAIキャラクターが待っています。<br>さあ、旅を始めましょう。",
-      start: "スタート ▶",
-      about: "このアプリについて"
-    },
-    en: {
-      title: "WhoAI?",
-      lead: "In this world, an AI character grows through conversation with you.<br>Ready to begin the journey?",
-      start: "Start ▶",
-      about: "About this app"
-    }
-  };
-
-  const LANG_KEY = "whoai_lang";
-
-  function getLang(){
-    const v = localStorage.getItem(LANG_KEY);
-    return (v === "en" || v === "ja") ? v : "ja";
-  }
-  function setLang(lang){
-    localStorage.setItem(LANG_KEY, lang);
-    applyLang(lang);
-  }
-  function applyLang(lang){
-    const t = L[lang] || L.ja;
-    document.getElementById("title").innerHTML = t.title;
-    document.getElementById("lead").innerHTML  = t.lead;
-    document.getElementById("startBtn").textContent = t.start;
-    document.getElementById("aboutBtn").textContent = t.about;
-    // html lang 属性も更新
-    document.documentElement.lang = lang;
-  }
-
-  // 初期適用（保存があればそれを使う）
-  applyLang(getLang());
-
-  // スタート＝占いページへ
-  document.getElementById("startBtn").addEventListener("click", () => {
-    // 占いページ名が違う場合はここを変更（例: fortune/index.html など）
-    location.href = "fortune.html";
-  });
-
-  // 言語ボタン
-  document.getElementById("jaBtn").addEventListener("click", () => setLang("ja"));
-  document.getElementById("enBtn").addEventListener("click", () => setLang("en"));
-
-  // 「このアプリについて」
-  document.getElementById("aboutBtn").addEventListener("click", () => {
-    location.href = "about.html";
-  });
+document.getElementById("startBtn").addEventListener("click", function() {
+    location.href = "fortune.html"; // 占いへ
+});
 </script>
 </body>
 </html>
