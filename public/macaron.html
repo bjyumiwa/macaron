@@ -8,8 +8,7 @@
   html,body{height:100%;margin:0}
   body{
     font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    background:url("../stage1/space_background.png") center/cover fixed no-repeat;
-    /* ↑ このファイルが /assets/ または /assets/stage1/ にあっても相対で解決できるよう "../" を使用 */
+    background:url("/macaron/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
     color:#fff; display:flex; flex-direction:column; align-items:center; gap:18px; padding:24px
   }
   h1{margin:8px 0 4px}
@@ -29,10 +28,10 @@
   <div class="hint">色を変えても<b>進化状態は維持</b>します（見た目だけ変わります）。</div>
 
   <div class="grid" id="grid">
-    <div class="card" data-color="pink"><img class="img" data-file="macaron_pink.png"  alt="pink"><div>ピンク（情熱）</div></div>
-    <div class="card" data-color="blue"><img class="img" data-file="macaron_blue.png"  alt="blue"><div>ブルー（静寂）</div></div>
-    <div class="card" data-color="green"><img class="img" data-file="macaron_green.png" alt="green"><div>グリーン（元気）</div></div>
-    <div class="card" data-color="purple"><img class="img" data-file="macaron_purple.png" alt="purple"><div>パープル（創造）</div></div>
+    <div class="card" data-color="pink"><img class="img" src="/macaron/public/assets/stage1/macaron_pink.png"  alt="pink"><div>ピンク（情熱）</div></div>
+    <div class="card" data-color="blue"><img class="img" src="/macaron/public/assets/stage1/macaron_blue.png"  alt="blue"><div>ブルー（静寂）</div></div>
+    <div class="card" data-color="green"><img class="img" src="/macaron/public/assets/stage1/macaron_green.png" alt="green"><div>グリーン（元気）</div></div>
+    <div class="card" data-color="purple"><img class="img" src="/macaron/public/assets/stage1/macaron_purple.png" alt="purple"><div>パープル（創造）</div></div>
   </div>
 
   <div class="row">
@@ -41,35 +40,11 @@
   </div>
 
 <script>
-  /* ルート（/repo/）を推定 */
-  function repoRoot(){
-    const p = location.pathname;
-    // 例: /repo/assets/macaron.html → /repo/
-    const m = p.match(/^(.*?\/)(?:assets\/.*|[^/]+)$/);
-    return (m && m[1]) || '/';
-  }
-  const ROOT = repoRoot();
+  const TALK_PAGE = '/macaron/whoai_talk.html';
 
-  // 画像を assets/stage1 から読み込み（このhtmlが assets 配下でもOK）
-  document.querySelectorAll('.img').forEach(img=>{
-    const file = img.dataset.file;
-    img.src = `${ROOT}assets/stage1/${file}`;
-  });
-
+  // 選択
   const cards = document.querySelectorAll('.card');
   let chosen = null;
-
-  // 直近の選択を初期表示
-  try{
-    const prev = JSON.parse(localStorage.getItem('macaron_choice')||'null');
-    if(prev?.macaron){
-      chosen = prev.macaron;
-      document.querySelector(`.card[data-color="${chosen}"]`)?.classList.add('active');
-      document.getElementById('evolveBtn').disabled = false;
-    }
-  }catch{}
-
-  // クリックで選択
   cards.forEach(c=>{
     c.addEventListener('click', ()=>{
       cards.forEach(x=>x.classList.remove('active'));
@@ -79,27 +54,27 @@
       document.getElementById('evolveBtn').disabled = false;
     });
   });
-
-  // 会話ページの場所を計算（assets 配下なら 1 階層上へ戻す）
-  function talkPath(){
-    // /repo/assets/xxx.html → /repo/whoai_talk.html
-    // /repo/marcaron.html   → /repo/whoai_talk.html
-    const p = location.pathname;
-    if (p.includes('/assets/')) return ROOT + 'whoai_talk.html';
-    return p.replace(/[^/]+$/, 'whoai_talk.html');
-  }
+  // 前回選択を反映
+  try{
+    const prev = JSON.parse(localStorage.getItem('macaron_choice')||'null');
+    if(prev?.macaron){
+      chosen = prev.macaron;
+      document.querySelector(`.card[data-color="${chosen}"]`)?.classList.add('active');
+      document.getElementById('evolveBtn').disabled = false;
+    }
+  }catch{}
 
   // 戻る
   document.getElementById('backBtn').addEventListener('click', ()=>{
     if(localStorage.getItem('whoai_need_evolve')==='1'){
       localStorage.removeItem('whoai_need_evolve');
-      location.href = talkPath();
+      location.href = TALK_PAGE;
     }else{
       history.back();
     }
   });
 
-  // 進化を適用
+  // 進化を適用して会話へ
   document.getElementById('evolveBtn').addEventListener('click', ()=>{
     if(!chosen) return;
 
@@ -107,14 +82,14 @@
     try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
 
     s.color   = chosen;
-    s.stage   = 'evolved';
-    s.variant = 'open';
-    s.xp      = 0;            // 次ループ開始。維持したい場合はこの行を削除
+    s.stage   = 'evolved'; // 進化を維持
+    s.variant = 'open';    // 見た目：open（必要なら変更OK）
+    s.xp      = 0;         // 新しい周回を始めるなら0
     s.goal    = s.goal || 12;
 
     localStorage.setItem('whoai_state', JSON.stringify(s));
     localStorage.removeItem('whoai_need_evolve');
-    location.href = talkPath();
+    location.href = TALK_PAGE;
   });
 </script>
 </body>
