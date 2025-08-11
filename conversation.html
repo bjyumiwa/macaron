@@ -15,10 +15,7 @@
       text-align: center;
       padding: 20px;
     }
-    #characterImg {
-      width: 180px;
-      margin-bottom: 12px;
-    }
+    #characterImg { width: 180px; margin-bottom: 12px; }
     #chatArea {
       background: rgba(255,255,255,0.1);
       padding: 16px;
@@ -29,6 +26,7 @@
       margin-right: auto;
       height: 300px;
       overflow-y: auto;
+      text-align: left;
     }
     #userInput {
       width: 80%;
@@ -44,9 +42,10 @@
       border: none;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #ff99cc;
-    }
+    button:hover { background-color: #ff99cc; }
+    .sys { opacity: .85; font-size: 0.9em; }
+    .me  { margin: 6px 0; }
+    .ai  { margin: 6px 0; }
   </style>
 </head>
 <body>
@@ -55,39 +54,123 @@
 
   <div id="chatArea"></div>
 
-  <input type="text" id="userInput" placeholder="メッセージを入力...">
-  <br>
-  <button onclick="sendMessage()">送信</button>
+  <input type="text" id="userInput" placeholder="メッセージを入力..." />
+  <br />
+  <button id="sendBtn">送信</button>
 
   <script>
-    let talkCount = 0;
+    // ====== 設定 ======
+    // ← あなたのVercelのAPIエンドポイントに変更してOK
+    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 
-    function sendMessage() {
-      const input = document.getElementById("userInput");
-      const text = input.value.trim();
+    // 必要に応じて指示文を編集
+    const SYSTEM_PROMPT = `
+あなたは「ぴーぷく」。やさしく短めに返事をする。中学生にもわかる言葉で、
+相手の気持ちに寄り添いながら一つだけ問い返すか、次の行動のヒントを示す。
+    `.trim();
+
+    // ====== 状態 ======
+    let turnCount = 0;
+    const history = []; // {role: 'user'|'assistant', content: '...'}
+
+    // ====== DOM ======
+    const chatArea = document.getElementById('chatArea');
+    const userInput = document.getElementById('userInput');
+    const sendBtn   = document.getElementById('sendBtn');
+
+    // 初期メッセージ（任意）
+    appendSys('↑ ぴーぷくとお話ししてね。3回話すとマカロンの世界へ進むよ。');
+
+    // Enterで送信
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+    sendBtn.addEventListener('click', sendMessage);
+
+    // ====== 送信処理（ここが fetch ）======
+    async function sendMessage() {
+      const text = userInput.value.trim();
       if (!text) return;
 
-      appendMessage("あなた", text);
-      input.value = "";
+      appendMe(text);
+      history.push({ role: 'user', content: text });
+      userInput.value = '';
+      lockUI(true);
 
-      // API風ダミー応答（実際はfetchでAI APIに送信）
-      setTimeout(() => {
-        appendMessage("ぴーぷく", "それは面白いね！");
-        talkCount++;
-        if (talkCount >= 3) {
-          setTimeout(() => {
-            window.location.href = "macaron.html";
-          }, 1000);
+      const typingId = appendSys('ぴーぷくが考え中…');
+
+      try {
+        const payload = {
+          userMessage: text,
+          history,
+          systemPrompt: SYSTEM_PROMPT,
+          model: 'gpt-4o-mini',
+          temperature: 0.7,
+          max_tokens: 220
+        };
+
+        const res = await fetch(TALK_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        removeById(typingId);
+
+        if (!res.ok) {
+          appendSys(`エラー: ${data?.error || '通信に失敗しました'}`);
+          lockUI(false);
+          return;
         }
-      }, 500);
+
+        const reply = (data?.reply || '').trim();
+        appendAI(reply || 'うまく返事ができなかったみたい…もう一度試してね。');
+        if (reply) history.push({ role: 'assistant', content: reply });
+
+        turnCount++;
+        if (turnCount >= 3) {
+          appendSys('マカロンの世界へ移動します…');
+          setTimeout(() => { window.location.href = 'macaron.html'; }, 800);
+        }
+      } catch (err) {
+        removeById(typingId);
+        appendSys('ネットワークエラーだよ。再度お試しください。');
+      } finally {
+        lockUI(false);
+      }
     }
 
-    function appendMessage(sender, text) {
-      const chatArea = document.getElementById("chatArea");
-      const p = document.createElement("p");
-      p.innerHTML = `<strong>${sender}:</strong> ${text}`;
+    // ====== 表示系 ======
+    function appendMe(text)  { appendLine(`あなた：${escapeHtml(text)}`, 'me'); }
+    function appendAI(text)  { appendLine(`ぴーぷく：${escapeHtml(text)}`, 'ai'); }
+    function appendSys(text) { return appendLine(text, 'sys'); }
+
+    function appendLine(text, cls = '') {
+      const p = document.createElement('p');
+      const id = 'm_' + Math.random().toString(36).slice(2);
+      p.id = id;
+      p.className = cls;
+      p.textContent = text;
       chatArea.appendChild(p);
       chatArea.scrollTop = chatArea.scrollHeight;
+      return id; // 後で消す用
+    }
+
+    function removeById(id) {
+      const el = document.getElementById(id);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    }
+
+    function lockUI(disabled) {
+      userInput.disabled = disabled;
+      sendBtn.disabled   = disabled;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
   </script>
 </body>
