@@ -8,7 +8,7 @@
   html,body{height:100%;margin:0}
   body{
     font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    background:url("assets/stage1/space_background.png") center/cover fixed no-repeat;
+    background:url("/macaron/assets/stage1/space_background.png") center/cover fixed no-repeat;
     color:#fff; display:flex; flex-direction:column; gap:12px; padding:18px
   }
   .panel{background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.18);border-radius:16px}
@@ -71,32 +71,14 @@
   </div>
 
 <script>
-  /* ====== API（そのまま） ====== */
+  const REPO_BASE = '/macaron/';                       // ★GitHub Pages ルート
   const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-
-  /* ====== ルートパスを計算（/repo/ までを抽出） ====== */
-  function repoRoot(){
-    // /repo/whoai_talk.html → /repo/
-    // /repo/assets/macaron.html → /repo/
-    const p = location.pathname;
-    if (p.includes('/assets/')) return p.replace(/\/assets\/.*/,'/') ;
-    return p.replace(/[^/]+$/,'');
-  }
-  const ROOT = repoRoot();
-
-  /* ====== 背景フォールバック ====== */
-  (()=>{
-    const img = new Image();
-    img.src = `${ROOT}assets/stage1/space_background.png`;
-    img.onerror = ()=>{ document.body.style.backgroundImage = `url("${ROOT}public/assets/stage1/space_background.png")`; };
-    // 既定CSSの相対は残してOK
-  })();
 
   /* ====== 状態 ====== */
   function read(obj, k, def){ return (obj && obj[k]!=null)?obj[k]:def; }
-  const stored = JSON.parse(localStorage.getItem('whoai_state') || "{}");
+  const stored  = JSON.parse(localStorage.getItem('whoai_state') || "{}");
   const macaron = JSON.parse(localStorage.getItem('macaron_choice') || "null");
-  const color = stored.color || (macaron?macaron.macaron:null) || localStorage.getItem('selectedMacaron') || 'pink';
+  const color   = stored.color || (macaron?macaron.macaron:null) || localStorage.getItem('selectedMacaron') || 'pink';
   const state = {
     name: read(stored,'name','WHOAI'),
     color,
@@ -112,8 +94,8 @@
 
   /* ====== 進捗表示 ====== */
   const goalText = document.getElementById('goalText');
-  const fill = document.getElementById('fill');
-  const counter = document.getElementById('counter');
+  const fill     = document.getElementById('fill');
+  const counter  = document.getElementById('counter');
 
   function updateGoalText(){
     const colorLabel = {pink:'ピンク / Pink', blue:'ブルー / Blue', green:'グリーン / Green', purple:'パープル / Purple'}[state.color] || state.color;
@@ -129,16 +111,14 @@
 
   /* ====== アバター ====== */
   function charPath(s){
-    const name = (s.variant === "tane") ? `tane_${s.color}.png` : `${s.color}_${s.variant}.png`;
-    return [`${ROOT}assets/stage1/${name}`, `${ROOT}public/assets/stage1/${name}`];
+    const file = (s.variant === "tane") ? `tane_${s.color}.png` : `${s.color}_${s.variant}.png`;
+    return `${REPO_BASE}assets/stage1/${file}`;
   }
   (function setAvatar(){
     const img = document.getElementById('avatar');
-    const [p0, p1] = charPath(state);
-    img.src = p0;
+    img.src = charPath(state);
     img.alt = (state.name || 'WHOAI') + ' avatar';
     img.onerror = ()=>{
-      if(img.dataset.fbk!=='1'){ img.dataset.fbk='1'; img.src = p1; return; }
       const f = document.createElement('div');
       f.className = 'fallback';
       f.style.background = {pink:'#ff8fb1', blue:'#88a7ff', green:'#85f3b0', purple:'#c59bff'}[state.color] || '#fff';
@@ -147,7 +127,7 @@
   })();
 
   /* ====== チャット ====== */
-  const logEl = document.getElementById('log');
+  const logEl  = document.getElementById('log');
   const textEl = document.getElementById('text');
   const sendEl = document.getElementById('send');
 
@@ -191,23 +171,10 @@
     else { textEl.classList.remove('disabled'); sendEl.classList.remove('disabled'); }
   }
 
-  // ▼ macaron.html をオート検出（同階層 /assets/ 内 どちらでもOK）
-  async function goToMacaron(){
+  // ★ゴール到達で assets/macaron.html へ（固定パス）
+  function reachGoal(){
     localStorage.setItem('whoai_need_evolve','1');
-    const base = location.pathname.replace(/[^/]+$/, '');
-    const candidates = [
-      base + 'macaron.html',
-      base + 'assets/macaron.html',
-      base + 'assets/stage1/macaron.html',
-      base + 'macaron_select.html'
-    ];
-    for (const url of candidates) {
-      try {
-        const res = await fetch(url, { method:'HEAD', cache:'no-store' });
-        if (res.ok) { location.href = url + (url.includes('?')?'':'?from=talk'); return; }
-      } catch {}
-    }
-    alert('macaron.html が見つかりませんでした。配置場所を確認してください。');
+    location.href = REPO_BASE + 'assets/macaron.html?from=talk';
   }
 
   if(state.xp >= state.goal){ disableInput(true); }
@@ -234,7 +201,7 @@
 
     if(state.xp >= state.goal){
       disableInput(true);
-      setTimeout(goToMacaron, 250);
+      setTimeout(reachGoal, 250);
     }
   }
 
