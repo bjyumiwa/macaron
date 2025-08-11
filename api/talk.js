@@ -1,12 +1,12 @@
-// /api/talk.js  ←リポジトリ直下に置く
+// /api/talk.js
 export default async function handler(req, res) {
-  // CORS
+  // --- CORS ---
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  // 生存確認（GET OK）
+  // GET を許可（生存確認用）
   if (req.method === 'GET') {
     return res.status(200).json({ ok: true, endpoint: '/api/talk', method: 'POST only' });
   }
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const temperature = typeof body.temperature === 'number' ? body.temperature : 0.7;
     const max_tokens = typeof body.max_tokens === 'number' ? body.max_tokens : 220;
 
-    // 今回のフロント互換
+    // 互換: {userMessage, history[], systemPrompt}
     if (body.userMessage) {
       const systemPrompt = body.systemPrompt || 'You are WHOAI.';
       const hist = Array.isArray(body.history) ? body.history : [];
@@ -38,23 +38,21 @@ export default async function handler(req, res) {
         { role: 'user', content: String(body.userMessage || '') }
       ];
     }
-    // 旧形式
+    // 旧: {messages:[...]}
     if (!messages && Array.isArray(body.messages) && body.messages.length > 0) {
       messages = body.messages.map(m => ({
         role: (m.role === 'assistant' || m.role === 'system') ? m.role : 'user',
         content: String(m.content || '')
       }));
     }
-    // 単発
+    // 単発: {message:"..."}
     if (!messages && body.message) {
       messages = [
         { role: 'system', content: 'あなたはやさしい相棒AI。短く優しく答えて。' },
         { role: 'user', content: String(body.message) }
       ];
     }
-    if (!messages) {
-      return res.status(400).json({ error: 'No input' });
-    }
+    if (!messages) return res.status(400).json({ error: 'No input' });
 
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
