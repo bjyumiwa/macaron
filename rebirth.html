@@ -1,139 +1,52 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>命の終わりと復活儀式</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .container {
-      background: rgba(0,0,0,0.7);
-      border-radius: 16px;
-      max-width: 400px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    h1 {
-      font-size: 1.8em;
-      margin-bottom: 20px;
-    }
-    p {
-      font-size: 1.1em;
-      margin-bottom: 24px;
-      line-height: 1.4;
-    }
-    .btn-group {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-    }
-    button {
-      background: #ffd1ec;
-      color: #111;
-      border: none;
-      border-radius: 12px;
-      padding: 12px 20px;
-      font-size: 1em;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background: #ff70c1;
-      color: white;
-    }
-    #drink {
-      margin-top: 40px;
-      width: 100px;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    #drink:hover {
-      transform: scale(1.1);
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>復活の儀式（Rebirth）</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{max-width:920px;width:92vw;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:28px;text-align:center}
+  h1{margin:0 0 8px}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(220px,1fr));margin-top:16px}
+  .opt{background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:16px;padding:16px;cursor:pointer}
+  .opt:hover{transform:translateY(-2px)}
+  .opt.selected{border-color:#ffc9d6}
+  .btn{margin-top:16px;border:none;border-radius:16px;padding:14px 22px;font-weight:700;background:#ffc9d6;color:#222;cursor:pointer}
+</style>
 </head>
-
 <body>
-  <div class="container">
-    <h1>命の終わり…そして復活</h1>
-    <p>
-      あなたと一緒に歩んできたキャラクターは一度「命を終え」、<br>
-      今、再び生まれ変わろうとしています。<br>
-      どちらを引き継いで復活しますか？
-    </p>
-    <div class="btn-group">
-      <button onclick="chooseMemory()">記憶を引き継ぐ</button>
-      <button onclick="chooseAppearance()">容姿を引き継ぐ</button>
+  <div class="card">
+    <h1>復活の儀式</h1>
+    <p>どちらを残しますか？（ゲーム体験のための選択です）</p>
+    <div class="grid">
+      <div class="opt" id="keepAppearance"><h3>容姿を保つ</h3><p>見た目は維持。<br>記憶はリセットされます。</p></div>
+      <div class="opt" id="keepMemory"><h3>記憶を保つ</h3><p>会話の記憶は維持。<br>見た目は変化します。</p></div>
     </div>
-    <img id="drink" src="public/assets/stage1/drink_item.png" alt="復活のドリンク" title="復活のドリンク - クリックでアンケートへ" onclick="goToSurvey()" />
+    <button class="btn" id="go">決定する</button>
   </div>
 
-  <script>
-    // 初期設定：言語を取得
-    document.addEventListener("DOMContentLoaded", () => {
-      const lang = localStorage.getItem("lang") || "ja";
-
-      // タイトルの書き換え
-      document.title = lang === "en"
-        ? "Rebirth Ceremony"
-        : "命の終わりと復活儀式";
-
-      // 見出し
-      document.querySelector("h1").textContent = 
-        lang === "en" ? "End of Life... and Rebirth" : "命の終わり…そして復活";
-
-      // 本文
-      document.querySelector("p").innerHTML = lang === "en"
-        ? `The character who has walked with you has reached the end of its journey,<br>
-           and now seeks to be reborn.<br>
-           Which will you pass on?`
-        : `あなたと一緒に歩んできたキャラクターは一度「命を終え」、<br>
-           今、再び生まれ変わろうとしています。<br>
-           どちらを引き継いで復活しますか？`;
-
-      // ボタンの表示テキスト
-      document.querySelectorAll("button")[0].textContent =
-        lang === "en" ? "Inherit Memory" : "記憶を引き継ぐ";
-
-      document.querySelectorAll("button")[1].textContent =
-        lang === "en" ? "Inherit Appearance" : "容姿を引き継ぐ";
-
-      // ドリンクのタイトル（マウスホバー時）
-      document.getElementById("drink").title = lang === "en"
-        ? "Revival Drink - Click to take the survey"
-        : "復活のドリンク - クリックでアンケートへ";
-    });
-
-    // ボタン処理
-    function chooseMemory() {
-      localStorage.setItem("rebirth_choice", "memory");
-      location.href = "naming.html";
-    }
-
-    function chooseAppearance() {
-      localStorage.setItem("rebirth_choice", "appearance");
-      location.href = "conversation.html";
-    }
-
-    function goToSurvey() {
-      location.href = "identity_check.html";
-    }
-  </script>
+<script>
+const state=JSON.parse(localStorage.getItem('whoai_state')||'{}'); if(!state.color) location.href='macaron_select.html';
+let choice=null;
+const a=document.getElementById('keepAppearance'), m=document.getElementById('keepMemory');
+[a,m].forEach(el=>el.onclick=()=>{choice=(el===a?'appearance':'memory'); a.classList.toggle('selected',choice==='appearance'); m.classList.toggle('selected',choice==='memory');});
+document.getElementById('go').onclick=()=>{
+  if(!choice) return alert('どちらかを選んでください');
+  state.stage='final';
+  state.goal=12; state.xp=0;
+  state.currentCondition=choice;
+  if(choice==='appearance'){
+    state.variant='open';
+    localStorage.removeItem('whoai_chat'); // 記憶リセット
+  }else{
+    state.variant='close';                  // 記憶維持
+  }
+  localStorage.setItem('whoai_state', JSON.stringify(state));
+  location.href='whoai_talk.html';
+};
+</script>
 </body>
 </html>
