@@ -8,7 +8,8 @@
   html,body{height:100%;margin:0}
   body{
     font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    background:url("assets/stage1/space_background.png") center/cover fixed no-repeat;
+    background:url("../stage1/space_background.png") center/cover fixed no-repeat;
+    /* ↑ このファイルが /assets/ または /assets/stage1/ にあっても相対で解決できるよう "../" を使用 */
     color:#fff; display:flex; flex-direction:column; align-items:center; gap:18px; padding:24px
   }
   h1{margin:8px 0 4px}
@@ -40,22 +41,20 @@
   </div>
 
 <script>
-  // 画像パスのフォールバック（assets/.. が無ければ public/assets/..）
-  const BASES = ["assets/stage1", "public/assets/stage1"];
+  /* ルート（/repo/）を推定 */
+  function repoRoot(){
+    const p = location.pathname;
+    // 例: /repo/assets/macaron.html → /repo/
+    const m = p.match(/^(.*?\/)(?:assets\/.*|[^/]+)$/);
+    return (m && m[1]) || '/';
+  }
+  const ROOT = repoRoot();
+
+  // 画像を assets/stage1 から読み込み（このhtmlが assets 配下でもOK）
   document.querySelectorAll('.img').forEach(img=>{
     const file = img.dataset.file;
-    img.src = `${BASES[0]}/${file}`;
-    img.onerror = ()=>{
-      if(img.dataset.altbase!=='1'){
-        img.dataset.altbase='1';
-        img.src = `${BASES[1]}/${file}`;
-      }
-    };
+    img.src = `${ROOT}assets/stage1/${file}`;
   });
-  // 背景もフォールバック
-  const testBg = new Image();
-  testBg.src = "assets/stage1/space_background.png";
-  testBg.onerror = ()=>{ document.body.style.backgroundImage = 'url("public/assets/stage1/space_background.png")'; };
 
   const cards = document.querySelectorAll('.card');
   let chosen = null;
@@ -81,19 +80,26 @@
     });
   });
 
+  // 会話ページの場所を計算（assets 配下なら 1 階層上へ戻す）
+  function talkPath(){
+    // /repo/assets/xxx.html → /repo/whoai_talk.html
+    // /repo/marcaron.html   → /repo/whoai_talk.html
+    const p = location.pathname;
+    if (p.includes('/assets/')) return ROOT + 'whoai_talk.html';
+    return p.replace(/[^/]+$/, 'whoai_talk.html');
+  }
+
   // 戻る
   document.getElementById('backBtn').addEventListener('click', ()=>{
     if(localStorage.getItem('whoai_need_evolve')==='1'){
       localStorage.removeItem('whoai_need_evolve');
-      // whoai_talk.html と同じ階層へ戻す
-      const base = location.pathname.replace(/[^/]+$/, '');
-      location.href = base + 'whoai_talk.html';
+      location.href = talkPath();
     }else{
       history.back();
     }
   });
 
-  // 進化を適用（★色を変えても進化のまま）
+  // 進化を適用
   document.getElementById('evolveBtn').addEventListener('click', ()=>{
     if(!chosen) return;
 
@@ -101,16 +107,14 @@
     try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
 
     s.color   = chosen;
-    s.stage   = 'evolved';   // 常に進化状態
-    s.variant = 'open';      // 進化時の見た目（命名は手元に合わせてOK）
-    s.xp      = 0;           // 新しい周回を始めるなら0。維持したいなら削除OK
+    s.stage   = 'evolved';
+    s.variant = 'open';
+    s.xp      = 0;            // 次ループ開始。維持したい場合はこの行を削除
     s.goal    = s.goal || 12;
 
     localStorage.setItem('whoai_state', JSON.stringify(s));
-
     localStorage.removeItem('whoai_need_evolve');
-    const base = location.pathname.replace(/[^/]+$/, '');
-    location.href = base + 'whoai_talk.html';
+    location.href = talkPath();
   });
 </script>
 </body>
