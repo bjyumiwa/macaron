@@ -11,7 +11,7 @@
     background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
     color:#fff; display:flex; align-items:center; justify-content:center; text-align:center; padding:24px
   }
-  .card{background:rgba(0,0,0,.38); border:1px solid rgba(255,255,255,.18); border-radius:20px; padding:22px; width:min(760px,92vw)}
+  .card{background:rgba(0,0,0,.38); border:1px solid rgba(255,255,255,.18); border-radius:20px; padding:22px; width:min(760px,92vw); position:relative}
   h1{margin:0 0 8px}
   .img{height:180px; display:flex; align-items:center; justify-content:center; margin:8px auto 6px}
   .img img{max-height:170px; max-width:82%; filter:drop-shadow(0 10px 24px rgba(0,0,0,.5))}
@@ -19,14 +19,13 @@
   .namebox{margin-top:12px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:14px; padding:12px}
   .namebox h2{margin:0 0 8px; font-size:18px}
   .row{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
-  .row input{
-    width:min(360px,80vw); padding:12px 14px; border-radius:12px; border:none; outline:none;
-  }
+  .row input{width:min(360px,80vw); padding:12px 14px; border-radius:12px; border:none; outline:none}
   .row button{padding:12px 16px; border:none; border-radius:12px; font-weight:700; cursor:pointer}
   .primary{background:#ffd1ec; color:#222}
   .go{margin-top:14px}
   .muted{opacity:.85}
   .err{color:#ffb3b3; margin-top:6px; min-height:1.2em}
+  .rename{position:absolute; right:14px; bottom:12px; font-size:12px; opacity:.8; cursor:pointer; text-decoration:underline}
 </style>
 </head>
 <body>
@@ -35,7 +34,6 @@
     <div class="img"><img id="char" alt=""></div>
     <p id="desc" class="muted"></p>
 
-    <!-- 名前付け（必要なときだけ表示） -->
     <div id="namebox" class="namebox" style="display:none;">
       <h2 id="nameTitle">キャラクターに名前をつけてください</h2>
       <div class="row">
@@ -47,6 +45,7 @@
     </div>
 
     <button class="primary go" id="go">会話へ進む</button>
+    <span id="rename" class="rename">名前を変更する</span>
   </div>
 
 <script>
@@ -55,7 +54,6 @@
   const state = JSON.parse(localStorage.getItem('whoai_state')||"{}");
   if(!state || !state.color){ location.href = "macaron_select.html"; }
 
-  // i18n
   const T = {
     ja:{
       titleSeed:"進化（種）", titleNext:"進化（次形態）",
@@ -67,6 +65,7 @@
       nameNote:"※ 1〜16文字。あとから変更できます。",
       errEmpty:"1文字以上で入力してください。",
       go:"会話へ進む",
+      rename:"名前を変更する",
       colors:{pink:"ピンク", blue:"ブルー", green:"グリーン", purple:"パープル"}
     },
     en:{
@@ -79,72 +78,72 @@
       nameNote:"* 1–16 characters. You can change it later.",
       errEmpty:"Please enter at least 1 character.",
       go:"Start chatting",
+      rename:"Change name",
       colors:{pink:"Pink", blue:"Blue", green:"Green", purple:"Purple"}
     }
   }[lang];
 
-  // 画像パス
   function charSrc(s){
     if(s.variant === "tane") return `${ASSETS}/tane_${s.color}.png`;
     return `${ASSETS}/${s.color}_${s.variant}.png`;
   }
 
-  // 描画
   const img = document.getElementById('char');
   img.src = charSrc(state);
   img.onerror = ()=>{ img.remove(); const d=document.createElement('div'); d.className='fallback'; d.style.background=state.color; document.querySelector('.img').appendChild(d); };
 
   document.getElementById('title').textContent = (state.variant==="tane") ? T.titleSeed : T.titleNext;
 
-  // 名前の既定値
   const storedName = localStorage.getItem('whoai_name');
   if(!state.name && storedName) state.name = storedName;
 
   const colorName = T.colors[state.color] || state.color;
   const N = state.name || (lang==='ja'?'キャラクター':'Character');
-  const desc = (state.variant==="tane") ? T.ate(N, colorName) : T.evo(N, colorName, state.variant);
-  document.getElementById('desc').textContent = desc;
+  document.getElementById('desc').textContent =
+    (state.variant==="tane") ? T.ate(N, colorName) : T.evo(N, colorName, state.variant);
 
-  // 名前付けUIの出し分け
-  const needName = !state.name || state.name === "WHOAI";
+  const needNameFirst = localStorage.getItem('whoai_named') !== '1';
   const namebox = document.getElementById('namebox');
   const goBtn = document.getElementById('go');
-  const nameInput = document.getElementById('nameInput');
-  const nameErr = document.getElementById('nameErr');
+  const renameLink = document.getElementById('rename');
 
-  // 文言
   document.getElementById('nameTitle').textContent = T.nameTitle;
-  nameInput.placeholder = T.placeholder;
+  document.getElementById('nameInput').placeholder = T.placeholder;
   document.getElementById('saveName').textContent = T.nameBtn;
   document.getElementById('nameNote').textContent = T.nameNote;
   goBtn.textContent = T.go;
+  renameLink.textContent = T.rename;
 
-  if(needName){
+  function openNameBox(lockGo=true){
     namebox.style.display = 'block';
-    goBtn.disabled = true; goBtn.style.opacity = .7;
+    if(lockGo){ goBtn.disabled = true; goBtn.style.opacity = .7; }
+    document.getElementById('nameInput').focus();
   }
+  if(needNameFirst){ openNameBox(true); }
+  renameLink.addEventListener('click', ()=> openNameBox(false));
 
-  // 名前保存
+  const nameInput = document.getElementById('nameInput');
+  const nameErr = document.getElementById('nameErr');
+
   function cleanName(s){ return s.replace(/\s+/g,' ').trim().slice(0,16); }
-  document.getElementById('saveName').addEventListener('click', ()=>{
+  function saveName(){
     const v = cleanName(nameInput.value);
     if(!v){ nameErr.textContent = T.errEmpty; return; }
     nameErr.textContent = '';
-    // 保存
     localStorage.setItem('whoai_name', v);
+    localStorage.setItem('whoai_named', '1');
     const st = JSON.parse(localStorage.getItem('whoai_state')||"{}");
     st.name = v;
     localStorage.setItem('whoai_state', JSON.stringify(st));
-    // 説明に反映
-    const desc2 = (st.variant==="tane") ? T.ate(v, colorName) : T.evo(v, colorName, st.variant);
-    document.getElementById('desc').textContent = desc2;
-    // 進行を解放
+    document.getElementById('desc').textContent =
+      (st.variant==="tane") ? T.ate(v, colorName) : T.evo(v, colorName, st.variant);
     goBtn.disabled = false; goBtn.style.opacity = 1;
-  });
+    namebox.style.display = 'none';
+  }
+  document.getElementById('saveName').addEventListener('click', saveName);
+  nameInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveName(); } });
 
-  // すでに名前があるなら、進行OK
-  if(!needName){ goBtn.disabled = false; }
-
+  if(!needNameFirst && (state.name || storedName)){ goBtn.disabled = false; }
   goBtn.addEventListener('click', ()=>{ location.href = "whoai_talk.html"; });
 </script>
 </body>
