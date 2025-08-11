@@ -72,7 +72,7 @@
   </div>
 
 <script>
-  /* ====== APIエンドポイント（変更しない） ====== */
+  /* ====== APIエンドポイント ====== */
   const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 
   /* ====== assets / public/assets 両対応のフォールバック ====== */
@@ -101,7 +101,7 @@
   document.getElementById('dot').classList.add(color);
   document.getElementById('traitLabel').textContent = state.name || "WHOAI";
 
-  /* ====== 進捗表示（テキスト＋バー） ====== */
+  /* ====== 進捗表示 ====== */
   const goalText = document.getElementById('goalText');
   const fill = document.getElementById('fill');
   const counter = document.getElementById('counter');
@@ -116,12 +116,10 @@
     fill.style.width = (p*100)+'%';
     counter.textContent = `${state.xp} / ${state.goal}`;
   }
-  updateGoalText();
-  updateBarAndCounter();
+  updateGoalText(); updateBarAndCounter();
 
-  /* ====== アバター（画像パス自動解決＋フォールバック） ====== */
+  /* ====== アバター（variantに合わせて表示） ====== */
   function charPath(s){
-    // まず進化の見た目を優先（variant が open/close 等ならそれ）
     const name = (s.variant === "tane") ? `tane_${s.color}.png` : `${s.color}_${s.variant}.png`;
     return [`${BASES[0]}/${name}`, `${BASES[1]}/${name}`];
   }
@@ -132,8 +130,7 @@
     img.alt = (state.name || 'WHOAI') + ' avatar';
     img.onerror = ()=>{
       if(img.dataset.fbk!=='1'){ img.dataset.fbk='1'; img.src = p1; return; }
-      // どちらも無いときはカラー丸
-      const f = document.createElement('div');
+      const f = document.createElement('div'); // どちらも無い時は色丸を表示
       f.className = 'fallback';
       f.style.background = {pink:'#ff8fb1', blue:'#88a7ff', green:'#85f3b0', purple:'#c59bff'}[state.color] || '#fff';
       img.replaceWith(f);
@@ -154,8 +151,6 @@
     logEl.scrollTop = logEl.scrollHeight;
     return div;
   }
-
-  // 最初の挨拶
   addMsg('ai', {pink:"やっほー！まずは一歩いってみよ！",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"}[state.color] || "こんにちは！");
 
   // 履歴
@@ -163,7 +158,7 @@
   function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-14))); }
   let chat = loadChat();
 
-  /* ====== API呼び出し（既存のまま） ====== */
+  /* ====== API呼び出し ====== */
   async function talkAPI(userText){
     const systemPrompt = `あなたはWHOAIのキャラクター。名前は「${state.name||'WHOAI'}」。色は${state.color}、形態は${state.variant||'tane'}。口調は次の方針：
 - ピンク: 前向きに励ます
@@ -189,10 +184,11 @@
     else { textEl.classList.remove('disabled'); sendEl.classList.remove('disabled'); }
   }
 
-  // ▼ゴール到達時はマカロンへ（進化用フラグON）
+  // ▼ゴール到達時はマカロンへ（404対策つき）
   function reachGoal(){
     localStorage.setItem('whoai_need_evolve','1');
-    location.href = 'macaron.html?from=talk';
+    const base = location.pathname.replace(/[^/]+$/, ''); // 同じフォルダへ
+    location.href = base + 'macaron.html?from=talk';
   }
 
   if(state.xp >= state.goal){ disableInput(true); }
