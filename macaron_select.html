@@ -3,195 +3,76 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WHOAI - マカロン選択</title>
+<title>マカロン選択</title>
 <style>
   :root{ --glass: rgba(255,255,255,.10); --accent:#ffd1ec; }
   html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    color:#fff;
+  body{font-family:"Noto Sans JP",sans-serif;color:#fff;
     background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px;text-align:center
-  }
-  .lang{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:2}
-  .lang button{border:none;border-radius:999px;padding:8px 14px;cursor:pointer;background:rgba(255,255,255,.14);color:#fff}
-  .lang button.active{background:#fff;color:#111}
-
+    display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
   h1{margin:6px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
-  p{margin:0 0 6px;opacity:.9}
-
-  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(160px,1fr));width:min(680px,94vw);margin-top:8px}
-  .card{
-    background:var(--glass);border-radius:16px;padding:16px;text-align:center;border:2px solid transparent;
-    cursor:pointer;transition:.12s;display:flex;flex-direction:column;align-items:center;gap:10px
-  }
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(140px,1fr));width:min(560px,92vw)}
+  .card{background:var(--glass);border-radius:16px;padding:14px;text-align:center;border:2px solid transparent;cursor:pointer;transition:.12s}
   .card:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,0,0,.25)}
   .card.selected{border-color:var(--accent);box-shadow:0 0 0 4px rgba(255,209,236,.25) inset}
-  .figure{width:96px;height:96px;display:flex;align-items:center;justify-content:center}
-  .figure img{max-width:96px;max-height:96px;object-fit:contain;display:block}
-  .dot{width:90px;height:90px;border-radius:50%;border:3px solid rgba(255,255,255,.75);box-shadow:0 6px 16px rgba(0,0,0,.4)}
-  .dot.pink{background:#ff8fb1}
-  .dot.blue{background:#88a7ff}
-  .dot.green{background:#85f3b0}
-  .dot.purple{background:#c59bff}
-
-  .label{font-weight:800;letter-spacing:.02em}
-  .desc{font-size:14px;opacity:.95;line-height:1.6}
-
-  .actions{display:flex;gap:12px;margin-top:10px;justify-content:center;flex-wrap:wrap}
-  button.action{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer;min-width:160px}
-  .next{background:var(--accent);color:#222}
-  .next:disabled{opacity:.6;cursor:not-allowed}
+  .card img{width:94px;height:94px;object-fit:contain;display:block;margin:6px auto 8px}
+  .label{font-weight:700}
+  .actions{display:flex;gap:12px;margin-top:8px}
+  button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
+  .next{background:var(--accent);color:#222}.next:disabled{opacity:.6}
   .clear{background:#444;color:#fff}
-
-  .page-id {position: fixed; bottom: 4px; right: 8px; font-size: 0.8rem; opacity: 0.6; color: #fff; pointer-events: none; user-select: none;}
-  @media (max-width:760px){ .grid{grid-template-columns:1fr 1fr} }
 </style>
 </head>
 <body>
-  <div class="lang" aria-label="Language Switch">
-    <button type="button" data-lang="ja" class="active">日本語</button>
-    <button type="button" data-lang="en">English</button>
-  </div>
-
-  <h1 data-i18n="title">好きなマカロンを選んでね</h1>
-  <p data-i18n="lead">クリックで選択 → 「決定する」で会話画面へ。</p>
-
-  <div id="grid" class="grid" aria-label="Macaron Choices"></div>
-
+  <h1>好きなマカロンを選んでね</h1>
+  <p>クリックで選択 → 「決定する」で開始。</p>
+  <div id="grid" class="grid"></div>
   <div class="actions">
-    <button id="clearBtn" class="action clear" data-i18n="clear">クリア</button>
-    <button id="goBtn" class="action next" disabled data-i18n="decide">決定する</button>
+    <button id="clearBtn" class="clear">クリア</button>
+    <button id="goBtn" class="next" disabled>決定する</button>
   </div>
-
-  <div class="page-id">macaron_select.html</div>
 
 <script>
-  // ===== i18n =====
-  const I18N = {
-    ja:{
-      title:"好きなマカロンを選んでね",
-      lead:"クリックで選択 → 「決定する」で会話画面へ。",
-      clear:"クリア", decide:"決定する",
-      items:{
-        pink:{name:"ピンク",  desc:"情熱。前向きで、相手を励ます言葉が増えます。"},
-        blue:{name:"ブルー",  desc:"静寂。落ち着いて、丁寧に考える会話になります。"},
-        green:{name:"グリーン",desc:"元気。テンポがよく、行動を促す返答になります。"},
-        purple:{name:"パープル",desc:"創造。比喩や発想の飛躍が少し増えます。"}
-      }
-    },
-    en:{
-      title:"Choose your macaron",
-      lead:"Click to select → “Decide” to start the conversation.",
-      clear:"Clear", decide:"Decide",
-      items:{
-        pink:{name:"Pink",  desc:"Passion. Upbeat tone that cheers you on."},
-        blue:{name:"Blue",  desc:"Calm. Thoughtful, measured responses."},
-        green:{name:"Green",desc:"Energy. Snappier replies nudging action."},
-        purple:{name:"Purple",desc:"Creativity. More metaphors and leaps of idea."}
-      }
-    }
+const ASSETS="public/assets/stage1";
+const OPTIONS=[
+  {key:"pink",   label:"ピンク",  img:`${ASSETS}/macaron_pink.png`},
+  {key:"blue",   label:"ブルー",  img:`${ASSETS}/macaron_blue.png`},
+  {key:"green",  label:"グリーン",img:`${ASSETS}/macaron_green.png`},
+  {key:"purple", label:"パープル",img:`${ASSETS}/macaron_purple.png`}
+];
+const grid=document.getElementById('grid');
+const goBtn=document.getElementById('goBtn');
+const clearBtn=document.getElementById('clearBtn');
+let selected=null;
+
+OPTIONS.forEach(opt=>{
+  const c=document.createElement('div'); c.className='card'; c.dataset.key=opt.key;
+  c.innerHTML=`<img src="${opt.img}" alt="${opt.label}"><div class="label">${opt.label}</div>`;
+  c.onclick=()=>{
+    document.querySelectorAll('.card').forEach(el=>el.classList.remove('selected'));
+    c.classList.add('selected'); selected=opt; goBtn.disabled=false;
   };
+  grid.appendChild(c);
+});
+clearBtn.onclick=()=>{document.querySelectorAll('.card').forEach(el=>el.classList.remove('selected'));selected=null;goBtn.disabled=true;};
 
-  const langBtns = document.querySelectorAll('.lang button');
-  function applyLang(lang){
-    document.documentElement.lang = (lang==='ja'?'ja':'en');
-    langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
-    document.querySelectorAll('[data-i18n]').forEach(el=>{
-      const k = el.getAttribute('data-i18n'); el.textContent = I18N[lang][k] ?? el.textContent;
-    });
-    renderCards(lang);
-    localStorage.setItem('lang', lang);
-  }
-  langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
-  const initLang = localStorage.getItem('lang') || 'ja';
-
-  // ===== データ =====
-  const ASSETS_BASE = "public/assets/stage1";
-  const OPTIONS = [
-    {key:"pink",   img:`${ASSETS_BASE}/macaron_pink.png`},
-    {key:"blue",   img:`${ASSETS_BASE}/macaron_blue.png`},
-    {key:"green",  img:`${ASSETS_BASE}/macaron_green.png`},
-    {key:"purple", img:`${ASSETS_BASE}/macaron_purple.png`}
-  ];
-
-  // ===== 描画 & 選択 =====
-  const grid   = document.getElementById("grid");
-  const goBtn  = document.getElementById("goBtn");
-  const clearBtn = document.getElementById("clearBtn");
-  let selectedKey = null;
-
-  function renderCards(lang){
-    grid.innerHTML = "";
-    OPTIONS.forEach(opt=>{
-      const card = document.createElement("button");
-      card.className = "card"; card.type = "button"; card.dataset.key = opt.key;
-
-      const fig = document.createElement("div"); fig.className = "figure";
-      const img = document.createElement("img");
-      img.src = opt.img; img.alt = I18N[lang].items[opt.key].name;
-      img.addEventListener("error", ()=>{
-        img.remove();
-        const dot = document.createElement("div");
-        dot.className = `dot ${opt.key}`; fig.appendChild(dot);
-      });
-      fig.appendChild(img);
-
-      const name = document.createElement("div");
-      name.className = "label"; name.textContent = I18N[lang].items[opt.key].name;
-
-      const desc = document.createElement("div");
-      desc.className = "desc"; desc.textContent = I18N[lang].items[opt.key].desc;
-
-      card.append(fig, name, desc);
-      card.addEventListener("click", ()=>{
-        document.querySelectorAll(".card").forEach(el=>el.classList.remove("selected"));
-        card.classList.add("selected");
-        selectedKey = opt.key;
-        goBtn.disabled = false;
-      });
-
-      grid.appendChild(card);
-    });
-  }
-
-  clearBtn.addEventListener("click", ()=>{
-    document.querySelectorAll(".card").forEach(el=>el.classList.remove("selected"));
-    selectedKey = null; goBtn.disabled = true;
-    localStorage.removeItem("selectedMacaron");
-    localStorage.removeItem("macaron_choice");
-  });
-
-  // ===== 進化・状態保存 =====
-  const NEXT_PAGE = "evolution.html";
-  const existing = JSON.parse(localStorage.getItem('whoai_state') || "{}");
-
-  // seed段階で3回トーク済みなら「2回目の選択」
-  const isSecondPick =
-    existing && existing.stage === 'seed' && (existing.turns || 0) >= 3;
-
-  document.getElementById("goBtn").addEventListener("click", ()=>{
-    if(!selectedKey) return;
-    const name = localStorage.getItem('whoai_name') || existing.name || "WHOAI";
-
-    // 互換キー（古いコード用）
-    localStorage.setItem("selectedMacaron", selectedKey);
-
-    // 初回→tane / 2回目→open
-    const state = {
-      name,
-      color: selectedKey,
-      stage: isSecondPick ? "evolved" : "seed",
-      variant: isSecondPick ? "open" : "tane",
-      turns: 0
-    };
-    localStorage.setItem("whoai_state", JSON.stringify(state));
-
-    location.href = NEXT_PAGE;
-  });
-
-  // 初期化
-  applyLang(initLang);
+goBtn.onclick=()=>{
+  if(!selected) return;
+  const state={
+    userId: crypto.randomUUID(),
+    lang: localStorage.getItem('lang')||'ja',
+    name: "WHOAI",
+    color: selected.key,
+    stage: "seed",          // まずは種
+    variant: "tane",
+    xp: 0,                  // 現章のXP
+    goal: 8,                // 8会話で儀式へ（短め）
+    turns: 0
+  };
+  localStorage.setItem('whoai_state', JSON.stringify(state));
+  localStorage.removeItem('whoai_chat');
+  location.href='evolution.html';
+};
 </script>
 </body>
 </html>
