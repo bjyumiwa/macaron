@@ -40,7 +40,8 @@
   </div>
 
 <script>
-  const TALK_PAGE = '/macaron/whoai_talk.html';
+  const TALK_PAGE    = '/macaron/whoai_talk.html';
+  const KEEP_MEMORY  = localStorage.getItem('whoai_keep_memory') === '1';
 
   // 選択
   const cards = document.querySelectorAll('.card');
@@ -54,6 +55,7 @@
       document.getElementById('evolveBtn').disabled = false;
     });
   });
+
   // 前回選択を反映
   try{
     const prev = JSON.parse(localStorage.getItem('macaron_choice')||'null');
@@ -66,6 +68,7 @@
 
   // 戻る
   document.getElementById('backBtn').addEventListener('click', ()=>{
+    localStorage.removeItem('whoai_keep_memory');
     if(localStorage.getItem('whoai_need_evolve')==='1'){
       localStorage.removeItem('whoai_need_evolve');
       location.href = TALK_PAGE;
@@ -80,15 +83,19 @@
 
     let s = {};
     try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
+    s.color = chosen;            // 見た目（色）だけ変更
 
-    s.color   = chosen;
-    s.stage   = 'evolved'; // 進化を維持
-    s.variant = 'open';    // 見た目：open（必要なら変更OK）
-    s.xp      = 0;         // 新しい周回を始めるなら0
-    s.goal    = s.goal || 12;
+    // 記憶を保つ：会話ログは維持・XPだけ0にして続行できるように
+    // 儀式から来ていない場合でも次周回を始められるよう 0 をセット
+    s.xp = 0;
+    s.goal = s.goal || (s.stage==='evolved'?12:8);
 
     localStorage.setItem('whoai_state', JSON.stringify(s));
+
+    // フラグ掃除
     localStorage.removeItem('whoai_need_evolve');
+    localStorage.removeItem('whoai_keep_memory');
+
     location.href = TALK_PAGE;
   });
 </script>
