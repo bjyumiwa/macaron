@@ -28,7 +28,6 @@
   .input input{flex:1;border:none;border-radius:12px;padding:12px}
   .input button{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
   .footer{opacity:.6;font-size:12px;text-align:right}
-  /* アバター：左右往復＋ゆらゆら */
   .avatar{--w:132px;position:fixed;bottom:90px;right:12px;width:var(--w);pointer-events:none;
     filter:drop-shadow(0 10px 24px rgba(0,0,0,.5));z-index:1;
     animation:sweep 28s linear infinite alternate,yura 6.2s ease-in-out infinite}
@@ -51,13 +50,12 @@
   <div class="avatar" aria-hidden="true"><img id="avatar" alt=""></div>
 
 <script>
-/* ===== 設定 ===== */
-// GitHub Pages でも確実に Vercel API を叩く
+// -------- 設定 --------
 const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 const USE_API = true;
 const ASSETS = "public/assets/stage1";
 
-/* ===== i18n ===== */
+// -------- i18n --------
 const I18N={ja:{hint:{pink:"ピンク：情熱。前向きで励ます。",blue:"ブルー：静寂。落ち着いて丁寧に考える。",green:"グリーン：元気。テンポよく行動を促す。",purple:"パープル：創造。比喩や発想の飛躍が増える。"},
   greet:{pink:"やっほー！まずは一歩いってみよ！",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"},
   you:"あなた",ai:"WHOAI",send:"送信",placeholder:"メッセージを入力",
@@ -81,7 +79,7 @@ function applyLang(lang){
 }
 langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
 
-/* ===== 状態 ===== */
+// -------- 状態 --------
 const state = JSON.parse(localStorage.getItem('whoai_state')||'{}');
 if(!state.color){ location.href='macaron_select.html' }
 const color=state.color;
@@ -89,11 +87,11 @@ document.getElementById('dot').classList.add(color);
 document.getElementById('traitLabel').textContent = state.name || "WHOAI";
 applyLang(localStorage.getItem('lang')||'ja');
 
-/* アバター */
+// アバター
 function charSrc(s){ if(s.variant==='tane') return `${ASSETS}/tane_${s.color}.png`; return `${ASSETS}/${s.color}_${s.variant}.png`; }
 document.getElementById('avatar').src=charSrc(state);
 
-/* 進捗バー */
+// 進捗バー
 function refreshBar(){
   const fill=document.getElementById('barFill');
   const r=(state.xp||0)/(state.goal||8);
@@ -103,7 +101,7 @@ function refreshBar(){
 }
 refreshBar();
 
-/* 初期メッセージ */
+// 初期メッセ
 const logEl=document.getElementById('log');
 const textEl=document.getElementById('text');
 const sendEl=document.getElementById('send');
@@ -114,13 +112,13 @@ function addMsg(who,content,extra=''){
 }
 addMsg('ai', I18N[curLang()].greet[color]);
 
-/* 保存されてる会話を復元（直近12） */
+// 会話履歴
 function loadChat(){ try{return JSON.parse(localStorage.getItem('whoai_chat')||'[]')}catch{return[]} }
 function saveChat(a){ localStorage.setItem('whoai_chat', JSON.stringify(a.slice(-12))); }
-let chat=loadChat(); // 過去ログがあれば反映
+let chat=loadChat();
 chat.forEach(m=>addMsg(m.role==='user'?'me':'ai', m.content));
 
-/* API 呼び出し */
+// API
 async function talkAPI(userText){
   const lang=curLang();
   const cond=state.currentCondition; // appearance|memory|undefined
@@ -148,16 +146,23 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'} in 1–2 sentences, ending
   if(!r.ok) throw new Error(await r.text()); const data=await r.json(); return data.reply?.trim()||"";
 }
 
-/* 返信フォールバック */
+// フォールバック
 function fallbackReply(lang){ const ja={pink:"うん！応援してるよ。",blue:"なるほど。順番に考えてみよう。",green:"いいね！小さく一歩、どう？",purple:"ふむ。別の想像をしてみたらどう？"}[color];
 const en={pink:"Yes! I’m cheering for you.",blue:"I see. Step by step.",green:"Nice! One small action?",purple:"Hmm. What if we imagine it differently?"}[color];
 return (lang==='ja')?ja:en;}
 
-/* XP処理 */
-function gainXP(n=1){ state.xp=(state.xp||0)+n; localStorage.setItem('whoai_state',JSON.stringify(state)); refreshBar();
-  if(state.xp>=state.goal){ alert(I18N[curLang()].done); location.href='ritual.html'; }}
+// ★ XP処理（到達で rebirth.html へ）
+function gainXP(n=1){
+  state.xp=(state.xp||0)+n;
+  localStorage.setItem('whoai_state',JSON.stringify(state));
+  refreshBar();
+  if(state.xp>=state.goal){
+    alert(I18N[curLang()].done);
+    location.href='rebirth.html';  // ← ここが変更点
+  }
+}
 
-/* 送信 */
+// 送信
 async function handleSend(){
   const v=textEl.value.trim(); if(!v) return; const lang=curLang();
   addMsg('me', v); textEl.value=''; chat.push({role:"user",content:v}); saveChat(chat);
