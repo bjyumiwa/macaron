@@ -55,7 +55,7 @@
 <script>
   // ====== 設定 ======
   const TALK_ENDPOINT = '/api/talk';   // 同ドメインで動かす場合はこのまま
-  const USE_API = true;                // API失敗時は自動フォールバック
+  const USE_API = true;                // API失敗時はローカル応答に自動フォールバック
 
   // ====== i18n ======
   const I18N = {
@@ -131,18 +131,8 @@
 
   // ====== フォールバック返信 ======
   function toneReply(input, lang){
-    const ja = {
-      pink:  "うん！応援してるよ。",
-      blue:  "なるほど。順番に考えてみよう。",
-      green: "いいね！小さく一歩、どう？",
-      purple:"ふむ。別の想像をしてみたらどう？"
-    }[color];
-    const en = {
-      pink:  "Yes! I’m rooting for you.",
-      blue:  "I see. Let’s consider it step by step.",
-      green: "Nice! How about one small action?",
-      purple:"Hmm. What if we imagine it differently?"
-    }[color];
+    const ja = { pink:"うん！応援してるよ。", blue:"なるほど。順番に考えてみよう。", green:"いいね！小さく一歩、どう？", purple:"ふむ。別の想像をしてみたらどう？" }[color];
+    const en = { pink:"Yes! I’m rooting for you.", blue:"I see. Let’s consider it step by step.", green:"Nice! How about one small action?", purple:"Hmm. What if we imagine it differently?" }[color];
     return (lang==='ja') ? ja : en;
   }
 
@@ -168,22 +158,9 @@
 - Purple: creative, a bit metaphorical
 Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, ending with exactly one next-step prompt.`;
 
-    const payload = {
-      userMessage: userText,
-      history: chat,
-      systemPrompt,
-      language: lang,
-      temperature: 0.7,
-      max_tokens: 220,
-      model: "gpt-4o-mini"
-    };
+    const payload = { userMessage:userText, history:chat, systemPrompt, language:lang, temperature:0.7, max_tokens:220, model:"gpt-4o-mini" };
 
-    const r = await fetch(TALK_ENDPOINT, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-
+    const r = await fetch(TALK_ENDPOINT, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
     if(!r.ok) throw new Error(await r.text());
     const data = await r.json();
     return data.reply?.trim() || "";
@@ -226,9 +203,7 @@ Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, endin
   }
 
   sendEl.addEventListener('click', handleSend);
-  textEl.addEventListener('keydown', e=>{
-    if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); }
-  });
+  textEl.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); } });
 </script>
 </body>
 </html>
