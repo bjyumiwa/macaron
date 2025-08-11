@@ -8,7 +8,8 @@
   html,body{height:100%;margin:0}
   body{
     font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    background:url("assets/stage1/space_background.png") center/cover fixed no-repeat;
+    /* ↑ 上の1行は環境により public/assets/... かも。下で自動フォールバックします */
     color:#fff; display:flex; flex-direction:column; align-items:center; gap:18px; padding:24px
   }
   h1{margin:8px 0 4px}
@@ -28,11 +29,19 @@
   <div class="hint">色を変えても<b>進化状態は維持</b>します（見た目だけ変わります）。</div>
 
   <div class="grid" id="grid">
-    <!-- 画像パスはお手元の構成に合わせてください -->
-    <div class="card" data-color="pink"><img class="img" src="public/assets/stage1/macaron_pink.png"  alt="pink"><div>ピンク（情熱）</div></div>
-    <div class="card" data-color="blue"><img class="img" src="public/assets/stage1/macaron_blue.png"  alt="blue"><div>ブルー（静寂）</div></div>
-    <div class="card" data-color="green"><img class="img" src="public/assets/stage1/macaron_green.png" alt="green"><div>グリーン（元気）</div></div>
-    <div class="card" data-color="purple"><img class="img" src="public/assets/stage1/macaron_purple.png" alt="purple"><div>パープル（創造）</div></div>
+    <!-- 画像の src はJSでセット（assets/ と public/assets/ の両対応） -->
+    <div class="card" data-color="pink">
+      <img class="img" data-file="macaron_pink.png" alt="pink"><div>ピンク（情熱）</div>
+    </div>
+    <div class="card" data-color="blue">
+      <img class="img" data-file="macaron_blue.png" alt="blue"><div>ブルー（静寂）</div>
+    </div>
+    <div class="card" data-color="green">
+      <img class="img" data-file="macaron_green.png" alt="green"><div>グリーン（元気）</div>
+    </div>
+    <div class="card" data-color="purple">
+      <img class="img" data-file="macaron_purple.png" alt="purple"><div>パープル（創造）</div>
+    </div>
   </div>
 
   <div class="row">
@@ -41,6 +50,25 @@
   </div>
 
 <script>
+  // 画像パスのフォールバック（assets/.. が無ければ public/assets/.. を試す）
+  const BASES = ["assets/stage1", "public/assets/stage1"];
+  document.querySelectorAll('.img').forEach(img=>{
+    const file = img.dataset.file;
+    img.src = `${BASES[0]}/${file}`;
+    img.onerror = ()=>{
+      if(img.dataset.altbase!=='1'){
+        img.dataset.altbase='1';
+        img.src = `${BASES[1]}/${file}`;
+      }
+    };
+  });
+  // 背景もフォールバック（上でCSSに assets/.. を指定済み）
+  const testBg = new Image();
+  testBg.src = "assets/stage1/space_background.png";
+  testBg.onerror = ()=>{
+    document.body.style.backgroundImage = 'url("public/assets/stage1/space_background.png")';
+  };
+
   const cards = document.querySelectorAll('.card');
   let chosen = null;
 
@@ -67,7 +95,6 @@
 
   // 戻る
   document.getElementById('backBtn').addEventListener('click', ()=>{
-    // フラグがあれば会話へ戻す
     if(localStorage.getItem('whoai_need_evolve')==='1'){
       localStorage.removeItem('whoai_need_evolve');
       location.href = 'whoai_talk.html';
@@ -76,7 +103,7 @@
     }
   });
 
-  // 進化を適用（ここが肝）
+  // 進化を適用（★ここが肝：色を変えても進化のまま）
   document.getElementById('evolveBtn').addEventListener('click', ()=>{
     if(!chosen) return;
 
@@ -84,16 +111,16 @@
     let s = {};
     try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
 
-    // 色だけ更新。進化は維持／なければ進化させる
+    // 色だけ更新。進化は必ず維持／無ければ進化させる
     s.color   = chosen;
-    s.stage   = 'evolved';   // 常に進化状態にする
-    s.variant = 'open';      // 進化時の見た目（お手元の命名に合わせてOK）
-    s.xp      = 0;           // 次の周回を始めるならリセット。維持したいなら消してOK
-    s.goal    = s.goal || 12; // 進化後の目標値
+    s.stage   = 'evolved';   // 常に進化状態
+    s.variant = 'open';      // 進化時の見た目（あなたの命名に合わせてOK）
+    s.xp      = 0;           // 次ループを始めるなら0。維持したいならこの行を消してOK
+    s.goal    = s.goal || 12; // 進化後の目標値のデフォルト
 
     localStorage.setItem('whoai_state', JSON.stringify(s));
 
-    // 完了 → 会話へ戻る
+    // 完了 → 会話へ戻る（API部分は触らない）
     localStorage.removeItem('whoai_need_evolve');
     location.href = 'whoai_talk.html';
   });
