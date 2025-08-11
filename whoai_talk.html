@@ -6,11 +6,9 @@
 <title>WHOAI - Talk</title>
 <style>
   html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    color:#fff; display:flex; flex-direction:column; gap:12px; padding:18px
-  }
+  body{font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;color:#fff;
+    display:flex;flex-direction:column;gap:12px;padding:18px}
   .top{display:flex;justify-content:space-between;align-items:center}
   .badge{display:inline-flex;gap:8px;align-items:center;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:999px}
   .dot{width:14px;height:14px;border-radius:50%}
@@ -20,247 +18,159 @@
   .lang button.active{background:#fff;color:#111}
   .panel{background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.18);border-radius:16px}
   #hint{padding:10px 14px}
+  #bar{height:10px;border-radius:10px;background:rgba(255,255,255,.2);overflow:hidden}
+  #bar span{display:block;height:100%;width:0;background:#ffc9d6}
   #log{flex:1;overflow:auto;padding:14px}
-  .msg{margin:10px 0;max-width:80%}
-  .me{margin-left:auto}
+  .msg{margin:10px 0;max-width:80%}.me{margin-left:auto}
   .b{background:rgba(255,255,255,.1);padding:10px 12px;border-radius:14px}
   .typing{opacity:.75;font-style:italic}
   .input{display:flex;gap:8px;padding:10px}
   .input input{flex:1;border:none;border-radius:12px;padding:12px}
   .input button{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
   .footer{opacity:.6;font-size:12px;text-align:right}
-
-  /* ▼ 右↔左スイープ＋ゆらゆらアバター */
-  .avatar{
-    --avatar-w:132px;
-    position:fixed; bottom:96px; right:12px; width:var(--avatar-w); pointer-events:none;
-    filter:drop-shadow(0 10px 24px rgba(0,0,0,.5)); z-index:1;
-    animation: sweep 28s linear infinite alternate, yura 6.2s ease-in-out infinite;
-    transform-origin:center;
-  }
-  .avatar img{width:100%; height:auto; display:block}
-  .avatar .fallback{
-    width:100%; aspect-ratio:1/1; border-radius:50%;
-    border:4px solid rgba(255,255,255,.85); box-shadow:0 8px 20px rgba(0,0,0,.45);
-  }
-  /* 右→左へ往復（alternate）*/
-  @keyframes sweep{
-    from { right:12px; }
-    to   { right: calc(100vw - 12px - var(--avatar-w)); }
-  }
-  /* ゆらゆら */
-  @keyframes yura{
-    0%   { transform: translateY(0) rotate(-1.2deg); }
-    50%  { transform: translateY(-10px) rotate( 1.2deg); }
-    100% { transform: translateY(0) rotate(-1.2deg); }
-  }
-  @media (max-width:600px){
-    .avatar{ --avatar-w:96px; bottom:82px; }
-  }
+  /* アバター：左右往復＋ゆらゆら */
+  .avatar{--w:132px;position:fixed;bottom:90px;right:12px;width:var(--w);pointer-events:none;
+    filter:drop-shadow(0 10px 24px rgba(0,0,0,.5));z-index:1;
+    animation:sweep 28s linear infinite alternate,yura 6.2s ease-in-out infinite}
+  .avatar img{width:100%;height:auto;display:block}
+  @keyframes sweep{from{right:12px}to{right:calc(100vw - 12px - var(--w))}}
+  @keyframes yura{0%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-10px) rotate(1.2deg)}100%{transform:translateY(0) rotate(-1.2deg)}}
+  @media (max-width:600px){.avatar{--w:96px}}
 </style>
 </head>
 <body>
   <div class="top">
-    <div class="badge">
-      <span class="dot" id="dot"></span>
-      <span id="traitLabel">—</span>
-    </div>
-    <div class="lang">
-      <button type="button" data-lang="ja" class="active">日本語</button>
-      <button type="button" data-lang="en">English</button>
-    </div>
+    <div class="badge"><span class="dot" id="dot"></span><span id="traitLabel">—</span></div>
+    <div class="lang"><button type="button" data-lang="ja" class="active">日本語</button><button type="button" data-lang="en">English</button></div>
   </div>
-
+  <div id="bar" class="panel" aria-label="progress"><span id="barFill"></span></div>
   <div id="hint" class="panel"></div>
   <div id="log" class="panel" aria-live="polite"></div>
-
-  <div class="input panel">
-    <input id="text" type="text" placeholder="メッセージを入力 / Type a message" />
-    <button id="send">送信</button>
-  </div>
+  <div class="input panel"><input id="text" type="text" placeholder="メッセージを入力 / Type a message" /><button id="send">送信</button></div>
   <div class="footer">whoai_talk.html</div>
-
-  <!-- ▼ ゆらゆら表示するアバター -->
-  <div class="avatar" aria-hidden="true">
-    <img id="avatar" alt="">
-  </div>
+  <div class="avatar" aria-hidden="true"><img id="avatar" alt=""></div>
 
 <script>
-  // ====== 設定 ======
-  // Vercel で開いていれば相対 /api/talk、その他（GitHub Pages等）は絶対URLでVercelを叩く
-  const TALK_ENDPOINT = location.hostname.endsWith('vercel.app')
-    ? '/api/talk'
-    : 'https://macaron-one.vercel.app/api/talk';
+/* ===== 設定 ===== */
+// GitHub Pages でも確実に Vercel API を叩く
+const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+const USE_API = true;
+const ASSETS = "public/assets/stage1";
 
-  const USE_API = true;
-  const ASSETS = "public/assets/stage1";
+/* ===== i18n ===== */
+const I18N={ja:{hint:{pink:"ピンク：情熱。前向きで励ます。",blue:"ブルー：静寂。落ち着いて丁寧に考える。",green:"グリーン：元気。テンポよく行動を促す。",purple:"パープル：創造。比喩や発想の飛躍が増える。"},
+  greet:{pink:"やっほー！まずは一歩いってみよ！",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"},
+  you:"あなた",ai:"WHOAI",send:"送信",placeholder:"メッセージを入力",
+  typing:"入力中…",err:"通信に失敗しました。ローカル応答に切り替えます。",
+  goal: g=>`目標 ${g} XP`, done:"目標達成！復活の儀式へ進みます。"},
+en:{hint:{pink:"Pink: Passion.",blue:"Blue: Calm.",green:"Green: Energy.",purple:"Purple: Creativity."},
+  greet:{pink:"Hey! Let’s get rolling.",blue:"Hello. Let’s think this through.",green:"Yo! Let’s take the first step!",purple:"Welcome—let’s weave a story."},
+  you:"You",ai:"WHOAI",send:"Send",placeholder:"Type a message",
+  typing:"typing…",err:"API failed. Falling back to local reply.",
+  goal:g=>`Goal ${g} XP`,done:"Goal reached! Moving to the ritual."}};
+const langBtns=document.querySelectorAll('.lang button');
+function curLang(){return (document.documentElement.lang==='ja'?'ja':'en')}
+function applyLang(lang){
+  document.documentElement.lang=(lang==='ja'?'ja':'en');
+  langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
+  document.getElementById('send').textContent=I18N[lang].send;
+  document.getElementById('text').placeholder=I18N[lang].placeholder+" / "+(lang==='ja'?'Type a message':'メッセージを入力');
+  if(window.color){document.getElementById('hint').textContent = I18N[lang].hint[color] || "";}
+  refreshBar();
+  localStorage.setItem('lang', lang);
+}
+langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
 
-  // ====== i18n ======
-  const I18N = {
-    ja:{
-      hint:{
-        pink:"ピンク：情熱。前向きで励ますトーン。",
-        blue:"ブルー：静寂。落ち着いて丁寧に考える。",
-        green:"グリーン：元気。テンポよく行動を促す。",
-        purple:"パープル：創造。比喩や発想の飛躍が増える。"
-      },
-      greet:{pink:"こんにちは！一緒に走り出そう。",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"},
-      you:"あなた", ai:"WHOAI", send:"送信", placeholder:"メッセージを入力",
-      done3:"3回の会話が完了！もう一度マカロンを選んで、次の形態に進化させよう。",
-      done10:"10回の会話が完了！次の進化のために、もう一度マカロンを選ぼう。",
-      typing:"入力中…", err:"通信に失敗しました。ローカル応答に切り替えます。"
-    },
-    en:{
-      hint:{
-        pink:"Pink: Passion. Upbeat, encouraging tone.",
-        blue:"Blue: Calm. Thoughtful and measured.",
-        green:"Green: Energy. Snappy, action-nudging.",
-        purple:"Purple: Creativity. More metaphors and leaps."
-      },
-      greet:{pink:"Hey! Let’s get rolling.",blue:"Hello. Let’s think this through.",green:"Yo! Let’s take the first step!",purple:"Welcome—let’s weave a story."},
-      you:"You", ai:"WHOAI", send:"Send", placeholder:"Type a message",
-      done3:"Three messages done! Choose another macaron to evolve to the next form.",
-      done10:"Ten messages done! Pick another macaron for the next evolution.",
-      typing:"typing…", err:"API failed. Falling back to local reply."
-    }
-  };
-  const langBtns = document.querySelectorAll('.lang button');
-  function currentLang(){ return (document.documentElement.lang==='ja'?'ja':'en'); }
-  function applyLang(lang){
-    document.documentElement.lang = (lang==='ja'?'ja':'en');
-    langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
-    document.getElementById('send').textContent = I18N[lang].send;
-    document.getElementById('text').placeholder = I18N[lang].placeholder + " / " + (lang==='ja'?'Type a message':'メッセージを入力');
-    if(window.color){ document.getElementById('hint').textContent = I18N[lang].hint[color] || ""; }
-    localStorage.setItem('lang', lang);
+/* ===== 状態 ===== */
+const state = JSON.parse(localStorage.getItem('whoai_state')||'{}');
+if(!state.color){ location.href='macaron_select.html' }
+const color=state.color;
+document.getElementById('dot').classList.add(color);
+document.getElementById('traitLabel').textContent = state.name || "WHOAI";
+applyLang(localStorage.getItem('lang')||'ja');
+
+/* アバター */
+function charSrc(s){ if(s.variant==='tane') return `${ASSETS}/tane_${s.color}.png`; return `${ASSETS}/${s.color}_${s.variant}.png`; }
+document.getElementById('avatar').src=charSrc(state);
+
+/* 進捗バー */
+function refreshBar(){
+  const fill=document.getElementById('barFill');
+  const r=(state.xp||0)/(state.goal||8);
+  fill.style.width=(Math.min(1,r)*100)+'%';
+  fill.setAttribute('aria-valuenow',Math.round(r*100));
+  document.getElementById('hint').textContent = `${I18N[curLang()].goal(state.goal)}  /  ${I18N[curLang()].hint[color]||''}`;
+}
+refreshBar();
+
+/* 初期メッセージ */
+const logEl=document.getElementById('log');
+const textEl=document.getElementById('text');
+const sendEl=document.getElementById('send');
+function addMsg(who,content,extra=''){
+  const lang=curLang(); const label=(who==='me')?I18N[lang].you:I18N[lang].ai;
+  const div=document.createElement('div'); div.className='msg '+(who==='me'?'me':'')+' '+extra;
+  div.innerHTML=`<div class="b"><strong>${label}</strong><br>${content}</div>`; logEl.appendChild(div); logEl.scrollTop=logEl.scrollHeight; return div;
+}
+addMsg('ai', I18N[curLang()].greet[color]);
+
+/* 保存されてる会話を復元（直近12） */
+function loadChat(){ try{return JSON.parse(localStorage.getItem('whoai_chat')||'[]')}catch{return[]} }
+function saveChat(a){ localStorage.setItem('whoai_chat', JSON.stringify(a.slice(-12))); }
+let chat=loadChat(); // 過去ログがあれば反映
+chat.forEach(m=>addMsg(m.role==='user'?'me':'ai', m.content));
+
+/* API 呼び出し */
+async function talkAPI(userText){
+  const lang=curLang();
+  const cond=state.currentCondition; // appearance|memory|undefined
+  let condHint="";
+  if(cond==='memory'){
+    condHint=(lang==='ja')?'過去の出来事やユーザー名を自然に想起して返答してください。':'Recall past events and the user’s name naturally.';
+  }else if(cond==='appearance'){
+    condHint=(lang==='ja')?'外見の変化には触れてもよいが、過去出来事の詳細な参照は控えめに。':'You may mention changed appearance; avoid detailed past-event references.';
   }
-  langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
-
-  // ====== 状態読み込み ======
-  const state = JSON.parse(localStorage.getItem('whoai_state') || "{}");
-  const color = state.color || localStorage.getItem('selectedMacaron');
-  if(!color){ location.href = 'macaron_select.html'; }
-  document.getElementById('dot').classList.add(color);
-  document.getElementById('traitLabel').textContent = state.name || "WHOAI";
-  applyLang(localStorage.getItem('lang') || 'ja');
-
-  // ▼ 現在形態のアバター画像（tane/open/close 対応）
-  function charSrc(s){
-    if(s.variant === "tane") return `${ASSETS}/tane_${s.color}.png`;
-    return `${ASSETS}/${s.color}_${s.variant}.png`;
-  }
-  (function setAvatar(){
-    const img = document.getElementById('avatar');
-    img.src = charSrc(state);
-    img.alt = (state.name || 'WHOAI') + ' avatar';
-    img.onerror = ()=>{
-      // 画像がなければ色丸のフォールバック
-      const f = document.createElement('div');
-      f.className = 'fallback';
-      const col = {pink:'#ff8fb1', blue:'#88a7ff', green:'#85f3b0', purple:'#c59bff'}[color] || '#fff';
-      f.style.background = col;
-      img.replaceWith(f);
-    };
-  })();
-
-  // ★ 目標回数：seed=3 / evolved=10
-  const TALK_TARGET = (state.stage === 'seed') ? 3 : 10;
-
-  // ====== チャットUI ======
-  const logEl = document.getElementById('log');
-  const textEl = document.getElementById('text');
-  const sendEl = document.getElementById('send');
-
-  function addMsg(who, content, extraClass=''){
-    const lang = currentLang();
-    const label = (who==='me') ? I18N[lang].you : I18N[lang].ai;
-    const div = document.createElement('div');
-    div.className = 'msg ' + (who==='me'?'me':'') + ' ' + extraClass;
-    div.innerHTML = `<div class="b"><strong>${label}</strong><br>${content}</div>`;
-    logEl.appendChild(div);
-    logEl.scrollTop = logEl.scrollHeight;
-    return div;
-  }
-
-  // 挨拶 & ヒント
-  addMsg('ai', I18N[currentLang()].greet[color]);
-  document.getElementById('hint').textContent = I18N[currentLang()].hint[color];
-
-  // ====== フォールバック返信 ======
-  function toneReply(input, lang){
-    const ja = { pink:"うん！応援してるよ。", blue:"なるほど。順番に考えてみよう。", green:"いいね！小さく一歩、どう？", purple:"ふむ。別の想像をしてみたらどう？" }[color];
-    const en = { pink:"Yes! I’m rooting for you.", blue:"I see. Let’s consider it step by step.", green:"Nice! How about one small action?", purple:"Hmm. What if we imagine it differently?" }[color];
-    return (lang==='ja') ? ja : en;
-  }
-
-  // ====== 会話履歴 ======
-  function loadChat(){ try{ return JSON.parse(localStorage.getItem('whoai_chat')||'[]'); }catch{ return []; } }
-  function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-12))); }
-  let chat = loadChat();
-
-  // ====== API呼び出し ======
-  async function talkAPI(userText){
-    const lang = currentLang();
-    const systemPrompt = (lang==='ja')
-      ? `あなたはWHOAIのキャラクター。名前は「${state.name||'WHOAI'}」。色は${color}、形態は${state.variant||'tane'}。口調は次の方針：
+  const systemPrompt=(lang==='ja'
+   ? `あなたはWHOAI。名前は「${state.name||'WHOAI'}」。色は${state.color}、形態は${state.variant||'tane'}。
 - ピンク: 前向きに励ます
 - ブルー: 落ち着いて丁寧に考える
 - グリーン: テンポよく行動を促す
 - パープル: 比喩や発想の飛躍を少し入れる
 必ず日本語で、1〜2文で返答。最後に次の行動を1つだけ提案して。`
-      : `You are WHOAI. Name: ${state.name||'WHOAI'}. Color: ${color}, Form: ${state.variant||'tane'}. Tone:
+   : `You are WHOAI. Name: ${state.name||'WHOAI'}. Color: ${state.color}, Form: ${state.variant||'tane'}.
 - Pink: upbeat encouragement
 - Blue: calm, thoughtful
 - Green: snappy, action-nudging
-- Purple: creative, a bit metaphorical
-Reply strictly in ${lang==='ja'?'Japanese':'English'}, in 1–2 sentences, ending with exactly one next-step prompt.`;
+- Purple: mildly metaphorical
+Reply strictly in ${lang==='ja'?'Japanese':'English'} in 1–2 sentences, ending with one next-step prompt.`);
+  const payload={ userMessage:userText, history:chat, systemPrompt:systemPrompt+'\n'+condHint, language:lang, temperature:0.7, max_tokens:220, model:"gpt-4o-mini" };
+  const r=await fetch(TALK_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  if(!r.ok) throw new Error(await r.text()); const data=await r.json(); return data.reply?.trim()||"";
+}
 
-    const payload = { userMessage:userText, history:chat, systemPrompt, language:lang, temperature:0.7, max_tokens:220, model:"gpt-4o-mini" };
+/* 返信フォールバック */
+function fallbackReply(lang){ const ja={pink:"うん！応援してるよ。",blue:"なるほど。順番に考えてみよう。",green:"いいね！小さく一歩、どう？",purple:"ふむ。別の想像をしてみたらどう？"}[color];
+const en={pink:"Yes! I’m cheering for you.",blue:"I see. Step by step.",green:"Nice! One small action?",purple:"Hmm. What if we imagine it differently?"}[color];
+return (lang==='ja')?ja:en;}
 
-    const r = await fetch(TALK_ENDPOINT, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
-    if(!r.ok) throw new Error(await r.text());
-    const data = await r.json();
-    return data.reply?.trim() || "";
-  }
+/* XP処理 */
+function gainXP(n=1){ state.xp=(state.xp||0)+n; localStorage.setItem('whoai_state',JSON.stringify(state)); refreshBar();
+  if(state.xp>=state.goal){ alert(I18N[curLang()].done); location.href='ritual.html'; }}
 
-  // ====== ターン数カウント ======
-  function bumpTurns(){
-    const s = JSON.parse(localStorage.getItem('whoai_state') || "{}");
-    s.turns = (s.turns || 0) + 1;
-    localStorage.setItem('whoai_state', JSON.stringify(s));
-    return s;
-  }
-
-  // ====== 送信処理 ======
-  async function handleSend(){
-    const v = textEl.value.trim(); if(!v) return;
-    const lang = currentLang();
-
-    addMsg('me', v);
-    textEl.value='';
-    chat.push({role:"user", content:v}); saveChat(chat);
-
-    const typing = addMsg('ai', I18N[lang].typing, 'typing');
-
-    let reply = "";
-    try{ if(USE_API) reply = await talkAPI(v); }catch(e){
-      console.warn(e); typing.querySelector('.b').innerHTML = `<strong>${I18N[lang].ai}</strong><br>${I18N[lang].err}`;
-    }
-    if(!reply) reply = toneReply(v, lang);
-
-    typing.remove();
-    addMsg('ai', reply);
-    chat.push({role:"assistant", content:reply}); saveChat(chat);
-
-    const s = bumpTurns();
-    if(s.turns >= TALK_TARGET){
-      alert(TALK_TARGET===3 ? I18N[lang].done3 : I18N[lang].done10);
-      location.href = 'macaron_select.html';
-    }
-  }
-
-  sendEl.addEventListener('click', handleSend);
-  textEl.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); } });
+/* 送信 */
+async function handleSend(){
+  const v=textEl.value.trim(); if(!v) return; const lang=curLang();
+  addMsg('me', v); textEl.value=''; chat.push({role:"user",content:v}); saveChat(chat);
+  const typing=addMsg('ai', I18N[lang].typing, 'typing');
+  let reply=""; try{ if(USE_API) reply=await talkAPI(v); }catch(e){ console.warn('API FAIL:',e);
+    typing.querySelector('.b').innerHTML=`<strong>${I18N[lang].ai}</strong><br>${I18N[lang].err}`;}
+  if(!reply) reply=fallbackReply(lang);
+  typing.remove(); addMsg('ai',reply); chat.push({role:"assistant",content:reply}); saveChat(chat);
+  state.turns=(state.turns||0)+1; localStorage.setItem('whoai_state',JSON.stringify(state));
+  gainXP(1);
+}
+sendEl.onclick=handleSend;
+textEl.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); handleSend(); }});
 </script>
 </body>
 </html>
