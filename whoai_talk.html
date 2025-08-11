@@ -71,11 +71,13 @@
   </div>
 
 <script>
-  const REPO_BASE   = '/macaron/';
-  const PUBLIC_BASE = '/macaron/public/';
-  const ASSET_BASE  = PUBLIC_BASE + 'assets/stage1/';
-  const MACARON_PAGE= PUBLIC_BASE + 'macaron.html';
-  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+  /* ====== ルート定義 ====== */
+  const REPO_BASE    = '/macaron/';
+  const PUBLIC_BASE  = REPO_BASE + 'public/';
+  const ASSET_BASE   = PUBLIC_BASE + 'assets/stage1/';
+  const MACARON_PAGE = PUBLIC_BASE + 'macaron.html';
+  const REBIRTH_PAGE = PUBLIC_BASE + 'rebirth.html';   // ← 追加
+  const TALK_ENDPOINT= 'https://macaron-one.vercel.app/api/talk';
 
   /* ====== 状態 ====== */
   function read(obj, k, def){ return (obj && obj[k]!=null)?obj[k]:def; }
@@ -174,10 +176,10 @@
     else { textEl.classList.remove('disabled'); sendEl.classList.remove('disabled'); }
   }
 
-  // ★ゴールで /macaron/public/macaron.html へ
+  // ★ゴールで 復活の儀式 へ
   function reachGoal(){
     localStorage.setItem('whoai_need_evolve','1');
-    location.href = MACARON_PAGE + '?from=talk';
+    location.href = REBIRTH_PAGE + '?from=talk';
   }
 
   if(state.xp >= state.goal){ disableInput(true); }
