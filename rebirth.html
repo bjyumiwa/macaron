@@ -3,50 +3,86 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>復活の儀式（Rebirth）</title>
+<title>復活の儀式</title>
 <style>
   html,body{height:100%;margin:0}
-  body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;align-items:center;justify-content:center;padding:24px}
-  .card{max-width:920px;width:92vw;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:28px;text-align:center}
-  h1{margin:0 0 8px}
-  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(220px,1fr));margin-top:16px}
-  .opt{background:rgba(255,255,255,.08);border:2px solid transparent;border-radius:16px;padding:16px;cursor:pointer}
-  .opt:hover{transform:translateY(-2px)}
-  .opt.selected{border-color:#ffc9d6}
-  .btn{margin-top:16px;border:none;border-radius:16px;padding:14px 22px;font-weight:700;background:#ffc9d6;color:#222;cursor:pointer}
+  body{
+    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    background:url("/macaron/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    color:#fff; display:flex; align-items:center; justify-content:center; padding:24px
+  }
+  .wrap{max-width:920px;width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:24px;box-shadow:0 10px 28px rgba(0,0,0,.45)}
+  h1{margin:0 0 12px;font-size:36px;text-align:center}
+  .sub{opacity:.9;text-align:center;margin-bottom:20px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}
+  .card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:20px;cursor:pointer}
+  .card h2{margin:0 0 8px}
+  .card p{margin:0;opacity:.95;line-height:1.6}
+  .btn{margin-top:18px;display:flex;justify-content:center;gap:12px}
+  button{border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
+  .primary{background:#ffd1ec;color:#111}
+  .ghost{background:rgba(255,255,255,.15);color:#fff}
 </style>
 </head>
 <body>
-  <div class="card">
+  <div class="wrap">
     <h1>復活の儀式</h1>
-    <p>どちらを残しますか？（ゲーム体験のための選択です）</p>
+    <div class="sub">どちらを残しますか？（ゲーム体験のための選択です）</div>
     <div class="grid">
-      <div class="opt" id="keepAppearance"><h3>容姿を保つ</h3><p>見た目は維持。<br>記憶はリセットされます。</p></div>
-      <div class="opt" id="keepMemory"><h3>記憶を保つ</h3><p>会話の記憶は維持。<br>見た目は変化します。</p></div>
+      <div class="card" id="keep-look">
+        <h2>容姿を保つ</h2>
+        <p>見た目は維持し、<b>会話の記録をリセット</b>します。新しい気持ちで続けます。</p>
+      </div>
+      <div class="card" id="keep-memory">
+        <h2>記憶を保つ</h2>
+        <p><b>会話の記録は維持</b>し、次に<b>マカロンで見た目だけ変更</b>します。</p>
+      </div>
     </div>
-    <button class="btn" id="go">決定する</button>
+    <div class="btn">
+      <button class="ghost" id="back">戻る</button>
+      <button class="primary" id="decide">決定する</button>
+    </div>
   </div>
 
 <script>
-const state=JSON.parse(localStorage.getItem('whoai_state')||'{}'); if(!state.color) location.href='macaron_select.html';
-let choice=null;
-const a=document.getElementById('keepAppearance'), m=document.getElementById('keepMemory');
-[a,m].forEach(el=>el.onclick=()=>{choice=(el===a?'appearance':'memory'); a.classList.toggle('selected',choice==='appearance'); m.classList.toggle('selected',choice==='memory');});
-document.getElementById('go').onclick=()=>{
-  if(!choice) return alert('どちらかを選んでください');
-  state.stage='final';
-  state.goal=12; state.xp=0;
-  state.currentCondition=choice;
-  if(choice==='appearance'){
-    state.variant='open';
-    localStorage.removeItem('whoai_chat'); // 記憶リセット
-  }else{
-    state.variant='close';                  // 記憶維持
-  }
-  localStorage.setItem('whoai_state', JSON.stringify(state));
-  location.href='whoai_talk.html';
-};
+  const TALK_PAGE  = '/macaron/whoai_talk.html';
+  const MACARON_PG = '/macaron/public/macaron.html';
+
+  let choice = null;
+  const look = document.getElementById('keep-look');
+  const memo = document.getElementById('keep-memory');
+
+  [look, memo].forEach(el=>{
+    el.addEventListener('click', ()=>{
+      choice = (el.id==='keep-look') ? 'look' : 'memory';
+      look.style.outline = (choice==='look') ? '3px solid #fff' : 'none';
+      memo.style.outline = (choice==='memory') ? '3px solid #fff' : 'none';
+    });
+  });
+
+  document.getElementById('back').onclick = ()=> history.back();
+
+  document.getElementById('decide').onclick = ()=>{
+    if(!choice){ alert('どちらかを選んでください'); return; }
+
+    if(choice==='look'){
+      // 容姿を保つ：会話ログとXPをリセットして会話へ
+      localStorage.removeItem('whoai_need_evolve');
+      localStorage.removeItem('whoai_keep_memory');
+      localStorage.removeItem('whoai_chat');
+      try{
+        const s = JSON.parse(localStorage.getItem('whoai_state')||'{}');
+        s.xp = 0;
+        s.goal = s.goal || (s.stage==='evolved'?12:8);
+        localStorage.setItem('whoai_state', JSON.stringify(s));
+      }catch{}
+      location.href = TALK_PAGE;
+    }else{
+      // 記憶を保つ：会話は維持。見た目だけ次で変更
+      localStorage.setItem('whoai_keep_memory','1');
+      location.href = MACARON_PG + '?from=rebirth';
+    }
+  };
 </script>
 </body>
 </html>
