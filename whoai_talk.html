@@ -17,7 +17,6 @@
   .dot{width:14px;height:14px;border-radius:50%}
   .dot.pink{background:#ff8fb1}.dot.blue{background:#88a7ff}.dot.green{background:#85f3b0}.dot.purple{background:#c59bff}
 
-  /* progress */
   #goalText{padding:8px 12px}
   #bar{height:12px;border-radius:8px;overflow:hidden;position:relative}
   #fill{height:100%;width:0;background:linear-gradient(90deg,#ffd1ec,#ffc5d9,#ffd1ec)}
@@ -72,17 +71,28 @@
   </div>
 
 <script>
-  /* ====== APIエンドポイント ====== */
+  /* ====== API（そのまま） ====== */
   const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 
-  /* ====== assets / public/assets 両対応のフォールバック ====== */
-  const BASES = ["assets/stage1", "public/assets/stage1"];
-  // 背景フォールバック
-  const bgTest = new Image();
-  bgTest.src = `${BASES[0]}/space_background.png`;
-  bgTest.onerror = ()=>{ document.body.style.backgroundImage = `url("${BASES[1]}/space_background.png")`; };
+  /* ====== ルートパスを計算（/repo/ までを抽出） ====== */
+  function repoRoot(){
+    // /repo/whoai_talk.html → /repo/
+    // /repo/assets/macaron.html → /repo/
+    const p = location.pathname;
+    if (p.includes('/assets/')) return p.replace(/\/assets\/.*/,'/') ;
+    return p.replace(/[^/]+$/,'');
+  }
+  const ROOT = repoRoot();
 
-  /* ====== 状態ロード ====== */
+  /* ====== 背景フォールバック ====== */
+  (()=>{
+    const img = new Image();
+    img.src = `${ROOT}assets/stage1/space_background.png`;
+    img.onerror = ()=>{ document.body.style.backgroundImage = `url("${ROOT}public/assets/stage1/space_background.png")`; };
+    // 既定CSSの相対は残してOK
+  })();
+
+  /* ====== 状態 ====== */
   function read(obj, k, def){ return (obj && obj[k]!=null)?obj[k]:def; }
   const stored = JSON.parse(localStorage.getItem('whoai_state') || "{}");
   const macaron = JSON.parse(localStorage.getItem('macaron_choice') || "null");
@@ -90,14 +100,13 @@
   const state = {
     name: read(stored,'name','WHOAI'),
     color,
-    variant: read(stored,'variant','tane'),  // 'tane' / 'open' / 'close' など
-    stage: read(stored,'stage','seed'),      // 'seed' or 'evolved'
+    variant: read(stored,'variant','tane'),
+    stage: read(stored,'stage','seed'),
     xp: read(stored,'xp',0),
     goal: read(stored,'goal', (stored.stage==='evolved'?12:8))
   };
   window.state = state;
 
-  // バッジ
   document.getElementById('dot').classList.add(color);
   document.getElementById('traitLabel').textContent = state.name || "WHOAI";
 
@@ -118,10 +127,10 @@
   }
   updateGoalText(); updateBarAndCounter();
 
-  /* ====== アバター（variantに合わせて表示） ====== */
+  /* ====== アバター ====== */
   function charPath(s){
     const name = (s.variant === "tane") ? `tane_${s.color}.png` : `${s.color}_${s.variant}.png`;
-    return [`${BASES[0]}/${name}`, `${BASES[1]}/${name}`];
+    return [`${ROOT}assets/stage1/${name}`, `${ROOT}public/assets/stage1/${name}`];
   }
   (function setAvatar(){
     const img = document.getElementById('avatar');
@@ -130,14 +139,14 @@
     img.alt = (state.name || 'WHOAI') + ' avatar';
     img.onerror = ()=>{
       if(img.dataset.fbk!=='1'){ img.dataset.fbk='1'; img.src = p1; return; }
-      const f = document.createElement('div'); // どちらも無い時は色丸を表示
+      const f = document.createElement('div');
       f.className = 'fallback';
       f.style.background = {pink:'#ff8fb1', blue:'#88a7ff', green:'#85f3b0', purple:'#c59bff'}[state.color] || '#fff';
       img.replaceWith(f);
     };
   })();
 
-  /* ====== チャットUI ====== */
+  /* ====== チャット ====== */
   const logEl = document.getElementById('log');
   const textEl = document.getElementById('text');
   const sendEl = document.getElementById('send');
@@ -153,12 +162,10 @@
   }
   addMsg('ai', {pink:"やっほー！まずは一歩いってみよ！",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"}[state.color] || "こんにちは！");
 
-  // 履歴
   function loadChat(){ try{ return JSON.parse(localStorage.getItem('whoai_chat')||'[]'); }catch{ return []; } }
   function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-14))); }
   let chat = loadChat();
 
-  /* ====== API呼び出し ====== */
   async function talkAPI(userText){
     const systemPrompt = `あなたはWHOAIのキャラクター。名前は「${state.name||'WHOAI'}」。色は${state.color}、形態は${state.variant||'tane'}。口調は次の方針：
 - ピンク: 前向きに励ます
@@ -184,11 +191,23 @@
     else { textEl.classList.remove('disabled'); sendEl.classList.remove('disabled'); }
   }
 
-  // ▼ゴール到達時はマカロンへ（404対策つき）
-  function reachGoal(){
+  // ▼ macaron.html をオート検出（同階層 /assets/ 内 どちらでもOK）
+  async function goToMacaron(){
     localStorage.setItem('whoai_need_evolve','1');
-    const base = location.pathname.replace(/[^/]+$/, ''); // 同じフォルダへ
-    location.href = base + 'macaron.html?from=talk';
+    const base = location.pathname.replace(/[^/]+$/, '');
+    const candidates = [
+      base + 'macaron.html',
+      base + 'assets/macaron.html',
+      base + 'assets/stage1/macaron.html',
+      base + 'macaron_select.html'
+    ];
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { method:'HEAD', cache:'no-store' });
+        if (res.ok) { location.href = url + (url.includes('?')?'':'?from=talk'); return; }
+      } catch {}
+    }
+    alert('macaron.html が見つかりませんでした。配置場所を確認してください。');
   }
 
   if(state.xp >= state.goal){ disableInput(true); }
@@ -209,14 +228,13 @@
     addMsg('ai', reply);
     chat.push({role:"assistant", content:reply}); saveChat(chat);
 
-    // XP加算＋表示更新
     state.xp = (state.xp||0) + 1;
     updateBarAndCounter();
     saveState();
 
     if(state.xp >= state.goal){
       disableInput(true);
-      setTimeout(reachGoal, 250);
+      setTimeout(goToMacaron, 250);
     }
   }
 
