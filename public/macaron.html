@@ -9,7 +9,6 @@
   body{
     font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
     background:url("assets/stage1/space_background.png") center/cover fixed no-repeat;
-    /* ↑ 上の1行は環境により public/assets/... かも。下で自動フォールバックします */
     color:#fff; display:flex; flex-direction:column; align-items:center; gap:18px; padding:24px
   }
   h1{margin:8px 0 4px}
@@ -17,7 +16,7 @@
   .card{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:12px;text-align:center;cursor:pointer}
   .card.active{outline:3px solid #fff}
   .img{width:80px;height:80px;margin:6px auto 8px;display:block}
-  .row{display:flex;gap:12px;align-items:center}
+  .row{display:flex;gap:12px;align-items:center;margin-top:8px}
   button{border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
   .primary{background:#ffd1ec;color:#111}
   .ghost{background:rgba(255,255,255,.15);color:#fff}
@@ -29,19 +28,10 @@
   <div class="hint">色を変えても<b>進化状態は維持</b>します（見た目だけ変わります）。</div>
 
   <div class="grid" id="grid">
-    <!-- 画像の src はJSでセット（assets/ と public/assets/ の両対応） -->
-    <div class="card" data-color="pink">
-      <img class="img" data-file="macaron_pink.png" alt="pink"><div>ピンク（情熱）</div>
-    </div>
-    <div class="card" data-color="blue">
-      <img class="img" data-file="macaron_blue.png" alt="blue"><div>ブルー（静寂）</div>
-    </div>
-    <div class="card" data-color="green">
-      <img class="img" data-file="macaron_green.png" alt="green"><div>グリーン（元気）</div>
-    </div>
-    <div class="card" data-color="purple">
-      <img class="img" data-file="macaron_purple.png" alt="purple"><div>パープル（創造）</div>
-    </div>
+    <div class="card" data-color="pink"><img class="img" data-file="macaron_pink.png"  alt="pink"><div>ピンク（情熱）</div></div>
+    <div class="card" data-color="blue"><img class="img" data-file="macaron_blue.png"  alt="blue"><div>ブルー（静寂）</div></div>
+    <div class="card" data-color="green"><img class="img" data-file="macaron_green.png" alt="green"><div>グリーン（元気）</div></div>
+    <div class="card" data-color="purple"><img class="img" data-file="macaron_purple.png" alt="purple"><div>パープル（創造）</div></div>
   </div>
 
   <div class="row">
@@ -50,7 +40,7 @@
   </div>
 
 <script>
-  // 画像パスのフォールバック（assets/.. が無ければ public/assets/.. を試す）
+  // 画像パスのフォールバック（assets/.. が無ければ public/assets/..）
   const BASES = ["assets/stage1", "public/assets/stage1"];
   document.querySelectorAll('.img').forEach(img=>{
     const file = img.dataset.file;
@@ -62,12 +52,10 @@
       }
     };
   });
-  // 背景もフォールバック（上でCSSに assets/.. を指定済み）
+  // 背景もフォールバック
   const testBg = new Image();
   testBg.src = "assets/stage1/space_background.png";
-  testBg.onerror = ()=>{
-    document.body.style.backgroundImage = 'url("public/assets/stage1/space_background.png")';
-  };
+  testBg.onerror = ()=>{ document.body.style.backgroundImage = 'url("public/assets/stage1/space_background.png")'; };
 
   const cards = document.querySelectorAll('.card');
   let chosen = null;
@@ -97,32 +85,32 @@
   document.getElementById('backBtn').addEventListener('click', ()=>{
     if(localStorage.getItem('whoai_need_evolve')==='1'){
       localStorage.removeItem('whoai_need_evolve');
-      location.href = 'whoai_talk.html';
+      // whoai_talk.html と同じ階層へ戻す
+      const base = location.pathname.replace(/[^/]+$/, '');
+      location.href = base + 'whoai_talk.html';
     }else{
       history.back();
     }
   });
 
-  // 進化を適用（★ここが肝：色を変えても進化のまま）
+  // 進化を適用（★色を変えても進化のまま）
   document.getElementById('evolveBtn').addEventListener('click', ()=>{
     if(!chosen) return;
 
-    // 既存の状態を読み込み
     let s = {};
     try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
 
-    // 色だけ更新。進化は必ず維持／無ければ進化させる
     s.color   = chosen;
     s.stage   = 'evolved';   // 常に進化状態
-    s.variant = 'open';      // 進化時の見た目（あなたの命名に合わせてOK）
-    s.xp      = 0;           // 次ループを始めるなら0。維持したいならこの行を消してOK
-    s.goal    = s.goal || 12; // 進化後の目標値のデフォルト
+    s.variant = 'open';      // 進化時の見た目（命名は手元に合わせてOK）
+    s.xp      = 0;           // 新しい周回を始めるなら0。維持したいなら削除OK
+    s.goal    = s.goal || 12;
 
     localStorage.setItem('whoai_state', JSON.stringify(s));
 
-    // 完了 → 会話へ戻る（API部分は触らない）
     localStorage.removeItem('whoai_need_evolve');
-    location.href = 'whoai_talk.html';
+    const base = location.pathname.replace(/[^/]+$/, '');
+    location.href = base + 'whoai_talk.html';
   });
 </script>
 </body>
