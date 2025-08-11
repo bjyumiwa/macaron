@@ -1,141 +1,102 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WHOAI - マカロン選択</title>
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-      color:#fff;
-      background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
-    }
-    .lang{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:2}
-    .lang button{border:none;border-radius:999px;padding:8px 14px;cursor:pointer;background:rgba(255,255,255,.14);color:#fff}
-    .lang button.active{background:#fff;color:#111}
-    .wrap{width:min(980px,94vw)}
-    h1{font-size:36px;margin:0 0 10px;text-shadow:0 2px 12px rgba(0,0,0,.5)}
-    p.lead{opacity:.95;margin:0 0 16px}
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(4, minmax(160px,1fr));
-      gap:16px; margin-top:14px
-    }
-    .card{
-      background:rgba(0,0,0,.38); border:1px solid rgba(255,255,255,.18);
-      border-radius:18px; padding:16px; cursor:pointer;
-      transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
-      display:flex;flex-direction:column;align-items:center;gap:10px
-    }
-    .card:hover{ transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,0,0,.35) }
-    .dot{
-      width:84px;height:84px;border-radius:50%;
-      border:3px solid rgba(255,255,255,.75); box-shadow:0 6px 16px rgba(0,0,0,.4)
-    }
-    .pink{   background:#ff8fb1 }
-    .blue{   background:#88a7ff }
-    .green{  background:#85f3b0 }
-    .purple{ background:#c59bff }
-    .name{font-weight:800;letter-spacing:.02em}
-    .desc{font-size:14px;opacity:.95;line-height:1.6}
-    .back{margin-top:14px}
-    .back a{color:#cfe8ff}
-    .page-tag{
-      position:fixed;right:10px;bottom:10px;font-size:12px;opacity:.8;background:rgba(0,0,0,.35);
-      padding:6px 8px;border-radius:8px
-    }
-    @media (max-width:760px){
-      .grid{grid-template-columns: repeat(2, minmax(160px,1fr))}
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>マカロンを選ぶ</title>
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
+    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    color:#fff; display:flex; flex-direction:column; align-items:center; gap:18px; padding:24px
+  }
+  h1{margin:8px 0 4px}
+  .grid{display:grid;grid-template-columns:repeat(4,120px);gap:18px}
+  .card{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:12px;text-align:center;cursor:pointer}
+  .card.active{outline:3px solid #fff}
+  .img{width:80px;height:80px;margin:6px auto 8px;display:block}
+  .row{display:flex;gap:12px;align-items:center}
+  button{border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
+  .primary{background:#ffd1ec;color:#111}
+  .ghost{background:rgba(255,255,255,.15);color:#fff}
+  .hint{opacity:.9}
+</style>
 </head>
 <body>
-  <div class="lang" aria-label="Language Switch">
-    <button type="button" data-lang="ja" class="active">日本語</button>
-    <button type="button" data-lang="en">English</button>
+  <h1>マカロンを選ぶ</h1>
+  <div class="hint">色を変えても<b>進化状態は維持</b>します（見た目だけ変わります）。</div>
+
+  <div class="grid" id="grid">
+    <!-- 画像パスはお手元の構成に合わせてください -->
+    <div class="card" data-color="pink"><img class="img" src="public/assets/stage1/macaron_pink.png"  alt="pink"><div>ピンク（情熱）</div></div>
+    <div class="card" data-color="blue"><img class="img" src="public/assets/stage1/macaron_blue.png"  alt="blue"><div>ブルー（静寂）</div></div>
+    <div class="card" data-color="green"><img class="img" src="public/assets/stage1/macaron_green.png" alt="green"><div>グリーン（元気）</div></div>
+    <div class="card" data-color="purple"><img class="img" src="public/assets/stage1/macaron_purple.png" alt="purple"><div>パープル（創造）</div></div>
   </div>
 
-  <main class="wrap">
-    <h1 data-i18n="title">マカロンを選んでください</h1>
-    <p class="lead" data-i18n="lead">色によって性格やストーリーが少し変わります。</p>
+  <div class="row">
+    <button class="ghost" id="backBtn">キャンセル</button>
+    <button class="primary" id="evolveBtn" disabled>進化する</button>
+  </div>
 
-    <section class="grid" aria-label="Macaron Choices">
-      <button class="card" data-color="pink">
-        <div class="dot pink" aria-hidden="true"></div>
-        <div class="name" data-i18n="pinkName">ピンク</div>
-        <div class="desc" data-i18n="pinkDesc">情熱。前向きで、相手を励ます言葉が増えます。</div>
-      </button>
+<script>
+  const cards = document.querySelectorAll('.card');
+  let chosen = null;
 
-      <button class="card" data-color="blue">
-        <div class="dot blue" aria-hidden="true"></div>
-        <div class="name" data-i18n="blueName">ブルー</div>
-        <div class="desc" data-i18n="blueDesc">静寂。落ち着いて、丁寧に考える会話になります。</div>
-      </button>
-
-      <button class="card" data-color="green">
-        <div class="dot green" aria-hidden="true"></div>
-        <div class="name" data-i18n="greenName">グリーン</div>
-        <div class="desc" data-i18n="greenDesc">元気。テンポがよく、行動を促す返答になります。</div>
-      </button>
-
-      <button class="card" data-color="purple">
-        <div class="dot purple" aria-hidden="true"></div>
-        <div class="name" data-i18n="purpleName">パープル</div>
-        <div class="desc" data-i18n="purpleDesc">創造。比喩や発想の飛躍が少し増えます。</div>
-      </button>
-    </section>
-
-    <div class="back"><a href="index.html" data-i18n="back">← タイトルにもどる</a></div>
-  </main>
-
-  <div class="page-tag">macaron.html（4色選択）</div>
-
-  <script>
-    // i18n
-    const I18N = {
-      ja:{
-        title:"マカロンを選んでください",
-        lead:"色によって性格やストーリーが少し変わります。",
-        pinkName:"ピンク",  pinkDesc:"情熱。前向きで、相手を励ます言葉が増えます。",
-        blueName:"ブルー",  blueDesc:"静寂。落ち着いて、丁寧に考える会話になります。",
-        greenName:"グリーン",greenDesc:"元気。テンポがよく、行動を促す返答になります。",
-        purpleName:"パープル",purpleDesc:"創造。比喩や発想の飛躍が少し増えます。",
-        back:"← タイトルにもどる"
-      },
-      en:{
-        title:"Choose a macaron",
-        lead:"Each color slightly shapes the trait and story.",
-        pinkName:"Pink",  pinkDesc:"Passion. Upbeat tone that cheers you on.",
-        blueName:"Blue",  blueDesc:"Calm. Thoughtful, measured responses.",
-        greenName:"Green",greenDesc:"Energy. Snappier replies nudging action.",
-        purpleName:"Purple",purpleDesc:"Creativity. More metaphors and leaps of idea.",
-        back:"← Back to Title"
-      }
-    };
-
-    const langBtns = document.querySelectorAll('.lang button');
-    function applyLang(lang){
-      document.documentElement.lang = (lang==='ja'?'ja':'en');
-      langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
-      document.querySelectorAll('[data-i18n]').forEach(el=>{
-        const k = el.getAttribute('data-i18n'); el.textContent = I18N[lang][k] ?? el.textContent;
-      });
-      localStorage.setItem('lang', lang);
+  // 直近の選択を初期表示
+  try{
+    const prev = JSON.parse(localStorage.getItem('macaron_choice')||'null');
+    if(prev?.macaron){
+      chosen = prev.macaron;
+      document.querySelector(`.card[data-color="${chosen}"]`)?.classList.add('active');
+      document.getElementById('evolveBtn').disabled = false;
     }
-    langBtns.forEach(b=>b.addEventListener('click',()=>applyLang(b.dataset.lang)));
-    applyLang(localStorage.getItem('lang') || 'ja');
+  }catch{}
 
-    // 選択処理
-    document.querySelectorAll('.card').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const color = btn.dataset.color;
-        localStorage.setItem('selectedMacaron', color);
-        // ここで次のページへ（会話ページなど）
-        location.href = 'conversation.html';
-      });
+  // クリックで選択
+  cards.forEach(c=>{
+    c.addEventListener('click', ()=>{
+      cards.forEach(x=>x.classList.remove('active'));
+      c.classList.add('active');
+      chosen = c.dataset.color;
+      localStorage.setItem('macaron_choice', JSON.stringify({macaron: chosen, at: Date.now()}));
+      document.getElementById('evolveBtn').disabled = false;
     });
-  </script>
+  });
+
+  // 戻る
+  document.getElementById('backBtn').addEventListener('click', ()=>{
+    // フラグがあれば会話へ戻す
+    if(localStorage.getItem('whoai_need_evolve')==='1'){
+      localStorage.removeItem('whoai_need_evolve');
+      location.href = 'whoai_talk.html';
+    }else{
+      history.back();
+    }
+  });
+
+  // 進化を適用（ここが肝）
+  document.getElementById('evolveBtn').addEventListener('click', ()=>{
+    if(!chosen) return;
+
+    // 既存の状態を読み込み
+    let s = {};
+    try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
+
+    // 色だけ更新。進化は維持／なければ進化させる
+    s.color   = chosen;
+    s.stage   = 'evolved';   // 常に進化状態にする
+    s.variant = 'open';      // 進化時の見た目（お手元の命名に合わせてOK）
+    s.xp      = 0;           // 次の周回を始めるならリセット。維持したいなら消してOK
+    s.goal    = s.goal || 12; // 進化後の目標値
+
+    localStorage.setItem('whoai_state', JSON.stringify(s));
+
+    // 完了 → 会話へ戻る
+    localStorage.removeItem('whoai_need_evolve');
+    location.href = 'whoai_talk.html';
+  });
+</script>
 </body>
 </html>
