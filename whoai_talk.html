@@ -2,13 +2,13 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（tane色同期＋再選択モーダル）</title>
+  <title>whoai_talk - 会話（tane色同期＋再選択）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      background-image:url("./space_background.png");
+      background-image:url("./public/assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
     }
     /* 右上バッジ */
@@ -104,13 +104,13 @@
     nameEl.textContent = `🪄 ${lsGet('characterName','なまえ未設定')}`;
     badge.style.display = 'flex';
 
-    // 候補URL（直下 → public → purple-typo → 緑）
+    // まず public/assets/stage1 を見る → 次に直下 → typo救済
     const candidates = [
-      `./tane_${color}.png`,
       `./public/assets/stage1/tane_${color}.png`,
-      color==='purple' ? './tane_purplo.png' : null,
-      './tane_green.png',
-      './public/assets/stage1/tane_green.png'
+      `./tane_${color}.png`,
+      (color==='purple') ? './tane_purplo.png' : null,
+      './public/assets/stage1/tane_green.png',
+      './tane_green.png'
     ].filter(Boolean);
 
     (function pickAndApply(i=0){
@@ -166,7 +166,6 @@
       }finally{
         sendBtn.disabled = false;
         inputEl.focus();
-        // 会話回数カウント（モーダル用）
         incTurns();
       }
     }
@@ -179,7 +178,7 @@
       sessionStorage.setItem('whoai_welcome_shown','1');
     }
 
-    // ---- ここから：会話回数トラッカー（API非干渉） ----
+    // 会話回数カウント（8回でモーダル）
     const TURN_GOAL = 8;
     window.incTurns = function(){
       const n = (Number(localStorage.getItem('whoai_turns')||0))+1;
@@ -196,10 +195,10 @@
     const commit=document.getElementById('mCommit');
 
     const OPTIONS=[
-      {key:'pink',   label:'ピンク',  img:'./macaron_pink.png'},
-      {key:'blue',   label:'ブルー',  img:'./macaron_blue.png'},
-      {key:'green',  label:'グリーン',img:'./macaron_green.png'},
-      {key:'purple', label:'パープル',img:'./macaron_purple.png'},
+      {key:'pink',   label:'ピンク',  img:'./public/assets/stage1/macaron_pink.png'},
+      {key:'blue',   label:'ブルー',  img:'./public/assets/stage1/macaron_blue.png'},
+      {key:'green',  label:'グリーン',img:'./public/assets/stage1/macaron_green.png'},
+      {key:'purple', label:'パープル',img:'./public/assets/stage1/macaron_purple.png'},
     ];
     let selected=null;
 
@@ -218,15 +217,19 @@
     window.openModal = function(){ build(); modal.style.display='flex'; }
     function closeModal(){ modal.style.display='none'; }
 
-    // 決定：色を保存→画像差し替え（直下→public→typo→緑）
     commit.onclick=()=>{
       if(!selected) return;
       localStorage.setItem('selectedMacaron', selected.key);
       localStorage.setItem('whoai_selectedMacaron', selected.key);
       const color=selected.key;
-      const candidates=[`./tane_${color}.png`,`./public/assets/stage1/tane_${color}.png`, color==='purple'?'./tane_purplo.png':null, './tane_green.png'].filter(Boolean);
       const face=document.getElementById('whoaiBadgeFace');
       const sprite=document.getElementById('whoaiSpriteImg');
+      const candidates=[
+        `./public/assets/stage1/tane_${color}.png`,
+        `./tane_${color}.png`,
+        (color==='purple') ? './tane_purplo.png' : null,
+        './public/assets/stage1/tane_green.png'
+      ].filter(Boolean);
       (function apply(i=0){
         if(i>=candidates.length){ closeModal(); return; }
         const t=new Image();
@@ -237,7 +240,7 @@
     };
     cancel.onclick=closeModal;
 
-    // ショートカット：Alt+M でいつでも開く
+    // Alt+M でいつでも開く
     window.addEventListener('keydown',(e)=>{ if(e.altKey && (e.key==='m' || e.key==='M')) window.openModal(); });
   })();
   </script>
