@@ -2,49 +2,109 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk</title>
+  <title>whoai_talk - 会話（tane色同期＋再選択モーダル）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      /* 画像はリポジトリ直下にある前提。ここを動かさない限り黒くなりません */
       background-image:url("./space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
     }
-    /* 右上バッジ（元のまま） */
-    .name-badge{position:fixed;top:10px;right:10px;z-index:9999;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700}
-    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
+    /* 右上バッジ */
+    .whoai-name-badge{
+      position:fixed;top:10px;right:10px;z-index:1000;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+      padding:8px 12px;border-radius:12px;font-weight:700;color:#fff;display:flex;align-items:center;
+    }
+    #whoaiBadgeFace{width:36px;height:36px;margin-right:8px;border-radius:8px}
+
     /* 中央キャラ（ゆらゆら） */
-    .sprite{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:180px;height:180px;display:flex;align-items:center;justify-content:center;z-index:30;pointer-events:none;animation:float 3s ease-in-out infinite;filter:drop-shadow(0 10px 22px rgba(0,0,0,.35))}
-    .sprite img{max-width:100%;max-height:100%}
+    .whoai-sprite{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:180px;height:180px;display:flex;align-items:center;justify-content:center;
+      z-index:30; pointer-events:none; animation:float 3s ease-in-out infinite;
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,.35));
+    }
+    .whoai-sprite img{max-width:100%;max-height:100%}
     @keyframes float{0%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-54%)}100%{transform:translate(-50%,-50%)}}
+
+    /* ===== Chat Dock ===== */
+    .whoai-chatdock{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(920px,92vw);z-index:900}
+    .whoai-log{max-height:38vh;overflow:auto;padding:12px 14px;margin-bottom:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.28);font-size:14px;line-height:1.5}
+    .whoai-msg{display:flex;gap:8px;margin:6px 0}
+    .whoai-msg.me{justify-content:flex-end}
+    .whoai-bubble{padding:8px 12px;border-radius:12px;max-width:72%;background:rgba(255,255,255,.12)}
+    .whoai-msg.me .whoai-bubble{background:rgba(255,209,236,.16)}
+    .whoai-inputrow{display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);padding:10px;border-radius:14px}
+    .whoai-inputrow input{flex:1;height:42px;border:none;border-radius:10px;padding:0 12px;font-size:16px;outline:none;background:rgba(255,255,255,.86)}
+    .whoai-inputrow button{height:42px;padding:0 14px;border:none;border-radius:10px;cursor:pointer;font-weight:700;background:#ffd1ec;color:#222}
+
+    /* ===== Macaron Modal ===== */
+    .macaron-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:1200}
+    .macaron-card{width:min(960px,96vw);background:rgba(0,0,0,.55);color:#fff;border-radius:22px;padding:24px 20px;box-shadow:0 20px 48px rgba(0,0,0,.35)}
+    .macaron-title{font-size:28px;font-weight:800;text-align:center;margin:6px 0 8px}
+    .macaron-sub{opacity:.9;text-align:center;margin-bottom:18px}
+    .macaron-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:10px auto 18px;max-width:840px}
+    .m-item{background:rgba(255,255,255,.08);border-radius:18px;padding:14px;text-align:center;cursor:pointer;border:2px solid transparent}
+    .m-item.selected{border-color:#ffd1ec;box-shadow:0 0 0 4px rgba(255,209,236,.25) inset}
+    .m-item img{width:96px;height:96px;object-fit:contain;display:block;margin:6px auto 10px}
+    .m-actions{display:flex;gap:10px;justify-content:center}
+    .m-btn{padding:10px 16px;border:none;border-radius:12px;font-weight:700;cursor:pointer}
+    .m-cancel{background:#555;color:#fff}.m-commit{background:#ffd1ec;color:#222}
   </style>
 </head>
 <body>
+
   <!-- 中央キャラ -->
-  <div class="sprite"><img id="sprite" alt="character"></div>
-  <!-- 右上のバッジ -->
-  <div id="nameBadge" class="name-badge" style="display:none;">
-    <img id="badgeFace" alt=""><span id="badgeText"></span>
+  <div id="whoaiSprite" class="whoai-sprite" aria-hidden="true">
+    <img id="whoaiSpriteImg" alt="character">
   </div>
 
-  <!-- ★ここより下は画像ローダだけ。APIや既存fetchは一切触りません -->
+  <!-- 右上のバッジ -->
+  <div id="whoaiNameBadge" class="whoai-name-badge" style="display:none;">
+    <img id="whoaiBadgeFace" alt="">
+    <span id="whoaiBadgeText"></span>
+  </div>
+
+  <!-- チャットDock（APIは既存設定を使用） -->
+  <div class="whoai-chatdock" id="whoaiChatDock" aria-live="polite">
+    <div class="whoai-log" id="whoaiLog"></div>
+    <div class="whoai-inputrow">
+      <input id="whoaiInput" type="text" placeholder="メッセージを入力して Enter / 送信" />
+      <button id="whoaiSend">送信</button>
+    </div>
+  </div>
+
+  <!-- モーダル（ページ内でマカロン再選択） -->
+  <div id="macaronModal" class="macaron-modal" aria-modal="true" role="dialog">
+    <div class="macaron-card">
+      <div class="macaron-title">マカロンを選ぶ</div>
+      <div class="macaron-sub">色を変えても進化状態は維持します（見た目だけ変わります）。</div>
+      <div class="macaron-grid" id="mGrid"></div>
+      <div class="m-actions">
+        <button class="m-btn m-cancel" id="mCancel">キャンセル</button>
+        <button class="m-btn m-commit" id="mCommit" disabled>進化する</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+  /* ===== 画像表示（マカロン色 → tane色） ===== */
   (function(){
-    function lsGet(k,d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{ return localStorage.getItem(k)??d }}
-    const picked = (lsGet('selectedMacaron')||lsGet('whoai_selectedMacaron')||'green');
-    const color  = ['pink','blue','green','purple'].includes(picked)?picked:'green';
+    function lsGet(k,d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{return localStorage.getItem(k)??d}}
+    const pickedRaw = lsGet('selectedMacaron') || lsGet('whoai_selectedMacaron') || 'green';
+    const color = ['pink','blue','green','purple'].includes(pickedRaw) ? pickedRaw : 'green';
 
-    const face = document.getElementById('badgeFace');
-    const badge= document.getElementById('nameBadge');
-    const text = document.getElementById('badgeText');
-    text.textContent = `🪄 ${lsGet('characterName','なまえ未設定')}`;
-    badge.style.display='inline-block';
+    const badge = document.getElementById('whoaiNameBadge');
+    const face  = document.getElementById('whoaiBadgeFace');
+    const nameEl= document.getElementById('whoaiBadgeText');
+    const spriteImg = document.getElementById('whoaiSpriteImg');
 
-    const sprite = document.getElementById('sprite');
+    nameEl.textContent = `🪄 ${lsGet('characterName','なまえ未設定')}`;
+    badge.style.display = 'flex';
 
-    // 画像候補：直下 → public/assets → purpleのtypo → 最後に緑
+    // 候補URL（直下 → public → purple-typo → 緑）
     const candidates = [
       `./tane_${color}.png`,
       `./public/assets/stage1/tane_${color}.png`,
@@ -53,14 +113,132 @@
       './public/assets/stage1/tane_green.png'
     ].filter(Boolean);
 
-    // 1つだけ実在URLを確定し、右上と中央に同時適用
-    (function pick(i=0){
+    (function pickAndApply(i=0){
       if(i>=candidates.length){ console.warn('tane image not found'); return; }
-      const img = new Image();
-      img.onload = ()=>{ face.src = img.src; sprite.src = img.src; };
-      img.onerror= ()=> pick(i+1);
-      img.src = candidates[i];
+      const test = new Image();
+      test.onload = () => { face.src = test.src; spriteImg.src = test.src; };
+      test.onerror = () => pickAndApply(i+1);
+      test.src = candidates[i];
     })();
+  })();
+
+  /* ===== チャットDock（APIは既存 or 既定URL） ===== */
+  (function(){
+    const ENDPOINT = window.TALK_ENDPOINT || 'https://macaron-one.vercel.app/api/talk';
+    const sessionId = localStorage.getItem('whoai_session_id') || crypto.randomUUID();
+    localStorage.setItem('whoai_session_id', sessionId);
+
+    const logEl = document.getElementById('whoaiLog');
+    const inputEl = document.getElementById('whoaiInput');
+    const sendBtn = document.getElementById('whoaiSend');
+
+    function addLine(side, text){
+      const wrap = document.createElement('div');
+      wrap.className = `whoai-msg ${side}`;
+      const bubble = document.createElement('div');
+      bubble.className = 'whoai-bubble';
+      bubble.textContent = text;
+      wrap.appendChild(bubble);
+      logEl.appendChild(wrap);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function send(){
+      const text = inputEl.value.trim();
+      if(!text) return;
+      inputEl.value = '';
+      addLine('me', text);
+
+      try{
+        sendBtn.disabled = true;
+        const res = await fetch(ENDPOINT, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ message: text, sessionId })
+        });
+        if(!res.ok){ addLine('bot', `（エラー: ${res.status}）サーバに接続できませんでした`); return; }
+        const data = await res.json();
+        const reply = data.reply || data.message || data.text || '[返信なし]';
+        addLine('bot', reply);
+      }catch(err){
+        addLine('bot', '（通信エラー）もう一度お試しください');
+        console.error(err);
+      }finally{
+        sendBtn.disabled = false;
+        inputEl.focus();
+        // 会話回数カウント（モーダル用）
+        incTurns();
+      }
+    }
+
+    sendBtn.addEventListener('click', send);
+    inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+
+    if(!sessionStorage.getItem('whoai_welcome_shown')){
+      addLine('bot','こんにちは！マカロン色の tane だよ。なんでも話しかけてね。');
+      sessionStorage.setItem('whoai_welcome_shown','1');
+    }
+
+    // ---- ここから：会話回数トラッカー（API非干渉） ----
+    const TURN_GOAL = 8;
+    window.incTurns = function(){
+      const n = (Number(localStorage.getItem('whoai_turns')||0))+1;
+      localStorage.setItem('whoai_turns', String(n));
+      if(n>=TURN_GOAL) openModal();
+    }
+  })();
+
+  /* ===== モーダル（ページ内でマカロン再選択） ===== */
+  (function(){
+    const modal=document.getElementById('macaronModal');
+    const grid =document.getElementById('mGrid');
+    const cancel=document.getElementById('mCancel');
+    const commit=document.getElementById('mCommit');
+
+    const OPTIONS=[
+      {key:'pink',   label:'ピンク',  img:'./macaron_pink.png'},
+      {key:'blue',   label:'ブルー',  img:'./macaron_blue.png'},
+      {key:'green',  label:'グリーン',img:'./macaron_green.png'},
+      {key:'purple', label:'パープル',img:'./macaron_purple.png'},
+    ];
+    let selected=null;
+
+    function build(){
+      grid.innerHTML='';
+      OPTIONS.forEach(opt=>{
+        const el=document.createElement('div'); el.className='m-item'; el.dataset.key=opt.key;
+        el.innerHTML=`<img src="${opt.img}" alt="${opt.label}"><div>${opt.label}</div>`;
+        el.onclick=()=>{
+          document.querySelectorAll('.m-item').forEach(i=>i.classList.remove('selected'));
+          el.classList.add('selected'); selected=opt; commit.disabled=false;
+        };
+        grid.appendChild(el);
+      });
+    }
+    window.openModal = function(){ build(); modal.style.display='flex'; }
+    function closeModal(){ modal.style.display='none'; }
+
+    // 決定：色を保存→画像差し替え（直下→public→typo→緑）
+    commit.onclick=()=>{
+      if(!selected) return;
+      localStorage.setItem('selectedMacaron', selected.key);
+      localStorage.setItem('whoai_selectedMacaron', selected.key);
+      const color=selected.key;
+      const candidates=[`./tane_${color}.png`,`./public/assets/stage1/tane_${color}.png`, color==='purple'?'./tane_purplo.png':null, './tane_green.png'].filter(Boolean);
+      const face=document.getElementById('whoaiBadgeFace');
+      const sprite=document.getElementById('whoaiSpriteImg');
+      (function apply(i=0){
+        if(i>=candidates.length){ closeModal(); return; }
+        const t=new Image();
+        t.onload=()=>{ face.src=t.src; sprite.src=t.src; closeModal(); };
+        t.onerror=()=>apply(i+1);
+        t.src=candidates[i];
+      })();
+    };
+    cancel.onclick=closeModal;
+
+    // ショートカット：Alt+M でいつでも開く
+    window.addEventListener('keydown',(e)=>{ if(e.altKey && (e.key==='m' || e.key==='M')) window.openModal(); });
   })();
   </script>
 </body>
