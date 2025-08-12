@@ -58,15 +58,17 @@ clearBtn.onclick=()=>{document.querySelectorAll('.card').forEach(el=>el.classLis
 
 goBtn.onclick=()=>{
   if(!selected) return;
-  // 両方保存して互換性確保
+
+  // 互換のため“両方のキー名”に保存
   localStorage.setItem('selectedMacaron', selected.key);
   localStorage.setItem('whoai_selectedMacaron', selected.key);
 
-  // 初期状態を設定
+  // ステージ初期化（tane で会話開始）
   localStorage.setItem('whoai_stage','stage1');
   localStorage.setItem('whoai_appearance','tane');
   localStorage.setItem('whoai_turn_s1','0');
 
+  // 会話ログ系は初期章なのでリセット（APIには非干渉）
   localStorage.removeItem('whoai_chat');
   localStorage.removeItem('whoai_xp');
 
