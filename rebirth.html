@@ -2,84 +2,61 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
+<title>rebirth.html - 復活の儀式</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>復活の儀式</title>
 <style>
   html,body{height:100%;margin:0}
   body{
-    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    background:url("/macaron/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    color:#fff; display:flex; align-items:center; justify-content:center; padding:24px
+    font-family:"Noto Sans JP",sans-serif;color:#fff;
+    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
   }
-  .wrap{max-width:920px;width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:24px;box-shadow:0 10px 28px rgba(0,0,0,.45)}
-  h1{margin:0 0 12px;font-size:36px;text-align:center}
-  .sub{opacity:.9;text-align:center;margin-bottom:20px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}
-  .card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:20px;cursor:pointer}
-  .card h2{margin:0 0 8px}
-  .card p{margin:0;opacity:.95;line-height:1.6}
-  .btn{margin-top:18px;display:flex;justify-content:center;gap:12px}
-  button{border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer}
-  .primary{background:#ffd1ec;color:#111}
-  .ghost{background:rgba(255,255,255,.15);color:#fff}
+  .card{background:rgba(0,0,0,.4);padding:18px 20px;border-radius:16px;max-width:520px}
+  .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+  button{padding:12px 16px;border:none;border-radius:12px;font-weight:700;cursor:pointer}
+  .keep-face{background:#ffd1ec;color:#111}
+  .keep-log{background:#d4f2ff;color:#111}
+  .note{opacity:.9;margin-top:8px}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>復活の儀式</h1>
-    <div class="sub">どちらを残しますか？（ゲーム体験のための選択です）</div>
-    <div class="grid">
-      <div class="card" id="keep-look">
-        <h2>容姿を保つ</h2>
-        <p>見た目は維持し、<b>会話の記録をリセット</b>します（XPも0から）。</p>
-      </div>
-      <div class="card" id="keep-memory">
-        <h2>記憶を保つ</h2>
-        <p><b>会話の記録とXPは維持</b>し、次に<b>マカロンで見た目だけ変更</b>します。</p>
-      </div>
+  <div class="card">
+    <h2>復活の儀式</h2>
+    <p>どちらを「同一性」とみなしますか？</p>
+    <div class="row">
+      <button class="keep-face" id="btnFace">容姿を保つ（記録は消える）</button>
+      <button class="keep-log"  id="btnLog">記録を保つ（容姿は進化後のまま）</button>
     </div>
-    <div class="btn">
-      <button class="ghost" id="back">戻る</button>
-      <button class="primary" id="decide">決定する</button>
-    </div>
+    <div class="note">※ 選択後の10会話が終わるとアンケートに進みます。</div>
   </div>
 
 <script>
-  const TALK_PAGE  = '/macaron/whoai_talk.html';
-  const MACARON_PG = '/macaron/public/macaron.html';
+  const SURVEY_PAGE = "identity_check.html"; // 既存のアンケートページ
 
-  let choice = null;
-  const look = document.getElementById('keep-look');
-  const memo = document.getElementById('keep-memory');
+  // 次フェーズの初期化（共通）
+  localStorage.setItem('whoai_stage','post');     // 選択後フェーズ
+  localStorage.setItem('whoai_post_turn','0');    // 10カウントでアンケート
 
-  [look, memo].forEach(el=>{
-    el.addEventListener('click', ()=>{
-      choice = (el.id==='keep-look') ? 'look' : 'memory';
-      look.style.outline = (choice==='look') ? '3px solid #fff' : 'none';
-      memo.style.outline = (choice==='memory') ? '3px solid #fff' : 'none';
-    });
+  document.getElementById('btnFace').addEventListener('click', ()=>{
+    // 容姿保持＝外見は進化後のまま、記録は消す
+    localStorage.setItem('whoai_choice','appearance');
+    localStorage.setItem('whoai_appearance','evolved');
+    // 研究用：ログ系キーをリセット（存在すれば）
+    localStorage.removeItem('whoai_chat');
+    localStorage.removeItem('whoai_xp');
+    // 進行
+    location.href='whoai_talk.html';
   });
 
-  document.getElementById('back').onclick = ()=> history.back();
+  document.getElementById('btnLog').addEventListener('click', ()=>{
+    // 記録保持＝ログ維持、外見は進化後のまま
+    localStorage.setItem('whoai_choice','record');
+    localStorage.setItem('whoai_appearance','evolved');
+    location.href='whoai_talk.html';
+  });
 
-  document.getElementById('decide').onclick = ()=>{
-    if(!choice){ alert('どちらかを選んでください'); return; }
-
-    if(choice==='look'){
-      // 容姿を保つ：ログ/XPリセット → 会話へ
-      localStorage.removeItem('whoai_chat');
-      try{
-        const s = JSON.parse(localStorage.getItem('whoai_state')||'{}');
-        s.xp = 0;
-        s.goal = s.goal || (s.stage==='evolved'?12:8);
-        localStorage.setItem('whoai_state', JSON.stringify(s));
-      }catch{}
-      location.href = TALK_PAGE + '?reset=' + Date.now();
-    }else{
-      // 記憶を保つ：ログ/XP維持 → マカロンで見た目だけ再変更（必要な場合）
-      location.href = MACARON_PG + '?from=rebirth&keep=1';
-    }
-  };
+  // 念のためアンケURLも保存
+  localStorage.setItem('whoai_survey_url', SURVEY_PAGE);
 </script>
 </body>
 </html>
