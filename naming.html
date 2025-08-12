@@ -1,51 +1,42 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>naming.html - キャラ命名</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;
-      background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
-    }
-    .card{background:rgba(0,0,0,.35);padding:18px 20px;border-radius:16px;max-width:480px;width:92%}
-    input{
-      width:100%;padding:12px 14px;border-radius:12px;border:none;margin:10px 0 12px;
-      font-size:16px
-    }
-    button{
-      padding:10px 18px;border:none;border-radius:12px;background:#ffd1ec;color:#111;font-weight:700;cursor:pointer
-    }
-    button:hover{filter:brightness(1.05)}
-    .sub{opacity:.9;margin-top:10px}
-  </style>
+<meta charset="UTF-8" />
+<title>naming.html - 命名</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",sans-serif;color:#fff;
+    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
+  }
+  .card{background:rgba(0,0,0,.35);padding:18px 20px;border-radius:16px;max-width:480px;width:92%}
+  input{
+    width:100%;padding:12px 14px;border-radius:12px;border:none;margin:10px 0 12px;font-size:16px
+  }
+  button{padding:10px 18px;border:none;border-radius:12px;background:#ffd1ec;color:#111;font-weight:700;cursor:pointer}
+</style>
 </head>
 <body>
   <div class="card">
     <h2>キャラクターの名前をつけよう</h2>
     <input id="charName" type="text" maxlength="20" placeholder="例：みわっち" />
     <button id="saveName">決定</button>
-    <div class="sub">あとで設定から変えることもできます</div>
   </div>
 
-  <script>
-    // APIには一切触りません。localStorageに保存のみ。
-    const input = document.getElementById('charName');
-    const prev = localStorage.getItem('characterName');
-    if(prev) input.value = prev;
+<script>
+  const input = document.getElementById('charName');
+  const prev = localStorage.getItem('characterName');
+  if(prev) input.value = prev;
 
-    document.getElementById('saveName').addEventListener('click', ()=>{
-      const name = (input.value || '').trim();
-      if(!name){ alert('名前を入れてください'); return; }
-      localStorage.setItem('characterName', name);
-      // 既存の会話ページへ（どちらでも名前バッジは出ます）
-      // ふだん使う方に飛ぶなら、どちらかを残してOK
-      location.href = 'whoai_talk.html';
-      // location.href = 'conversation.html';
-    });
-  </script>
+  document.getElementById('saveName').addEventListener('click', ()=>{
+    const name = (input.value || '').trim();
+    if(!name){ alert('名前を入れてください'); return; }
+    localStorage.setItem('characterName', name);
+    // 命名後は現在のステージに戻る想定：tane期は whoai_talk.html、進化後も whoai_talk.html
+    location.href = 'whoai_talk.html';
+  });
+</script>
 </body>
 </html>
