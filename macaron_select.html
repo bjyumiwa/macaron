@@ -2,69 +2,76 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<title>macaron_select.html - マカロン選択</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>マカロン選択</title>
 <style>
+  :root{ --glass: rgba(255,255,255,.10); --accent:#ffd1ec; }
   html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
+  body{font-family:"Noto Sans JP",sans-serif;color:#fff;
     background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
-  }
-  h1{margin:8px 0 6px;text-shadow:0 2px 10px rgba(0,0,0,.4)}
-  p{opacity:.95;margin:0 0 16px}
-  .grid{display:grid;grid-template-columns:repeat(4,110px);gap:16px}
-  .macaron{
-    width:110px;height:110px;border-radius:16px;backdrop-filter:blur(2px);
-    background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;
-    cursor:pointer;transition:transform .15s ease, background .15s ease; user-select:none;
-    font-weight:700
-  }
-  .macaron:hover{transform:translateY(-4px);background:rgba(255,255,255,.22)}
-  .tag{font-size:12px;opacity:.9;margin-top:6px}
-  .cap{opacity:.8;font-size:12px;margin-top:12px}
+    display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
+  h1{margin:6px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(140px,1fr));width:min(560px,92vw)}
+  .card{background:var(--glass);border-radius:16px;padding:14px;text-align:center;border:2px solid transparent;cursor:pointer;transition:.12s}
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,0,0,.25)}
+  .card.selected{border-color:var(--accent);box-shadow:0 0 0 4px rgba(255,209,236,.25) inset}
+  .card img{width:94px;height:94px;object-fit:contain;display:block;margin:6px auto 8px}
+  .label{font-weight:700}
+  .actions{display:flex;gap:12px;margin-top:8px}
+  button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
+  .next{background:var(--accent);color:#222}.next:disabled{opacity:.6}
+  .clear{background:#444;color:#fff}
 </style>
 </head>
 <body>
-  <h1>マカロンを選んでね</h1>
-  <p>1回目は色決め、2回目で進化します。</p>
-  <div class="grid">
-    <div class="macaron" data-color="pink">PINK<div class="tag">情熱</div></div>
-    <div class="macaron" data-color="blue">BLUE<div class="tag">静寂</div></div>
-    <div class="macaron" data-color="green">GREEN<div class="tag">元気</div></div>
-    <div class="macaron" data-color="purple">PURPLE<div class="tag">創造</div></div>
+  <h1>好きなマカロンを選んでね</h1>
+  <p>クリックで選択 → 「決定する」で開始。</p>
+  <div id="grid" class="grid"></div>
+  <div class="actions">
+    <button id="clearBtn" class="clear">クリア</button>
+    <button id="goBtn" class="next" disabled>決定する</button>
   </div>
-  <div class="cap">※ 赤は使いません</div>
 
 <script>
-  function lsGet(k, d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{return localStorage.getItem(k)??d}}
-  function lsSet(k, v){localStorage.setItem(k, typeof v==="string"?v:JSON.stringify(v))}
+const ASSETS="public/assets/stage1";
+const OPTIONS=[
+  {key:"pink",   label:"ピンク",  img:`${ASSETS}/macaron_pink.png`},
+  {key:"blue",   label:"ブルー",  img:`${ASSETS}/macaron_blue.png`},
+  {key:"green",  label:"グリーン",img:`${ASSETS}/macaron_green.png`},
+  {key:"purple", label:"パープル",img:`${ASSETS}/macaron_purple.png`}
+];
+const grid=document.getElementById('grid');
+const goBtn=document.getElementById('goBtn');
+const clearBtn=document.getElementById('clearBtn');
+let selected=null;
 
-  document.querySelectorAll('.macaron').forEach(m=>{
-    m.addEventListener('click', ()=>{
-      const color = m.dataset.color;
-      if(!color) return;
-      lsSet('whoai_selectedMacaron', color);
+OPTIONS.forEach(opt=>{
+  const c=document.createElement('div'); c.className='card'; c.dataset.key=opt.key;
+  c.innerHTML=`<img src="${opt.img}" alt="${opt.label}"><div class="label">${opt.label}</div>`;
+  c.onclick=()=>{
+    document.querySelectorAll('.card').forEach(el=>el.classList.remove('selected'));
+    c.classList.add('selected'); selected=opt; goBtn.disabled=false;
+  };
+  grid.appendChild(c);
+});
+clearBtn.onclick=()=>{document.querySelectorAll('.card').forEach(el=>el.classList.remove('selected'));selected=null;goBtn.disabled=true;};
 
-      // マカロン選択回数を記録
-      const count = (lsGet('whoai_macaron_count',0)|0) + 1;
-      lsSet('whoai_macaron_count', count);
+goBtn.onclick=()=>{
+  if(!selected) return;
+  // 両方保存して互換性確保
+  localStorage.setItem('selectedMacaron', selected.key);
+  localStorage.setItem('whoai_selectedMacaron', selected.key);
 
-      if(count === 1){
-        // 1回目：taneで会話5回へ
-        lsSet('whoai_stage','stage1');     // tane期
-        lsSet('whoai_appearance','tane');
-        if(lsGet('whoai_turn_s1')==null) lsSet('whoai_turn_s1',0);
-        location.href = 'whoai_talk.html'; // 既存会話ページ（APIはそのまま）
-      } else {
-        // 2回目：進化イベントへ
-        lsSet('whoai_stage','stage2');     // 進化期
-        lsSet('whoai_appearance','evolved');
-        lsSet('whoai_turn_s2', 0);
-        location.href = 'evolution.html';
-      }
-    });
-  });
+  // 初期状態を設定
+  localStorage.setItem('whoai_stage','stage1');
+  localStorage.setItem('whoai_appearance','tane');
+  localStorage.setItem('whoai_turn_s1','0');
+
+  localStorage.removeItem('whoai_chat');
+  localStorage.removeItem('whoai_xp');
+
+  location.href='whoai_talk.html';
+};
 </script>
 </body>
 </html>
