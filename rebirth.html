@@ -31,11 +31,11 @@
     <div class="grid">
       <div class="card" id="keep-look">
         <h2>容姿を保つ</h2>
-        <p>見た目は維持し、<b>会話の記録をリセット</b>します。新しい気持ちで続けます。</p>
+        <p>見た目は維持し、<b>会話の記録をリセット</b>します（XPも0から）。</p>
       </div>
       <div class="card" id="keep-memory">
         <h2>記憶を保つ</h2>
-        <p><b>会話の記録は維持</b>し、次に<b>マカロンで見た目だけ変更</b>します。</p>
+        <p><b>会話の記録とXPは維持</b>し、次に<b>マカロンで見た目だけ変更</b>します。</p>
       </div>
     </div>
     <div class="btn">
@@ -66,21 +66,21 @@
     if(!choice){ alert('どちらかを選んでください'); return; }
 
     if(choice==='look'){
-      // 容姿を保つ：ログとXPをリセットして会話へ
+      // 容姿を保つ：ログ/XPリセット → 会話へ
       localStorage.removeItem('whoai_need_evolve');
       localStorage.removeItem('whoai_keep_memory');
-      localStorage.removeItem('whoai_chat');
+      localStorage.removeItem('whoai_chat'); // ←会話ログ消去
       try{
         const s = JSON.parse(localStorage.getItem('whoai_state')||'{}');
         s.xp = 0;
         s.goal = s.goal || (s.stage==='evolved'?12:8);
         localStorage.setItem('whoai_state', JSON.stringify(s));
       }catch{}
-      location.href = TALK_PAGE;
+      location.href = TALK_PAGE + '?reset=' + Date.now();
     }else{
-      // 記憶を保つ：ログ/XPは維持。容姿だけ次で選ぶ
+      // 記憶を保つ：ログ/XPは維持 → マカロンで色だけ選ぶ
       localStorage.setItem('whoai_keep_memory','1');
-      location.href = MACARON_PG + '?from=rebirth';
+      location.href = MACARON_PG + '?from=rebirth&keep=1';
     }
   };
 </script>
