@@ -1,177 +1,56 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>conversation.html - 会話</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <title>conversation.html - 会話（進化版UI）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 20px;
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
     }
-    #characterImg { width: 180px; margin-bottom: 12px; }
-    #chatArea {
-      background: rgba(255,255,255,0.1);
-      padding: 16px;
-      margin-top: 16px;
-      border-radius: 12px;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-      height: 300px;
-      overflow-y: auto;
-      text-align: left;
+    .name-badge{
+      position:fixed;top:10px;right:10px;z-index:9999;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+      padding:8px 12px;border-radius:12px;font-weight:700
     }
-    #userInput {
-      width: 80%;
-      padding: 8px;
-      border-radius: 8px;
-      border: none;
-    }
-    button {
-      padding: 8px 16px;
-      margin-top: 8px;
-      border-radius: 8px;
-      background-color: #ffccff;
-      border: none;
-      cursor: pointer;
-    }
-    button:hover { background-color: #ff99cc; }
-    .sys { opacity: .85; font-size: 0.9em; }
-    .me  { margin: 6px 0; }
-    .ai  { margin: 6px 0; }
+    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
   </style>
 </head>
 <body>
-  <h2>ぴーぷくと会話しよう</h2>
-  <img id="characterImg" src="public/assets/character/pee_puku.png" alt="ぴーぷく">
 
-  <div id="chatArea"></div>
+  <!-- ★ 既存の会話UI（あなたの元コード）をこの下にそのまま残してください ★ -->
+  <!-- ・・・・（元のHTML/JS/Fetchなど全て）・・・・ -->
 
-  <input type="text" id="userInput" placeholder="メッセージを入力..." />
-  <br />
-  <button id="sendBtn">送信</button>
+  <!-- 追加：名前バッジ -->
+  <div id="nameBadge" class="name-badge" style="display:none;">
+    <img id="badgeFace" alt="">
+    <span id="badgeText"></span>
+  </div>
 
   <script>
-    // ====== 設定 ======
-    // ← あなたのVercelのAPIエンドポイントに変更してOK
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+    // ★APIコードには一切干渉しません★
+    (function(){
+      const picked = localStorage.getItem('selectedMacaron');
+      const safeColor = ['pink','blue','green','purple'].includes(picked) ? picked : 'pink';
+      const name = localStorage.getItem('characterName') || 'なまえ未設定';
 
-    // 必要に応じて指示文を編集
-    const SYSTEM_PROMPT = `
-あなたは「ぴーぷく」。やさしく短めに返事をする。中学生にもわかる言葉で、
-相手の気持ちに寄り添いながら一つだけ問い返すか、次の行動のヒントを示す。
-    `.trim();
+      const badge = document.getElementById('nameBadge');
+      const face  = document.getElementById('badgeFace');
+      const text  = document.getElementById('badgeText');
 
-    // ====== 状態 ======
-    let turnCount = 0;
-    const history = []; // {role: 'user'|'assistant', content: '...'}
+      text.textContent = `🪄 ${name}`;
+      badge.style.display = 'inline-block';
 
-    // ====== DOM ======
-    const chatArea = document.getElementById('chatArea');
-    const userInput = document.getElementById('userInput');
-    const sendBtn   = document.getElementById('sendBtn');
-
-    // 初期メッセージ（任意）
-    appendSys('↑ ぴーぷくとお話ししてね。3回話すとマカロンの世界へ進むよ。');
-
-    // Enterで送信
-    userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-    sendBtn.addEventListener('click', sendMessage);
-
-    // ====== 送信処理（ここが fetch ）======
-    async function sendMessage() {
-      const text = userInput.value.trim();
-      if (!text) return;
-
-      appendMe(text);
-      history.push({ role: 'user', content: text });
-      userInput.value = '';
-      lockUI(true);
-
-      const typingId = appendSys('ぴーぷくが考え中…');
-
-      try {
-        const payload = {
-          userMessage: text,
-          history,
-          systemPrompt: SYSTEM_PROMPT,
-          model: 'gpt-4o-mini',
-          temperature: 0.7,
-          max_tokens: 220
-        };
-
-        const res = await fetch(TALK_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        removeById(typingId);
-
-        if (!res.ok) {
-          appendSys(`エラー: ${data?.error || '通信に失敗しました'}`);
-          lockUI(false);
-          return;
-        }
-
-        const reply = (data?.reply || '').trim();
-        appendAI(reply || 'うまく返事ができなかったみたい…もう一度試してね。');
-        if (reply) history.push({ role: 'assistant', content: reply });
-
-        turnCount++;
-        if (turnCount >= 3) {
-          appendSys('マカロンの世界へ移動します…');
-          setTimeout(() => { window.location.href = 'macaron.html'; }, 800);
-        }
-      } catch (err) {
-        removeById(typingId);
-        appendSys('ネットワークエラーだよ。再度お試しください。');
-      } finally {
-        lockUI(false);
+      let isOpen = true;
+      function setSrc(){
+        face.src = `public/assets/evolved/${safeColor}_${isOpen ? 'open':'close'}.png`;
       }
-    }
-
-    // ====== 表示系 ======
-    function appendMe(text)  { appendLine(`あなた：${escapeHtml(text)}`, 'me'); }
-    function appendAI(text)  { appendLine(`ぴーぷく：${escapeHtml(text)}`, 'ai'); }
-    function appendSys(text) { return appendLine(text, 'sys'); }
-
-    function appendLine(text, cls = '') {
-      const p = document.createElement('p');
-      const id = 'm_' + Math.random().toString(36).slice(2);
-      p.id = id;
-      p.className = cls;
-      p.textContent = text;
-      chatArea.appendChild(p);
-      chatArea.scrollTop = chatArea.scrollHeight;
-      return id; // 後で消す用
-    }
-
-    function removeById(id) {
-      const el = document.getElementById(id);
-      if (el && el.parentNode) el.parentNode.removeChild(el);
-    }
-
-    function lockUI(disabled) {
-      userInput.disabled = disabled;
-      sendBtn.disabled   = disabled;
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    }
+      setSrc();
+      setInterval(()=>{ isOpen=!isOpen; setSrc(); }, 1400);
+    })();
   </script>
 </body>
 </html>
