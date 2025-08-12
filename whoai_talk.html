@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk.html - 会話（tane色同期）</title>
+  <title>whoai_talk.html - 会話（tane色同期＋チャット）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
@@ -31,11 +31,42 @@
                      50%{transform:translate(-50%,-54%)}
                      100%{transform:translate(-50%,-50%)}}
     .whoai-safe-pad{padding-top:72px}
+
+    /* ===== Chat Dock ===== */
+    .whoai-chatdock{
+      position:fixed;left:50%;bottom:16px;transform:translateX(-50%);
+      width:min(920px,92vw);z-index:1000;
+    }
+    .whoai-log{
+      max-height:38vh; overflow:auto; padding:12px 14px; margin-bottom:8px;
+      background:rgba(0,0,0,.45); backdrop-filter:blur(4px);
+      border-radius:14px; box-shadow:0 8px 22px rgba(0,0,0,.28);
+      font-size:14px; line-height:1.5;
+    }
+    .whoai-msg{display:flex;gap:8px; margin:6px 0}
+    .whoai-msg.me{justify-content:flex-end}
+    .whoai-bubble{
+      padding:8px 12px; border-radius:12px; max-width:72%;
+      background:rgba(255,255,255,.12)
+    }
+    .whoai-msg.me .whoai-bubble{background:rgba(255,209,236,.16)}
+    .whoai-inputrow{
+      display:flex; gap:8px; align-items:center;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(6px);
+      padding:10px; border-radius:14px;
+    }
+    .whoai-inputrow input{
+      flex:1; height:42px; border:none; border-radius:10px; padding:0 12px;
+      font-size:16px; outline:none;
+      background:rgba(255,255,255,.85)
+    }
+    .whoai-inputrow button{
+      height:42px; padding:0 14px; border:none; border-radius:10px; cursor:pointer;
+      font-weight:700; background:#ffd1ec; color:#222;
+    }
   </style>
 </head>
 <body class="whoai-safe-pad">
-
-  <!-- ▼ここに既存の会話UI（fetch/TALK_ENDPOINTなど）をそのまま残してください ▼ -->
 
   <!-- 中央キャラ -->
   <div id="whoaiSprite" class="whoai-sprite" aria-hidden="true">
@@ -46,6 +77,15 @@
   <div id="whoaiNameBadge" class="whoai-name-badge" style="display:none;">
     <img id="whoaiBadgeFace" alt="">
     <span id="whoaiBadgeText"></span>
+  </div>
+
+  <!-- チャットDock -->
+  <div class="whoai-chatdock" id="whoaiChatDock" aria-live="polite">
+    <div class="whoai-log" id="whoaiLog"></div>
+    <div class="whoai-inputrow">
+      <input id="whoaiInput" type="text" placeholder="メッセージを入力して Enter / 送信" />
+      <button id="whoaiSend">送信</button>
+    </div>
   </div>
 
   <script>
@@ -65,15 +105,71 @@
     nameEl.textContent = `🪄 ${charName}`;
     badge.style.display = 'inline-block';
 
-    // tane のファイルは repo 直下にあります（tane_{color}.png）
     const tanePath = `./tane_${color}.png`;
     setImage(face, tanePath);
 
-    // 中央キャラも同じ
+    // 中央キャラ
     const spriteImg = document.getElementById('whoaiSpriteImg');
     setImage(spriteImg, tanePath);
+  })();
 
-    // 以降、APIの送受信ロジックには一切触りません
+  // ==== チャットDock動作 ====
+  (function(){
+    const ENDPOINT = window.TALK_ENDPOINT || 'https://macaron-one.vercel.app/api/talk';
+    const sessionId = localStorage.getItem('whoai_session_id') || (crypto.randomUUID());
+    localStorage.setItem('whoai_session_id', sessionId);
+
+    const logEl = document.getElementById('whoaiLog');
+    const inputEl = document.getElementById('whoaiInput');
+    const sendBtn = document.getElementById('whoaiSend');
+
+    function addLine(side, text){
+      const wrap = document.createElement('div');
+      wrap.className = `whoai-msg ${side}`;
+      const bubble = document.createElement('div');
+      bubble.className = 'whoai-bubble';
+      bubble.textContent = text;
+      wrap.appendChild(bubble);
+      logEl.appendChild(wrap);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function send(){
+      const text = inputEl.value.trim();
+      if(!text) return;
+      inputEl.value = '';
+      addLine('me', text);
+
+      try{
+        sendBtn.disabled = true;
+        const res = await fetch(ENDPOINT, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ message: text, sessionId })
+        });
+        if(!res.ok){
+          addLine('bot', `（エラー: ${res.status}）サーバに接続できませんでした`);
+          return;
+        }
+        const data = await res.json();
+        const reply = data.reply || data.message || data.text || '[返信なし]';
+        addLine('bot', reply);
+      }catch(err){
+        addLine('bot', '（通信エラー）もう一度お試しください');
+        console.error(err);
+      }finally{
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    sendBtn.addEventListener('click', send);
+    inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
+
+    if(!sessionStorage.getItem('whoai_welcome_shown')){
+      addLine('bot','こんにちは！マカロン色の tane だよ。なんでも話しかけてね。');
+      sessionStorage.setItem('whoai_welcome_shown','1');
+    }
   })();
   </script>
 </body>
