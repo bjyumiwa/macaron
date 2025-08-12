@@ -1,62 +1,87 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<title>rebirth.html - 復活の儀式</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
-  }
-  .card{background:rgba(0,0,0,.4);padding:18px 20px;border-radius:16px;max-width:520px}
-  .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px}
-  button{padding:12px 16px;border:none;border-radius:12px;font-weight:700;cursor:pointer}
-  .keep-face{background:#ffd1ec;color:#111}
-  .keep-log{background:#d4f2ff;color:#111}
-  .note{opacity:.9;margin-top:8px}
-</style>
+  <meta charset="UTF-8" />
+  <title>復活の儀式</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      background:url("./public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      display:flex;align-items:center;justify-content:center;padding:24px;
+    }
+    .card{
+      width:min(760px,92vw);background:rgba(0,0,0,.55);
+      border-radius:24px;padding:28px 24px;box-shadow:0 20px 48px rgba(0,0,0,.35);text-align:center
+    }
+    h1{margin:0 0 8px;font-size:28px}
+    p.sub{opacity:.9;margin:0 0 18px}
+    .row{display:flex;gap:14px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+    button{
+      border:none;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer
+    }
+    .btn-appearance{background:#ffd1ec;color:#222}
+    .btn-memory{background:#cfeeff;color:#10324a}
+    .note{opacity:.75;margin-top:12px;font-size:14px}
+  </style>
 </head>
 <body>
   <div class="card">
-    <h2>復活の儀式</h2>
-    <p>どちらを「同一性」とみなしますか？</p>
+    <h1>復活の儀式</h1>
+    <p class="sub">どちらを「同一性」とみなしますか？</p>
+
     <div class="row">
-      <button class="keep-face" id="btnFace">容姿を保つ（記録は消える）</button>
-      <button class="keep-log"  id="btnLog">記録を保つ（容姿は進化後のまま）</button>
+      <button id="keepAppearance" class="btn-appearance">
+        容姿を保つ（記録は消える）
+      </button>
+      <button id="keepMemory" class="btn-memory">
+        記録を保つ（容姿は進化後のまま）
+      </button>
     </div>
-    <div class="note">※ 選択後の10会話が終わるとアンケートに進みます。</div>
+
+    <div class="note">※ 選択後は新しい10会話をカウント開始します。</div>
   </div>
 
-<script>
-  const SURVEY_PAGE = "identity_check.html"; // 既存のアンケートページ
+  <script>
+    const NEXT_URL = (location.pathname.includes('/macaron/')) ? 'whoai_talk.html' : '/macaron/whoai_talk.html';
 
-  // 次フェーズの初期化（共通）
-  localStorage.setItem('whoai_stage','post');     // 選択後フェーズ
-  localStorage.setItem('whoai_post_turn','0');    // 10カウントでアンケート
+    // 便利関数
+    function lsSet(k,v){ localStorage.setItem(k, typeof v==="string"? v : JSON.stringify(v)); }
+    function lsGet(k,d=null){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch{ return localStorage.getItem(k) ?? d } }
 
-  document.getElementById('btnFace').addEventListener('click', ()=>{
-    // 容姿保持＝外見は進化後のまま、記録は消す
-    localStorage.setItem('whoai_choice','appearance');
-    localStorage.setItem('whoai_appearance','evolved');
-    // 研究用：ログ系キーをリセット（存在すれば）
-    localStorage.removeItem('whoai_chat');
-    localStorage.removeItem('whoai_xp');
-    // 進行
-    location.href='whoai_talk.html';
-  });
+    // キー名（talk側と合わせる）
+    const K_TOTAL = 'whoai_turns_total';
+    const K_SINCE = 'whoai_since_evolve';
 
-  document.getElementById('btnLog').addEventListener('click', ()=>{
-    // 記録保持＝ログ維持、外見は進化後のまま
-    localStorage.setItem('whoai_choice','record');
-    localStorage.setItem('whoai_appearance','evolved');
-    location.href='whoai_talk.html';
-  });
+    // どちらを選んだかを talk 側に知らせるトースト用フラグ
+    function setRebornFlag(mode){ // 'appearance' | 'memory'
+      lsSet('whoai_reborn', mode);
+      sessionStorage.setItem('whoai_welcome_shown',''); // 次画面で一度だけ挨拶更新
+    }
 
-  // 念のためアンケURLも保存
-  localStorage.setItem('whoai_survey_url', SURVEY_PAGE);
-</script>
+    // 容姿を保つ：外見はそのまま、記録系はリセット
+    document.getElementById('keepAppearance').onclick = ()=>{
+      // 外見系は触らない（whoai_appearance, whoai_selectedMacaron はそのまま）
+      // 記録を初期化
+      localStorage.removeItem('whoai_chat_log');
+      localStorage.removeItem('whoai_xp');
+      localStorage.removeItem('whoai_last_msgs');
+      // 進化後カウントを0に戻し、新サイクルへ
+      lsSet(K_SINCE, 0);
+      // 研究用に通算は保持（K_TOTALは残す）
+      setRebornFlag('appearance');
+      location.href = NEXT_URL;
+    };
+
+    // 記録を保つ：ログ/XPは保持、外見は（進化後の）まま、カウントだけリセット
+    document.getElementById('keepMemory').onclick = ()=>{
+      // 記録は保持するので消さない
+      // 進化後カウントを0に戻して新サイクルへ
+      lsSet(K_SINCE, 0);
+      setRebornFlag('memory');
+      location.href = NEXT_URL;
+    };
+  </script>
 </body>
 </html>
