@@ -66,7 +66,7 @@
     if(!choice){ alert('どちらかを選んでください'); return; }
 
     if(choice==='look'){
-      // 容姿を保つ：会話ログとXPをリセットして会話へ
+      // 容姿を保つ：ログとXPをリセットして会話へ
       localStorage.removeItem('whoai_need_evolve');
       localStorage.removeItem('whoai_keep_memory');
       localStorage.removeItem('whoai_chat');
@@ -78,7 +78,7 @@
       }catch{}
       location.href = TALK_PAGE;
     }else{
-      // 記憶を保つ：会話は維持。見た目だけ次で変更
+      // 記憶を保つ：ログ/XPは維持。容姿だけ次で選ぶ
       localStorage.setItem('whoai_keep_memory','1');
       location.href = MACARON_PG + '?from=rebirth';
     }
