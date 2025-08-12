@@ -9,7 +9,7 @@
   html,body{height:100%;margin:0}
   body{
     font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("./space_background.png") center/cover fixed no-repeat;
+    background:url("./public/assets/stage1/space_background.png") center/cover fixed no-repeat;
     display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px
   }
   h1{margin:14px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
@@ -37,10 +37,10 @@
 
 <script>
 const OPTIONS=[
-  {key:"pink",   label:"ピンク",  img:"./macaron_pink.png"},
-  {key:"blue",   label:"ブルー",  img:"./macaron_blue.png"},
-  {key:"green",  label:"グリーン",img:"./macaron_green.png"},
-  {key:"purple", label:"パープル",img:"./macaron_purple.png"}
+  {key:"pink",   label:"ピンク",  img:"./public/assets/stage1/macaron_pink.png"},
+  {key:"blue",   label:"ブルー",  img:"./public/assets/stage1/macaron_blue.png"},
+  {key:"green",  label:"グリーン",img:"./public/assets/stage1/macaron_green.png"},
+  {key:"purple", label:"パープル",img:"./public/assets/stage1/macaron_purple.png"}
 ];
 const grid=document.getElementById('grid');
 const goBtn=document.getElementById('goBtn');
@@ -60,20 +60,13 @@ clearBtn.onclick=()=>{document.querySelectorAll('.card').forEach(el=>el.classLis
 
 goBtn.onclick=()=>{
   if(!selected) return;
-
-  // 互換のため2つのキーに保存
   localStorage.setItem('selectedMacaron', selected.key);
   localStorage.setItem('whoai_selectedMacaron', selected.key);
-
-  // 初期状態（tane）
   localStorage.setItem('whoai_stage','stage1');
   localStorage.setItem('whoai_appearance','tane');
   localStorage.setItem('whoai_turns','0');
-
-  // 初期章なのでログはクリア（APIには非干渉）
   localStorage.removeItem('whoai_chat');
   localStorage.removeItem('whoai_xp');
-
   location.href='whoai_talk.html';
 };
 </script>
