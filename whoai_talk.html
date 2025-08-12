@@ -8,10 +8,9 @@
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      background-image:url("public/assets/stage1/space_background.png");
+      background-image:url("./space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
     }
-
     /* 右上の名前バッジ */
     .whoai-name-badge{
       position:fixed;top:10px;right:10px;z-index:9999;
@@ -20,7 +19,7 @@
     }
     #whoaiBadgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
 
-    /* 中央キャラ（ゆらゆら） */
+    /* 中央キャラ */
     .whoai-sprite{
       position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
       width:180px;height:180px;display:flex;align-items:center;justify-content:center;
@@ -36,8 +35,7 @@
 </head>
 <body class="whoai-safe-pad">
 
-  <!-- ▼ ここに“既存の会話UI（fetch/TALK_ENDPOINT含む）”をそのまま残してください ▼ -->
-  <!-- ※ TALK_ENDPOINT が絶対URL（例：https://macaron-one.vercel.app/api/talk）であることだけ確認 -->
+  <!-- ▼ここに既存の会話UI（fetch/TALK_ENDPOINTなど）をそのまま残してください ▼ -->
 
   <!-- 中央キャラ -->
   <div id="whoaiSprite" class="whoai-sprite" aria-hidden="true">
@@ -52,21 +50,14 @@
 
   <script>
   (function(){
-    // ---- 便利関数 ----
     function lsGet(k,d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{return localStorage.getItem(k)??d}}
-    function setImageWithFallback(imgEl, paths){
-      let i=0; const trySet=()=>{
-        if(i>=paths.length) return;
-        imgEl.onerror=()=>{i++; trySet();};
-        imgEl.src=paths[i];
-      }; trySet();
-    }
+    function setImage(imgEl, src){ imgEl.src = src; }
 
-    // ---- 選択色を取得（pink/blue/green/purple）----
+    // マカロンの色
     const pickedRaw = lsGet('selectedMacaron') || lsGet('whoai_selectedMacaron') || 'green';
     const color = ['pink','blue','green','purple'].includes(pickedRaw) ? pickedRaw : 'green';
 
-    // ---- 右上バッジ（tane顔 or 進化顔） ----
+    // バッジ
     const badge = document.getElementById('whoaiNameBadge');
     const face  = document.getElementById('whoaiBadgeFace');
     const nameEl= document.getElementById('whoaiBadgeText');
@@ -74,29 +65,15 @@
     nameEl.textContent = `🪄 ${charName}`;
     badge.style.display = 'inline-block';
 
-    // tane色別に最優先で読み込む。なければ green を読み、CSSで色相を近づける
-    function taneFaceCandidates(){
-      return [
-        `public/assets/stage1/tane_${color}.png`,   // 例: tane_pink.png（あれば使う）
-        `public/assets/stage1/tane_green.png`       // 無ければ緑を読み、後で色相調整
-      ];
-    }
-    setImageWithFallback(face, taneFaceCandidates());
+    // tane のファイルは repo 直下にあります（tane_{color}.png）
+    const tanePath = `./tane_${color}.png`;
+    setImage(face, tanePath);
 
-    // ---- 画面中央のキャラ（バッジと同じ画像を使う）----
+    // 中央キャラも同じ
     const spriteImg = document.getElementById('whoaiSpriteImg');
-    setImageWithFallback(spriteImg, taneFaceCandidates());
+    setImage(spriteImg, tanePath);
 
-    // 色相フィルタ（tane_* が無い色を“それっぽく”見せる）
-    const hueByColor = { green:0, pink:300, blue:200, purple:260 };
-    const hue = hueByColor[color] ?? 0;
-    if(color!=='green'){ // 緑以外は hue-rotate
-      spriteImg.style.filter = `hue-rotate(${hue}deg) drop-shadow(0 10px 22px rgba(0,0,0,.35))`;
-      face.style.filter       = `hue-rotate(${hue}deg)`;
-    }
-
-    // ---- （任意）会話回数のカウントは触らず、別途入れるならここにフック ----
-    // APIの送信処理そのままでOK。必要なら教えて、こちらで最小フックだけ足します。
+    // 以降、APIの送受信ロジックには一切触りません
   })();
   </script>
 </body>
