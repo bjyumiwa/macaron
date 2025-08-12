@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk.html - 会話</title>
+  <title>whoai_talk.html - 会話（復旧版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
@@ -11,44 +11,74 @@
       background-image:url("public/assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
     }
-    .name-badge{
+    /* 右上の名前バッジ */
+    .whoai-name-badge{
       position:fixed;top:10px;right:10px;z-index:9999;
       background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
-      padding:8px 12px;border-radius:12px;font-weight:700
+      padding:8px 12px;border-radius:12px;font-weight:700;color:#fff
     }
-    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
+    #whoaiBadgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
+
+    /* 画面中央のキャラ（tane / 進化） */
+    .whoai-sprite{
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+      width:180px;height:180px;display:flex;align-items:center;justify-content:center;
+      z-index:30; pointer-events:none;
+      animation:float 3s ease-in-out infinite;
+      filter: drop-shadow(0 10px 22px rgba(0,0,0,.35));
+    }
+    .whoai-sprite img{max-width:100%;max-height:100%}
+    @keyframes float{0%{transform:translate(-50%,-50%)}
+                     50%{transform:translate(-50%,-54%)}
+                     100%{transform:translate(-50%,-50%)}}
+
+    /* 既存の会話UIが被ってもOKなように軽く余白だけ確保（任意） */
+    .whoai-safe-pad{padding-top:72px}
   </style>
 </head>
-<body>
+<body class="whoai-safe-pad">
 
-  <!-- あなたの既存の会話UI -->
+  <!-- ▼ ここに“既存の会話UI（fetch/TALK_ENDPOINT含む）”をそのまま置いてください ▼ -->
+  <!-- 既存UIが無くてもこのページは動きます（APIには一切干渉しません） -->
 
-  <div id="nameBadge" class="name-badge" style="display:none;">
-    <img id="badgeFace" alt="">
-    <span id="badgeText"></span>
+  <!-- 中央キャラ -->
+  <div id="whoaiSprite" class="whoai-sprite" aria-hidden="true">
+    <img id="whoaiSpriteImg" alt="character">
   </div>
 
+  <!-- 右上のバッジ -->
+  <div id="whoaiNameBadge" class="whoai-name-badge" style="display:none;">
+    <img id="whoaiBadgeFace" alt="">
+    <span id="whoaiBadgeText"></span>
+  </div>
+
+  <!-- ===== 進行ウィジェット（API非干渉/完全復旧） ===== -->
   <script>
   (function(){
-    const picked = localStorage.getItem('selectedMacaron') || localStorage.getItem('whoai_selectedMacaron');
-    const safeColor = ['pink','blue','green','purple'].includes(picked) ? picked : 'green';
-    const appearance = localStorage.getItem('whoai_appearance') || 'tane';
-    const name = localStorage.getItem('characterName') || 'なまえ未設定';
-
-    const badge = document.getElementById('nameBadge');
-    const face  = document.getElementById('badgeFace');
-    const text  = document.getElementById('badgeText');
-
-    text.textContent = `🪄 ${name}`;
-    badge.style.display = 'inline-block';
-
-    function setImageWithFallback(paths){
+    // ---------- 小ユーティリティ ----------
+    function lsGet(k,d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{return localStorage.getItem(k)??d}}
+    function lsSet(k,v){localStorage.setItem(k, typeof v==="string"?v:JSON.stringify(v))}
+    function setImageWithFallback(imgEl, paths){
       let i=0; const trySet=()=>{
         if(i>=paths.length) return;
-        face.onerror=()=>{i++; trySet();};
-        face.src=paths[i];
+        imgEl.onerror=()=>{i++; trySet();};
+        imgEl.src=paths[i];
       }; trySet();
     }
+
+    // ---------- 既存キー互換 ----------
+    const pickedRaw = lsGet('selectedMacaron') || lsGet('whoai_selectedMacaron') || 'green';
+    const color = ['pink','blue','green','purple'].includes(pickedRaw) ? pickedRaw : 'green';
+    const stage = lsGet('whoai_stage') || 'stage1';              // stage1=tane / stage2=evolved / post=選択後
+    const appearance = lsGet('whoai_appearance') || (stage==='stage1'?'tane':'evolved');
+    let charName = lsGet('characterName','なまえ未設定');
+
+    // ---------- バッジ描画 ----------
+    const badge = document.getElementById('whoaiNameBadge');
+    const face  = document.getElementById('whoaiBadgeFace');
+    const nameEl= document.getElementById('whoaiBadgeText');
+    nameEl.textContent = `🪄 ${charName}`;
+    badge.style.display = 'inline-block';
 
     function faceCandidates(open){
       if(appearance==='tane'){
@@ -56,18 +86,62 @@
       }
       const s = open ? 'open':'closed';
       return [
-        `./${safeColor}_${s}.png`,
-        `public/assets/evolved/${safeColor}_${open?'open':'close'}.png`
+        `./${color}_${s}.png`,
+        `public/assets/evolved/${color}_${open?'open':'close'}.png`
       ];
     }
+    let isOpen=true;
+    setImageWithFallback(face, faceCandidates(isOpen));
+    setInterval(()=>{ isOpen=!isOpen; setImageWithFallback(face, faceCandidates(isOpen)); },
+      (appearance==='tane'?1600:1200));
 
-    let isOpen = true;
-    setImageWithFallback(faceCandidates(isOpen));
-    setInterval(()=>{
-      isOpen = !isOpen;
-      setImageWithFallback(faceCandidates(isOpen));
-    }, (appearance==='tane'? 1600 : 1200));
+    // ---------- 画面中央のキャラ（見逃し防止の本体） ----------
+    const spriteImg = document.getElementById('whoaiSpriteImg');
+    function spriteCandidates(open){
+      if(appearance==='tane'){
+        return ['public/assets/stage1/tane_green.png'];
+      }
+      const s = open ? 'open':'closed';
+      return [
+        `./${color}_${s}.png`,
+        `public/assets/evolved/${color}_${open?'open':'close'}.png`
+      ];
+    }
+    let sOpen=true;
+    setImageWithFallback(spriteImg, spriteCandidates(sOpen));
+    setInterval(()=>{ sOpen=!sOpen; setImageWithFallback(spriteImg, spriteCandidates(sOpen)); },
+      (appearance==='tane'?1600:1100));
+
+    // ----------（任意）進行カウント：APIの送信に割り込まず“後追い” ----------
+    const S1_TARGET=5, S2_TARGET=10, POST_TARGET=10;
+    function countAndRoute(){
+      const st = lsGet('whoai_stage','stage1');
+      if(st==='stage1'){
+        const n=(lsGet('whoai_turn_s1',0)|0)+1; lsSet('whoai_turn_s1',n);
+        if(n>=S1_TARGET) setTimeout(()=>location.href='macaron_select.html',700);
+      }else if(st==='stage2'){
+        const n=(lsGet('whoai_turn_s2',0)|0)+1; lsSet('whoai_turn_s2',n);
+        if(n>=S2_TARGET) setTimeout(()=>location.href='rebirth.html',700);
+      }else if(st==='post'){
+        const n=(lsGet('whoai_post_turn',0)|0)+1; lsSet('whoai_post_turn',n);
+        if(n>=POST_TARGET){
+          const url=lsGet('whoai_survey_url')||'identity_check.html';
+          setTimeout(()=>location.href=url,600);
+        }
+      }
+    }
+    // ボタンやEnter送信をざっくりフック（既存UIが無くても無害）
+    function hookSend(){
+      const btn=document.querySelector('#sendBtn, #sendButton, button[data-send], button#send, .send');
+      if(btn && !btn.dataset._whoaiHooked){ btn.dataset._whoaiHooked='1';
+        btn.addEventListener('click', ()=>setTimeout(countAndRoute,120)); }
+      const input=document.querySelector('#userInput, textarea, input[type="text"]');
+      if(input && !input.dataset._whoaiHooked){ input.dataset._whoaiHooked='1';
+        input.addEventListener('keydown',(e)=>{ if(e.key==='Enter'&&!e.shiftKey) setTimeout(countAndRoute,150); });}
+    }
+    hookSend(); setInterval(hookSend,1000);
   })();
   </script>
+  <!-- ===== /進行ウィジェット ===== -->
 </body>
 </html>
