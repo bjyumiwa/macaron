@@ -176,11 +176,11 @@
     else { textEl.classList.remove('disabled'); sendEl.classList.remove('disabled'); }
   }
 
-  // ★ゴールで 復活の儀式 へ
-  function reachGoal(){
-    localStorage.setItem('whoai_need_evolve','1');
-    location.href = REBIRTH_PAGE + '?from=talk';
-  }
+  // ★ゴールで /macaron/rebirth.html へ（public/ ではない）
+function reachGoal(){
+  localStorage.setItem('whoai_need_evolve','1');
+  location.href = REPO_BASE + 'rebirth.html?from=talk'; // ← ここを修正
+}
 
   if(state.xp >= state.goal){ disableInput(true); }
 
