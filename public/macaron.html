@@ -40,12 +40,25 @@
   </div>
 
 <script>
-  const TALK_PAGE    = '/macaron/whoai_talk.html';
-  const KEEP_MEMORY  = localStorage.getItem('whoai_keep_memory') === '1';
+  const TALK_PAGE   = '/macaron/whoai_talk.html';
+  const REPO_BASE   = '/macaron/';
+  const params      = new URLSearchParams(location.search);
+  const NEXT        = params.get('next'); // 'rebirth' or null
 
-  // 選択
   const cards = document.querySelectorAll('.card');
   let chosen = null;
+
+  // 前回選択を初期反映
+  try{
+    const prev = JSON.parse(localStorage.getItem('macaron_choice')||'null');
+    if(prev?.macaron){
+      chosen = prev.macaron;
+      document.querySelector(`.card[data-color="${chosen}"]`)?.classList.add('active');
+      document.getElementById('evolveBtn').disabled = false;
+    }
+  }catch{}
+
+  // クリックで選択
   cards.forEach(c=>{
     c.addEventListener('click', ()=>{
       cards.forEach(x=>x.classList.remove('active'));
@@ -56,47 +69,42 @@
     });
   });
 
-  // 前回選択を反映
-  try{
-    const prev = JSON.parse(localStorage.getItem('macaron_choice')||'null');
-    if(prev?.macaron){
-      chosen = prev.macaron;
-      document.querySelector(`.card[data-color="${chosen}"]`)?.classList.add('active');
-      document.getElementById('evolveBtn').disabled = false;
-    }
-  }catch{}
-
   // 戻る
   document.getElementById('backBtn').addEventListener('click', ()=>{
-    localStorage.removeItem('whoai_keep_memory');
-    if(localStorage.getItem('whoai_need_evolve')==='1'){
-      localStorage.removeItem('whoai_need_evolve');
-      location.href = TALK_PAGE;
-    }else{
-      history.back();
-    }
+    // どこから来ても会話に戻す
+    localStorage.removeItem('whoai_evolve_first');
+    location.href = TALK_PAGE;
   });
 
-  // 進化を適用して会話へ
+  // 進化を適用
   document.getElementById('evolveBtn').addEventListener('click', ()=>{
     if(!chosen) return;
 
+    // 状態を書き換え（色だけ。XP/ログはここでは触らない）
     let s = {};
     try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
-    s.color = chosen;            // 見た目（色）だけ変更
-
-    // 記憶を保つ：会話ログは維持・XPだけ0にして続行できるように
-    // 儀式から来ていない場合でも次周回を始められるよう 0 をセット
-    s.xp = 0;
-    s.goal = s.goal || (s.stage==='evolved'?12:8);
+    s.color = chosen;
+    // 進化見た目にしたいなら次の2行を有効化（必要な場合だけ）
+    // s.stage   = 'evolved';
+    // s.variant = 'open';
 
     localStorage.setItem('whoai_state', JSON.stringify(s));
 
-    // フラグ掃除
-    localStorage.removeItem('whoai_need_evolve');
-    localStorage.removeItem('whoai_keep_memory');
-
-    location.href = TALK_PAGE;
+    // 遷移ロジック：
+    // 1) 儀式で「記憶を保つ」を選んで戻ってきた場合（whoai_keep_memory=1）→ 会話へ直帰
+    // 2) ゴール後の「先に進化する」フロー or ?next=rebirth 指定 → 儀式へ
+    // 3) それ以外 → 会話へ
+    if(localStorage.getItem('whoai_keep_memory') === '1'){
+      localStorage.removeItem('whoai_keep_memory');
+      localStorage.removeItem('whoai_need_evolve');
+      localStorage.removeItem('whoai_evolve_first');
+      location.href = TALK_PAGE;
+    }else if (NEXT === 'rebirth' || localStorage.getItem('whoai_evolve_first') === '1'){
+      localStorage.removeItem('whoai_evolve_first');
+      location.href = REPO_BASE + 'rebirth.html?from=macaron';
+    }else{
+      location.href = TALK_PAGE;
+    }
   });
 </script>
 </body>
