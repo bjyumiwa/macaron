@@ -41,10 +41,7 @@
 
 <script>
   const TALK_PAGE   = '/macaron/whoai_talk.html';
-  const REPO_BASE   = '/macaron/';
   const params      = new URLSearchParams(location.search);
-  const NEXT        = params.get('next'); // 'rebirth' or null
-  const KEEP_MEMORY = (params.get('keep') === '1') || (localStorage.getItem('whoai_keep_memory') === '1');
 
   const cards = document.querySelectorAll('.card');
   let chosen = null;
@@ -70,41 +67,19 @@
     });
   });
 
-  // 戻る
-  document.getElementById('backBtn').addEventListener('click', ()=>{
-    localStorage.removeItem('whoai_evolve_first');
-    location.href = TALK_PAGE;
-  });
+  document.getElementById('backBtn').onclick = ()=>{ location.href = TALK_PAGE; };
 
-  // 進化を適用（色だけ変更。ログとXPは触らない＝記録維持）
-  document.getElementById('evolveBtn').addEventListener('click', ()=>{
+  // 進化を適用（色だけ変更。ログ/XPは触らない）
+  document.getElementById('evolveBtn').onclick = ()=>{
     if(!chosen) return;
-
     let s = {};
     try{ s = JSON.parse(localStorage.getItem('whoai_state')||'{}'); }catch{}
-    s.color = chosen;                  // ←見た目だけ変更
-    // s.variant は現状維持（必要ならここで変える）
+    s.color = chosen;                      // 見た目のみ更新
     localStorage.setItem('whoai_state', JSON.stringify(s));
 
-    // フラグ掃除
-    localStorage.removeItem('whoai_need_evolve');
-
-    // 記憶を保つ: そのまま会話へ戻る（ログ／XP維持）
-    if (KEEP_MEMORY) {
-      localStorage.removeItem('whoai_keep_memory');
-      localStorage.removeItem('whoai_evolve_first');
-      location.href = TALK_PAGE + '?changed=' + Date.now(); // ←キャッシュ回避
-      return;
-    }
-
-    // ゴール時フロー：進化のあと儀式へ
-    if (NEXT === 'rebirth' || localStorage.getItem('whoai_evolve_first') === '1'){
-      localStorage.removeItem('whoai_evolve_first');
-      location.href = REPO_BASE + 'rebirth.html?from=macaron';
-    }else{
-      location.href = TALK_PAGE + '?changed=' + Date.now();
-    }
-  });
+    // 会話へ戻る（戻った先で1往復してから儀式へ誘導）
+    location.href = TALK_PAGE + '?changed=' + Date.now();
+  };
 </script>
 </body>
 </html>
