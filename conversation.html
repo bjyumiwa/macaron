@@ -30,29 +30,123 @@
     <span id="badgeText"></span>
   </div>
 
-   <script>
-    // ★APIコードには一切干渉しません★
-    (function(){
-      const picked = localStorage.getItem('selectedMacaron');
-      const safeColor = ['pink','blue','green','purple'].includes(picked) ? picked : 'pink';
-      const name = localStorage.getItem('characterName') || 'なまえ未設定';
+ <!-- ===== WHOAI 進行ウィジェット（丸ごとコピペ／末尾に貼る）===== -->
+<style>
+  .whoai-name-badge{
+    position:fixed;top:10px;right:10px;z-index:9999;
+    background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+    padding:8px 12px;border-radius:12px;font-weight:700;color:#fff
+  }
+  #whoaiBadgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
+  #whoaiNameEdit{margin-left:8px;opacity:.85;cursor:pointer}
+</style>
 
-      const badge = document.getElementById('nameBadge');
-      const face  = document.getElementById('badgeFace');
-      const text  = document.getElementById('badgeText');
+<div id="whoaiNameBadge" class="whoai-name-badge" style="display:none;">
+  <img id="whoaiBadgeFace" alt="">
+  <span id="whoaiBadgeText"></span>
+  <span id="whoaiNameEdit" title="名前を変更">🖊</span>
+</div>
 
-      text.textContent = `🪄 ${name}`;
-      badge.style.display = 'inline-block';
+<script>
+(function(){
+  // ---- 小ユーティリティ ----
+  function lsGet(k,d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{return localStorage.getItem(k)??d}}
+  function lsSet(k,v){localStorage.setItem(k, typeof v==="string"?v:JSON.stringify(v))}
+  function setImageWithFallback(imgEl, paths){
+    let i=0; const trySet=()=>{
+      if(i>=paths.length) return; // 最後まで失敗したら何もしない
+      imgEl.onerror=()=>{i++; trySet();};
+      imgEl.src=paths[i];
+    }; trySet();
+  }
 
-      let isOpen = true;
-      function setSrc(){
-        face.src = `public/assets/evolved/${safeColor}_${isOpen ? 'open':'close'}.png`;
+  // ---- 名前＆顔バッジ表示（API非干渉）----
+  const picked = lsGet('whoai_selectedMacaron','green');           // pink/blue/green/purple
+  const appear = lsGet('whoai_appearance','tane');                 // 'tane' or 'evolved'
+  let name = lsGet('characterName','なまえ未設定');
+
+  const badge = document.getElementById('whoaiNameBadge');
+  const face  = document.getElementById('whoaiBadgeFace');
+  const text  = document.getElementById('whoaiBadgeText');
+  const edit  = document.getElementById('whoaiNameEdit');
+
+  function faceCandidates(open){
+    // taneは1枚画像（ゆらゆら表示）。進化後は open/closed 切替
+    if(appear==='tane'){
+      return ['public/assets/stage1/tane_green.png']; // 置き場所合わせ済み
+    }
+    const s = open ? 'open':'closed';
+    return [
+      `./${picked}_${s}.png`,                                    // 例: green_open.png / green_closed.png
+      `public/assets/evolved/${picked}_${open?'open':'close'}.png`// 例: public/assets/evolved/green_open.png
+    ];
+  }
+
+  function drawBadge(){
+    text.textContent = `🪄 ${name}`;
+    badge.style.display = 'inline-block';
+  }
+  drawBadge();
+
+  let isOpen=true;
+  setImageWithFallback(face, faceCandidates(isOpen));
+  setInterval(()=>{
+    isOpen=!isOpen;
+    setImageWithFallback(face, faceCandidates(isOpen));
+  }, (appear==='tane'? 1600 : 1200));
+
+  edit.addEventListener('click', ()=>{
+    const v = prompt('キャラクターの名前', name);
+    if(v!=null && v.trim()){
+      name = v.trim(); lsSet('characterName',name); drawBadge();
+    }
+  });
+
+  // ---- 進行管理（しきい値）※ APIのfetch等は一切変更しません ----
+  const S1_TARGET = 5;   // tane（stage1）で5会話 → macaron_select.html（2回目）
+  const S2_TARGET = 10;  // 進化（stage2）で10会話 → rebirth.html
+  const POST_TARGET = 10;// 選択後（post）で10会話 → identity_check.html（アンケ）
+
+  function countAndRoute(){
+    const stage = lsGet('whoai_stage','stage1');
+    if(stage==='stage1'){
+      const n = (lsGet('whoai_turn_s1',0)|0)+1; lsSet('whoai_turn_s1',n);
+      if(n>=S1_TARGET){ setTimeout(()=>location.href='macaron_select.html',700); }
+    }else if(stage==='stage2'){
+      const n = (lsGet('whoai_turn_s2',0)|0)+1; lsSet('whoai_turn_s2',n);
+      if(n>=S2_TARGET){ setTimeout(()=>location.href='rebirth.html',700); }
+    }else if(stage==='post'){
+      const n = (lsGet('whoai_post_turn',0)|0)+1; lsSet('whoai_post_turn',n);
+      if(n>=POST_TARGET){
+        const url = lsGet('whoai_survey_url') || 'identity_check.html';
+        setTimeout(()=>location.href=url,600);
       }
-      setSrc();
-      setInterval(()=>{ isOpen=!isOpen; setSrc(); }, 1400);
-    })();
-  </script>
+    }
+  }
+
+  // “送信”操作を広めにフック（既存APIコードは非干渉）
+  function hookSend(){
+    const btn = document.querySelector('#sendBtn, #sendButton, button[data-send], button#send, .send');
+    if(btn && !btn.dataset._whoaiHooked){
+      btn.dataset._whoaiHooked="1";
+      btn.addEventListener('click', ()=> setTimeout(countAndRoute, 120)); // 応答描画の少し後
+    }
+    const input = document.querySelector('#userInput, textarea, input[type="text"]');
+    if(input && !input.dataset._whoaiHooked){
+      input.dataset._whoaiHooked="1";
+      input.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' && !e.shiftKey){ setTimeout(countAndRoute,150); }
+      });
+    }
+  }
+  hookSend();
+  setInterval(hookSend, 1000); // SPA的UIや動的生成にも対応
+})();
+</script>
+<!-- ===== /WHOAI 進行ウィジェット（ここまで） ===== -->
+
 
 </body>
 </html>
+
 
