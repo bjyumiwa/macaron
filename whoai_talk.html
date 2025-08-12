@@ -106,8 +106,11 @@
     nameEl.textContent = `🪄 ${charName}`;
     badge.style.display = 'inline-block';
 
-    const tanePath = `./tane_${color}.png`;
-    setImage(face, tanePath);
+   // キャラ画像のパス修正
+　　const tanePath = "./public/assets/stage1/tane_" + color + ".png";
+　　setImage(face, tanePath);
+　　setImage(spriteImg, tanePath);
+
 
     // 中央キャラ
     const spriteImg = document.getElementById('whoaiSpriteImg');
