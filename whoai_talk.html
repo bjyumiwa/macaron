@@ -1,273 +1,57 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>WhoAI 会話ページ</title>
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif;
-    background:url("/macaron/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    color:#fff; display:flex; flex-direction:column; gap:12px; padding:18px
-  }
-  .panel{background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.18);border-radius:16px}
-  .top{display:flex;justify-content:space-between;align-items:center}
-  .badge{display:inline-flex;gap:8px;align-items:center;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:999px}
-  .dot{width:14px;height:14px;border-radius:50%}
-  .dot.pink{background:#ff8fb1}.dot.blue{background:#88a7ff}.dot.green{background:#85f3b0}.dot.purple{background:#c59bff}
-
-  #goalText{padding:8px 12px}
-  #bar{height:12px;border-radius:8px;overflow:hidden;position:relative}
-  #fill{height:100%;width:0;background:linear-gradient(90deg,#ffd1ec,#ffc5d9,#ffd1ec)}
-
-  #log{flex:1;overflow:auto;padding:14px}
-  .msg{margin:10px 0;max-width:80%}
-  .me{margin-left:auto}
-  .b{background:rgba(255,255,255,.1);padding:10px 12px;border-radius:14px}
-  .typing{opacity:.75;font-style:italic}
-  .input{display:flex;gap:8px;padding:10px}
-  .input input{flex:1;border:none;border-radius:12px;padding:12px}
-  .input button{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
-
-  /* avatar（右→左にゆらゆら） */
-  .avatar{position:fixed; right:24px; bottom:96px; width:150px; pointer-events:none;
-    filter:drop-shadow(0 10px 24px rgba(0,0,0,.5)); z-index:1; animation: yoko 8s ease-in-out infinite;}
-  .avatar img{width:100%; height:auto; display:block}
-  .avatar .fallback{width:120px; height:120px; border-radius:50%; border:4px solid rgba(255,255,255,.85); box-shadow:0 8px 20px rgba(0,0,0,.45)}
-  @keyframes yoko{0%{transform:translateX(0)}50%{transform:translateX(-60px)}100%{transform:translateX(0)}}
-  .disabled{opacity:.5;pointer-events:none}
-
-  /* ====== モーダル ====== */
-  .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.45); z-index:50}
-  .modal .card{max-width:520px; background:rgba(0,0,0,.75); border:1px solid rgba(255,255,255,.2);
-    border-radius:16px; padding:20px; text-align:center}
-  .row{display:flex; gap:10px; justify-content:center; margin-top:12px}
-  .btn{border:none; border-radius:12px; padding:10px 16px; font-weight:700; cursor:pointer}
-  .primary{background:#ffd1ec;color:#111}
-  .ghost{background:rgba(255,255,255,.15);color:#fff}
-</style>
+  <meta charset="UTF-8" />
+  <title>whoai_talk.html - 会話（進化版UI）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+    }
+    /* ここから追加UI。既存レイアウトに重ねるだけ */
+    .name-badge{
+      position:fixed;top:10px;right:10px;z-index:9999;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+      padding:8px 12px;border-radius:12px;font-weight:700
+    }
+    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
+  </style>
 </head>
 <body>
-  <div class="top">
-    <div class="badge">
-      <span class="dot" id="dot"></span>
-      <span id="traitLabel">WHOAI</span>
-    </div>
-    <div class="badge"><span id="counter">0 / 0</span></div>
+
+  <!-- ★ 既存の会話UI（あなたの元コード）をこの下にそのまま残してください ★ -->
+  <!-- ・・・・（元のHTML/JS/Fetchなど全て）・・・・ -->
+
+  <!-- 追加：名前バッジ（DOMに勝手に足すので既存を壊しません） -->
+  <div id="nameBadge" class="name-badge" style="display:none;">
+    <img id="badgeFace" alt="">
+    <span id="badgeText"></span>
   </div>
 
-  <div id="goalText" class="panel"></div>
-  <div id="bar" class="panel" aria-label="progress"><div id="fill"></div></div>
+  <script>
+    // ★APIコードには一切干渉しません★
+    (function(){
+      const picked = localStorage.getItem('selectedMacaron');
+      const safeColor = ['pink','blue','green','purple'].includes(picked) ? picked : 'pink';
+      const name = localStorage.getItem('characterName') || 'なまえ未設定';
 
-  <div id="log" class="panel" aria-live="polite"></div>
+      const badge = document.getElementById('nameBadge');
+      const face  = document.getElementById('badgeFace');
+      const text  = document.getElementById('badgeText');
 
-  <div class="input panel">
-    <input id="text" type="text" placeholder="メッセージを入力" />
-    <button id="send">送信</button>
-  </div>
+      text.textContent = `🪄 ${name}`;
+      badge.style.display = 'inline-block';
 
-  <div class="avatar" aria-hidden="true"><img id="avatar" alt=""></div>
-
-  <!-- 進化の案内モーダル -->
-  <div id="evolveModal" class="modal" role="dialog" aria-modal="true">
-    <div class="card">
-      <h3>目標達成！</h3>
-      <p>このまま<b>進化</b>しよう。<br>次の画面で <b>マカロンを選んでね</b>。</p>
-      <div class="row">
-        <button class="btn ghost" id="evolveLater">あとで</button>
-        <button class="btn primary" id="evolveGo">マカロンへ</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 儀式へ誘導トースト（復帰後） -->
-  <div id="ritualToast" class="modal" style="align-items:flex-start; padding-top:80px">
-    <div class="card">
-      <p>進化したよ！ ひとこと交わしたら<b>復活の儀式</b>へ進もう。</p>
-      <div class="row">
-        <button class="btn primary" id="ritualOk">OK</button>
-      </div>
-    </div>
-  </div>
-
-<script>
-  /* ====== ルート ====== */
-  const REPO_BASE    = '/macaron/';
-  const PUBLIC_BASE  = REPO_BASE + 'public/';
-  const ASSET_BASE   = PUBLIC_BASE + 'assets/stage1/';
-  const MACARON_PAGE = PUBLIC_BASE + 'macaron.html';
-  const TALK_ENDPOINT= 'https://macaron-one.vercel.app/api/talk';
-
-  /* ====== 状態 ====== */
-  function read(obj, k, def){ return (obj && obj[k]!=null)?obj[k]:def; }
-  const stored  = JSON.parse(localStorage.getItem('whoai_state') || "{}");
-  const macaron = JSON.parse(localStorage.getItem('macaron_choice') || "null");
-  const color   = stored.color || (macaron?macaron.macaron:null) || localStorage.getItem('selectedMacaron') || 'pink';
-  const state = {
-    name: read(stored,'name','WHOAI'),
-    color, variant: read(stored,'variant','tane'),
-    stage: read(stored,'stage','seed'),
-    xp: read(stored,'xp',0),
-    goal: read(stored,'goal', (stored.stage==='evolved'?12:8))
-  };
-  window.state = state;
-
-  document.getElementById('dot').classList.add(color);
-  document.getElementById('traitLabel').textContent = state.name || "WHOAI";
-
-  /* ====== 進捗 ====== */
-  const goalText = document.getElementById('goalText');
-  const fill     = document.getElementById('fill');
-  const counter  = document.getElementById('counter');
-
-  function updateGoalText(){
-    const colorLabel = {pink:'ピンク / Pink', blue:'ブルー / Blue', green:'グリーン / Green', purple:'パープル / Purple'}[state.color] || state.color;
-    goalText.textContent = `目標 ${state.goal} XP / ${colorLabel}：` +
-      ({pink:"情熱。前向きで励ます。", blue:"静寂。落ち着いて丁寧。", green:"元気。テンポよく行動。", purple:"創造。比喩や飛躍。"}[state.color] || "");
-  }
-  function updateBarAndCounter(){
-    const p = Math.max(0, Math.min(1, state.xp / Math.max(1,state.goal)));
-    fill.style.width = (p*100)+'%';
-    counter.textContent = `${state.xp} / ${state.goal}`;
-  }
-  updateGoalText(); updateBarAndCounter();
-
-  /* ====== アバター ====== */
-  function charSrc(s){
-    const file = (s.variant === "tane") ? `tane_${s.color}.png` : `${s.color}_${s.variant}.png`;
-    return ASSET_BASE + file + '?v=' + Date.now(); // キャッシュ回避
-  }
-  (function setAvatar(){
-    const img = document.getElementById('avatar');
-    img.src = charSrc(state);
-    img.alt = (state.name || 'WHOAI') + ' avatar';
-    img.onerror = ()=>{
-      const f = document.createElement('div'); f.className = 'fallback';
-      f.style.background = {pink:'#ff8fb1', blue:'#88a7ff', green:'#85f3b0', purple:'#c59bff'}[state.color] || '#fff';
-      img.replaceWith(f);
-    };
-  })();
-
-  /* ====== チャット ====== */
-  const logEl  = document.getElementById('log');
-  const textEl = document.getElementById('text');
-  const sendEl = document.getElementById('send');
-
-  function addMsg(who, content, extraClass=''){
-    const label = (who==='me') ? 'あなた' : 'WHOAI';
-    const div = document.createElement('div');
-    div.className = 'msg ' + (who==='me'?'me':'') + ' ' + extraClass;
-    div.innerHTML = `<div class="b"><strong>${label}</strong><br>${content}</div>`;
-    logEl.appendChild(div);
-    logEl.scrollTop = logEl.scrollHeight;
-    return div;
-  }
-  addMsg('ai', {pink:"やっほー！まずは一歩いってみよ！",blue:"こんにちは。ゆっくり考えていこう。",green:"やっほー！まずは一歩いってみよ！",purple:"ようこそ。物語を編んでみよう。"}[state.color] || "こんにちは！");
-
-  function loadChat(){ try{ return JSON.parse(localStorage.getItem('whoai_chat')||'[]'); }catch{ return []; } }
-  function saveChat(arr){ localStorage.setItem('whoai_chat', JSON.stringify(arr.slice(-14))); }
-  let chat = loadChat();
-
-  async function talkAPI(userText){
-    const systemPrompt = `あなたはWHOAIのキャラクター。名前は「${state.name||'WHOAI'}」。色は${state.color}、形態は${state.variant||'tane'}。口調は次の方針：
-- ピンク: 前向きに励ます
-- ブルー: 落ち着いて丁寧に考える
-- グリーン: テンポよく行動を促す
-- パープル: 比喩や発想の飛躍を少し入れる
-必ず日本語で、1〜2文で返答。最後に次の行動を1つだけ提案して。`;
-    const payload = { userMessage:userText, history:chat, systemPrompt, temperature:0.7, max_tokens:220, model:"gpt-4o-mini" };
-    const r = await fetch(TALK_ENDPOINT, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
-    if(!r.ok){ throw new Error(await r.text()); }
-    const data = await r.json();
-    return (data.reply||"").trim();
-  }
-
-  function toneReply(){
-    return ({ pink:"うん！応援してるよ。", blue:"なるほど。順番に考えてみよう。", green:"いいね！小さく一歩、どう？", purple:"ふむ。別の想像をしてみたらどう？" }[state.color]) || "いいね、まず一歩やってみよう！";
-  }
-
-  function saveState(){ localStorage.setItem('whoai_state', JSON.stringify(state)); }
-  function disableInput(disabled=true){
-    textEl.disabled = disabled; sendEl.disabled = disabled;
-    textEl.classList.toggle('disabled', disabled);
-    sendEl.classList.toggle('disabled', disabled);
-  }
-
-  /* ====== ゴール時：案内モーダルを出してからマカロンへ ====== */
-  function reachGoal(){
-    // 入力は止めるが、いきなり遷移はしない
-    disableInput(true);
-    document.getElementById('evolveModal').style.display = 'grid';
-  }
-  // モーダルのボタン
-  document.getElementById('evolveLater').onclick = ()=>{
-    document.getElementById('evolveModal').style.display = 'none';
-    // 入力を少しだけ再開してもOK
-    disableInput(false);
-  };
-  document.getElementById('evolveGo').onclick = ()=>{
-    localStorage.setItem('whoai_ritual_after_return','1'); // 戻ったら儀式へ案内
-    // 進化選択へ
-    location.href = MACARON_PAGE + '?from=talk';
-  };
-
-  /* ====== 進化後に戻ってきたときの処理 ====== */
-  (function afterEvolveReturn(){
-    if(localStorage.getItem('whoai_ritual_after_return') === '1'){
-      // 1往復だけ話せるようにXPを goal-1 に調整
-      try{
-        const s = JSON.parse(localStorage.getItem('whoai_state')||'{}');
-        if(typeof s.goal === 'number'){ s.xp = Math.max(0, (s.goal||1) - 1); localStorage.setItem('whoai_state', JSON.stringify(s)); state.xp = s.xp; }
-      }catch{}
-      updateBarAndCounter();
-      // トースト表示
-      const t = document.getElementById('ritualToast');
-      t.style.display = 'grid';
-      document.getElementById('ritualOk').onclick = ()=>{ t.style.display='none'; };
-      // 次の送信後に儀式へ
-      localStorage.setItem('whoai_goto_ritual_after_next','1');
-      // 入力を再開
-      disableInput(false);
-    }
-  })();
-
-  /* ====== 送信 ====== */
-  async function handleSend(){
-    const v = textEl.value.trim(); if(!v) return;
-    addMsg('me', v);
-    textEl.value='';
-    chat.push({role:"user", content:v}); saveChat(chat);
-
-    const typing = addMsg('ai', '入力中…', 'typing');
-    let reply="";
-    try{ reply = await talkAPI(v); }
-    catch(e){ console.warn(e); typing.querySelector('.b').innerHTML = `<strong>WHOAI</strong><br>通信に失敗しました。ローカル応答に切り替えます。`; reply = toneReply(); }
-
-    typing.remove();
-    addMsg('ai', reply);
-    chat.push({role:"assistant", content:reply}); saveChat(chat);
-
-    state.xp = (state.xp||0) + 1;
-    updateBarAndCounter();
-    saveState();
-
-    // 儀式へ誘導フロー
-    if(localStorage.getItem('whoai_goto_ritual_after_next')==='1'){
-      localStorage.removeItem('whoai_goto_ritual_after_next');
-      localStorage.removeItem('whoai_ritual_after_return');
-      setTimeout(()=>{ location.href = REPO_BASE + 'rebirth.html?from=talk'; }, 400);
-      return;
-    }
-
-    // 通常のゴールチェック
-    if(state.xp >= state.goal){
-      setTimeout(reachGoal, 250);
-    }
-  }
-
-  document.getElementById('send').addEventListener('click', handleSend);
-  document.getElementById('text').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); } });
-</script>
+      let isOpen = true;
+      function setSrc(){
+        face.src = `public/assets/evolved/${safeColor}_${isOpen ? 'open':'close'}.png`;
+      }
+      setSrc();
+      setInterval(()=>{ isOpen=!isOpen; setSrc(); }, 1400);
+    })();
+  </script>
 </body>
 </html>
