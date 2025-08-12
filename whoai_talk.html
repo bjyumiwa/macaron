@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（tane色同期＋進化）</title>
+  <title>whoai_talk - 会話（tane色同期＋進化→10回で復活）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
@@ -22,7 +22,7 @@
     /* 中央キャラ（少し上／ゆらゆら） */
     .whoai-sprite{
       position:fixed;left:50%;
-      top:38%; /* 50%から上へ */
+      top:38%;
       transform:translate(-50%,-50%);
       width:180px;height:180px;display:flex;align-items:center;justify-content:center;
       z-index:30;pointer-events:none;animation:float 3s ease-in-out infinite;
@@ -97,6 +97,10 @@
   function lsGet(k,d=null){ try{ return JSON.parse(localStorage.getItem(k)) ?? d }catch{ return localStorage.getItem(k) ?? d } }
   function lsSet(k,v){ localStorage.setItem(k, typeof v==="string"? v : JSON.stringify(v)); }
 
+  const TURN_FOR_EVOLVE = 8;   // 8回でモーダル
+  const TURN_FOR_REBIRTH = 10; // 10回で復活の儀式
+  const REBIRTH_URL = (location.pathname.includes('/macaron/')) ? 'rebirth.html' : '/macaron/rebirth.html';
+
   /* ===== 見た目：tane or 進化(open/closed) ===== */
   (function(){
     const pickedRaw = lsGet('selectedMacaron') || lsGet('whoai_selectedMacaron') || 'green';
@@ -145,7 +149,6 @@
         `./public/assets/stage1/${c}_closed.png`,
         `./${c}_closed.png`
       ];
-      // 初期表示
       setOnce(face, openList);  setOnce(sprite, openList);
       let isOpen=true;
       blinkTimer = setInterval(()=>{
@@ -166,6 +169,8 @@
       lsSet('whoai_appearance', 'evolved');  // ← 進化フラグ
       appearance='evolved';
       showEvolved(c);
+      // モーダルは一度だけのためフラグを立て直す
+      lsSet('whoai_modal_shown', true);
     };
   })();
 
@@ -178,6 +183,11 @@
     const logEl = document.getElementById('whoaiLog');
     const inputEl = document.getElementById('whoaiInput');
     const sendBtn = document.getElementById('whoaiSend');
+
+    // 既存カウント読み込み（リセットしない）
+    let turns = Number(localStorage.getItem('whoai_turns')||0);
+    const appearance = lsGet('whoai_appearance','tane');
+    let modalShown = !!lsGet('whoai_modal_shown', false);
 
     function addLine(side, text){
       const wrap = document.createElement('div');
@@ -220,17 +230,35 @@
     inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); } });
 
     if(!sessionStorage.getItem('whoai_welcome_shown')){
-      addLine('bot','こんにちは！マカロン色の tane だよ。なんでも話しかけてね。');
+      const greet = (appearance==='evolved')
+        ? 'こんにちは！進化した whoai だよ。続けて話そう！'
+        : 'こんにちは！マカロン色の tane だよ。なんでも話しかけてね。';
+      addLine('bot', greet);
       sessionStorage.setItem('whoai_welcome_shown','1');
     }
 
-    // 会話回数カウント（8回でモーダル）
-    const TURN_GOAL = 8;
-    window.incTurns = function(){
-      const n = (Number(localStorage.getItem('whoai_turns')||0))+1;
-      localStorage.setItem('whoai_turns', String(n));
-      if(n>=TURN_GOAL) openModal();
+    // 会話回数カウント
+    function incTurns(){
+      turns += 1;
+      localStorage.setItem('whoai_turns', String(turns));
+
+      // 8回目で進化モーダル（未進化 & まだ出していないときだけ）
+      const isEvolved = lsGet('whoai_appearance','tane') === 'evolved';
+      if(!isEvolved && !modalShown && turns >= TURN_FOR_EVOLVE){
+        modalShown = true;
+        lsSet('whoai_modal_shown', true);
+        openModal();
+        return;
+      }
+
+      // 進化後に10回到達したら復活の儀式へ
+      if(isEvolved && turns >= TURN_FOR_REBIRTH){
+        // 次ページでの判定用に現在の状態を残す（ここではリセットしない）
+        location.href = REBIRTH_URL;
+      }
     }
+    // グローバルへ（他スクリプトから使う場合）
+    window.incTurns = incTurns;
   })();
 
   /* ===== モーダル（ページ内でマカロン再選択 → 進化） ===== */
@@ -263,7 +291,7 @@
     window.openModal = function(){ build(); modal.style.display='flex'; }
     function closeModal(){ modal.style.display='none'; }
 
-    // 進化する：色保存→見た目を進化(open/close)に切替
+    // 進化する：色保存→見た目を進化(open/close)に切替（カウントは維持）
     commit.onclick=()=>{
       if(!selected) return;
       window.whoaiApplyEvolution(selected.key);
