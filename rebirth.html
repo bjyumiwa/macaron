@@ -67,9 +67,7 @@
 
     if(choice==='look'){
       // 容姿を保つ：ログ/XPリセット → 会話へ
-      localStorage.removeItem('whoai_need_evolve');
-      localStorage.removeItem('whoai_keep_memory');
-      localStorage.removeItem('whoai_chat'); // ←会話ログ消去
+      localStorage.removeItem('whoai_chat');
       try{
         const s = JSON.parse(localStorage.getItem('whoai_state')||'{}');
         s.xp = 0;
@@ -78,8 +76,7 @@
       }catch{}
       location.href = TALK_PAGE + '?reset=' + Date.now();
     }else{
-      // 記憶を保つ：ログ/XPは維持 → マカロンで色だけ選ぶ
-      localStorage.setItem('whoai_keep_memory','1');
+      // 記憶を保つ：ログ/XP維持 → マカロンで見た目だけ再変更（必要な場合）
       location.href = MACARON_PG + '?from=rebirth&keep=1';
     }
   };
