@@ -20,14 +20,18 @@
     #whoaiBadgeFace{width:36px;height:36px;margin-right:8px;border-radius:8px}
 
     /* 中央キャラ（ゆらゆら） */
-    .whoai-sprite{
-      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
-      width:180px;height:180px;display:flex;align-items:center;justify-content:center;
-      z-index:30; pointer-events:none; animation:float 3s ease-in-out infinite;
-      filter: drop-shadow(0 10px 22px rgba(0,0,0,.35));
-    }
-    .whoai-sprite img{max-width:100%;max-height:100%}
-    @keyframes float{0%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,-54%)}100%{transform:translate(-50%,-50%)}}
+   .whoai-sprite{
+  position:fixed;left:50%;
+  top:38%;               /* ← 50% から上へ */
+  transform:translate(-50%,-50%);
+  width:180px;height:180px;display:flex;align-items:center;justify-content:center;
+  z-index:30;pointer-events:none;animation:float 3s ease-in-out infinite;
+  filter:drop-shadow(0 10px 22px rgba(0,0,0,.35));
+}
+@media (max-width: 640px){
+  .whoai-sprite{ top:34%; width:160px; height:160px; } /* スマホはもう少し上 */
+}
+
 
     /* ===== Chat Dock ===== */
     .whoai-chatdock{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(920px,92vw);z-index:900}
