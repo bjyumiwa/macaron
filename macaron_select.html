@@ -7,9 +7,11 @@
 <style>
   :root{ --glass: rgba(255,255,255,.10); --accent:#ffd1ec; }
   html,body{height:100%;margin:0}
-  body{font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px}
+  body{
+    font-family:"Noto Sans JP",sans-serif;color:#fff;
+    background:url("./space_background.png") center/cover fixed no-repeat;
+    display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px
+  }
   h1{margin:6px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
   .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(140px,1fr));width:min(560px,92vw)}
   .card{background:var(--glass);border-radius:16px;padding:14px;text-align:center;border:2px solid transparent;cursor:pointer;transition:.12s}
@@ -33,12 +35,11 @@
   </div>
 
 <script>
-const ASSETS="public/assets/stage1";
 const OPTIONS=[
-  {key:"pink",   label:"ピンク",  img:`${ASSETS}/macaron_pink.png`},
-  {key:"blue",   label:"ブルー",  img:`${ASSETS}/macaron_blue.png`},
-  {key:"green",  label:"グリーン",img:`${ASSETS}/macaron_green.png`},
-  {key:"purple", label:"パープル",img:`${ASSETS}/macaron_purple.png`}
+  {key:"pink",   label:"ピンク",  img:"./macaron_pink.png"},
+  {key:"blue",   label:"ブルー",  img:"./macaron_blue.png"},
+  {key:"green",  label:"グリーン",img:"./macaron_green.png"},
+  {key:"purple", label:"パープル",img:"./macaron_purple.png"}
 ];
 const grid=document.getElementById('grid');
 const goBtn=document.getElementById('goBtn');
@@ -58,20 +59,16 @@ clearBtn.onclick=()=>{document.querySelectorAll('.card').forEach(el=>el.classLis
 
 goBtn.onclick=()=>{
   if(!selected) return;
-
-  // 互換のため“両方のキー名”に保存
+  // 互換のため2つのキー名に保存
   localStorage.setItem('selectedMacaron', selected.key);
   localStorage.setItem('whoai_selectedMacaron', selected.key);
-
-  // ステージ初期化（tane で会話開始）
+  // tane で会話開始
   localStorage.setItem('whoai_stage','stage1');
   localStorage.setItem('whoai_appearance','tane');
   localStorage.setItem('whoai_turn_s1','0');
-
-  // 会話ログ系は初期章なのでリセット（APIには非干渉）
+  // 初期章なのでログはクリア（APIには非干渉）
   localStorage.removeItem('whoai_chat');
   localStorage.removeItem('whoai_xp');
-
   location.href='whoai_talk.html';
 };
 </script>
