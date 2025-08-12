@@ -30,7 +30,6 @@
   .input input{flex:1;border:none;border-radius:12px;padding:12px}
   .input button{border:none;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
 
-  /* avatar（右→左にゆらゆら） */
   .avatar{
     position:fixed; right:24px; bottom:96px; width:150px; pointer-events:none;
     filter:drop-shadow(0 10px 24px rgba(0,0,0,.5)); z-index:1;
@@ -42,7 +41,6 @@
     border:4px solid rgba(255,255,255,.85); box-shadow:0 8px 20px rgba(0,0,0,.45);
   }
   @keyframes yoko{0%{transform:translateX(0)}50%{transform:translateX(-60px)}100%{transform:translateX(0)}}
-
   .disabled{opacity:.5;pointer-events:none}
 </style>
 </head>
@@ -65,18 +63,16 @@
     <button id="send">送信</button>
   </div>
 
-  <!-- avatar -->
   <div class="avatar" aria-hidden="true">
     <img id="avatar" alt="">
   </div>
 
 <script>
-  /* ====== ルート定義 ====== */
+  /* ====== ルート ====== */
   const REPO_BASE    = '/macaron/';
   const PUBLIC_BASE  = REPO_BASE + 'public/';
   const ASSET_BASE   = PUBLIC_BASE + 'assets/stage1/';
   const MACARON_PAGE = PUBLIC_BASE + 'macaron.html';
-  const REBIRTH_PAGE = PUBLIC_BASE + 'rebirth.html';   // ← 追加
   const TALK_ENDPOINT= 'https://macaron-one.vercel.app/api/talk';
 
   /* ====== 状態 ====== */
@@ -176,11 +172,12 @@
     else { textEl.classList.remove('disabled'); sendEl.classList.remove('disabled'); }
   }
 
-  // ★ゴールで /macaron/rebirth.html へ（public/ ではない）
-function reachGoal(){
-  localStorage.setItem('whoai_need_evolve','1');
-  location.href = REPO_BASE + 'rebirth.html?from=talk'; // ← ここを修正
-}
+  // ★ゴールしたら 進化 → 儀式 の順へ
+  function reachGoal(){
+    localStorage.setItem('whoai_need_evolve','1');   // 進行フラグ
+    localStorage.setItem('whoai_evolve_first','1');  // 先に進化するフラグ
+    location.href = PUBLIC_BASE + 'macaron.html?from=talk&next=rebirth';
+  }
 
   if(state.xp >= state.goal){ disableInput(true); }
 
