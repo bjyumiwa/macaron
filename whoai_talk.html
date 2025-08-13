@@ -46,7 +46,7 @@
   <div class="container">
     <h1>WhoAI と会話する</h1>
     <div class="top">
-      <div class="avatar"><img id="avatarImg" alt="avatar (not found)"/></div>
+      <div class="avatar"><img id="avatarImg" alt="avatar"/></div>
       <div>
         <div><b>見た目:</b> <span id="appearanceLabel">-</span></div>
         <div><b>会話回数(この周回):</b> <span id="cycleCount">0</span>/10</div>
@@ -54,6 +54,7 @@
     </div>
 
     <div class="panel">
+      <!-- ✅ お知らせはここに1つだけ表示 -->
       <div class="notice">10ターン到達で「容姿 or 記録」選択画面へ移動します。 記録を選んだ場合、ログは残り、<span class="nobr">見た目のみ変わります。</span></div>
       <div id="chat"></div>
       <form id="talkForm">
@@ -76,14 +77,11 @@
   /* ============ 画像リゾルバ ============ */
   var BASES = [ './public/assets/stage1/', 'public/assets/stage1/', './assets/stage1/', 'assets/stage1/' ];
   var BG_NAME = 'space_background.png';
-  // 見た目ごとの候補（先にあるほど優先）
   var SPRITE_LIST = {
-    // マカロン色 → 同色の「tane_*」を最優先で採用（要望対応）
     green: ['tane_green.png','macaron_green.png','green_open.png','green_closed.png'],
     pink:  ['tane_pink.png','macaron_pink.png','pink_open.png','pink_closed.png'],
     blue:  ['tane_blue.png','macaron_blue.png','blue_open.png','blue_closed.png'],
     purple:['tane_purple.png','macaron_purple.png','purple_open.png','purple_closed.png'],
-    // フォールバック（色未指定など）
     tane:  ['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png']
   };
 
@@ -111,10 +109,18 @@
   // 新しい周回なら回数だけ0
   if(localStorage.getItem(K.flag)){ localStorage.removeItem(K.flag); localStorage.setItem(K.turns,'0'); }
 
-  // 状態
+  // 状態読み込み
   var chatLog = getJSON(K.log, []);
   var appearance = (localStorage.getItem(K.appear)||'green').replace(/^\"|\"$/g,'');
   var turns = parseInt(localStorage.getItem(K.turns)||'0',10);
+
+  // ✅ 起動時クリーンアップ：以前に保存された重複の system お知らせを除去
+  var BEFORE = chatLog.length;
+  chatLog = chatLog.filter(function(m){
+    return !(m.role==='system' && m.text && m.text.indexOf('10ターン到達で')>=0);
+  });
+  if (chatLog.length !== BEFORE) { setJSON(K.log, chatLog); }
+
   if(turns >= MAX_TURNS){ localStorage.setItem(K.flag,'1'); location.href = REBIRTH_URL; }
 
   // 表示
@@ -128,14 +134,10 @@
       var m = chatLog[i];
       var d = document.createElement('div');
       d.className = 'bubble ' + (m.role==='user'?'me':(m.role==='assistant'?'ai':'sys'));
-      d.textContent = m.text; chatEl.appendChild(d);
+      d.textContent = m.text;
+      chatEl.appendChild(d);
     }
     chatEl.scrollTop = chatEl.scrollHeight;
-  }
-  // インフォは重複させない
-  if(!chatLog.some(function(m){return m.role==='system' && m.text.indexOf('10ターン到達で')>=0;})){
-    chatLog.unshift({role:'system', text:'10ターン到達で「容姿 or 記録」選択画面へ移動します。記録を選んだ場合、ログは残り、見た目のみ変わります。'});
-    setJSON(K.log, chatLog);
   }
   renderChat();
 
@@ -143,18 +145,34 @@
   async function talkAPI(text){
     var hist = chatLog.slice(-8);
     try{
-      var r = await fetch(TALK_ENDPOINT,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ messages:[ {role:'system', content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'}, ...hist.map(function(m){return {role:(m.role==='assistant'?'assistant':(m.role==='user'?'user':'system')), content:m.text};}), {role:'user', content:text} ] }) });
+      var r = await fetch(TALK_ENDPOINT,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          messages:[
+            {role:'system', content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'},
+            ...hist.map(function(m){
+              return {role:(m.role==='assistant'?'assistant':(m.role==='user'?'user':'system')), content:m.text};
+            }),
+            {role:'user', content:text}
+          ]
+        })
+      });
       if(!r.ok) throw new Error('status '+r.status);
       var j = await r.json(); var reply = (j.reply||j.message||j.content||'').toString().trim();
       return reply || 'なるほど。もう少し詳しく教えて！';
-    }catch(e){ return 'なるほど。もう少し詳しく教えて！'; }
+    }catch(e){
+      return 'なるほど。もう少し詳しく教えて！';
+    }
   }
 
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     var text = input.value.trim(); if(!text) return;
+
     chatLog.push({role:'user', text:text}); setJSON(K.log, chatLog); renderChat(); input.value='';
     sendBtn.disabled=true; var reply = await talkAPI(text); sendBtn.disabled=false;
+
     chatLog.push({role:'assistant', text:reply}); setJSON(K.log, chatLog); renderChat();
 
     turns += 1; localStorage.setItem(K.turns,String(turns)); cycleEl.textContent = String(Math.min(turns,MAX_TURNS));
