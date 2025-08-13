@@ -2,53 +2,111 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>evolution.html - マカロン進化</title>
+  <title>evolution - マカロン進化</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;
-      background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      background-image:url("./public/assets/stage1/space_background.png"); /* 統一パス */
+      background-size:cover;background-position:center;background-attachment:fixed;
+      text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;
     }
-    .panel{
-      background:rgba(0,0,0,.35);padding:16px 20px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)
+    .name-badge{
+      position:fixed;top:10px;right:10px;z-index:9999;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+      padding:8px 12px;border-radius:12px;font-weight:700;display:none
     }
-    #evolvedCharacter{width:160px;height:auto;image-rendering:auto}
-    button{
-      margin-top:16px;padding:10px 18px;border:none;border-radius:12px;
-      background:#ffd1ec;color:#111;font-weight:700;cursor:pointer
+    #badgeFace{
+      width:36px;height:36px;vertical-align:middle;margin-right:8px;
+      border-radius:8px;object-fit:contain
     }
-    button:hover{filter:brightness(1.05)}
-    .hint{opacity:.9;margin-top:10px}
+    .macaron-img{
+      width:160px;height:auto;cursor:pointer;transition:transform 0.3s ease;
+    }
+    .macaron-img:hover{ transform:scale(1.1); }
+    #message{margin-top:20px;font-size:1.2em;}
   </style>
 </head>
 <body>
-  <div class="panel">
-    <h2>進化したよ！</h2>
-    <img id="evolvedCharacter" alt="evolved">
-    <div><button id="goNaming">名前をつける</button></div>
-    <div class="hint">※ まばたき（open/close）アニメーション中</div>
+  <!-- 名前バッジ -->
+  <div id="nameBadge" class="name-badge">
+    <img id="badgeFace" alt=""><span id="badgeText"></span>
   </div>
 
+  <!-- マカロン画像 -->
+  <img id="macaronImg" class="macaron-img" alt="選択マカロン">
+
+  <!-- メッセージ -->
+  <div id="message">マカロンをクリックして進化！</div>
+
   <script>
-    // APIには一切触りません。画像の交互切替のみ。
-    const picked = localStorage.getItem('selectedMacaron');
-    const safeColor = ['pink','blue','green','purple'].includes(picked) ? picked : 'pink';
-    const img = document.getElementById('evolvedCharacter');
-
-    let isOpen = true;
-    function setSrc(){
-      img.src = `public/assets/evolved/${safeColor}_${isOpen ? 'open':'close'}.png`;
+  (function(){
+    // localStorage取得
+    function lsGet(k, d=null){
+      const raw = localStorage.getItem(k);
+      if (raw === null || raw === undefined) return d;
+      try { return JSON.parse(raw); } catch { return raw; }
     }
-    setSrc();
-    const blinkTimer = setInterval(()=>{ isOpen=!isOpen; setSrc(); }, 1100);
 
-    document.getElementById('goNaming').addEventListener('click', ()=>{
-      clearInterval(blinkTimer);
-      location.href = 'naming.html';
+    const picked = lsGet('selectedMacaron') ?? lsGet('whoai_selectedMacaron') ?? 'green';
+    const color  = ['pink','blue','green','purple'].includes(picked) ? picked : 'green';
+    const name   = lsGet('characterName') ?? lsGet('whoai_characterName') ?? 'なまえ未設定';
+
+    // バッジ設定
+    const badge  = document.getElementById('nameBadge');
+    const face   = document.getElementById('badgeFace');
+    const text   = document.getElementById('badgeText');
+    text.textContent = `🪄 ${name}`;
+    face.alt = `${name} の顔`;
+
+    const charCandidates = [
+      `./public/assets/stage1/tane_${color}.png`,
+      './public/assets/stage1/tane_green.png'
+    ];
+    (function tryPickChar(i=0){
+      if (i >= charCandidates.length) {
+        console.warn('tane image not found:', color);
+        badge.style.display = 'none';
+        return;
+      }
+      const test = new Image();
+      test.onload = () => {
+        face.src = test.src;
+        badge.style.display = 'inline-block';
+      };
+      test.onerror = () => tryPickChar(i+1);
+      test.src = charCandidates[i];
+    })();
+
+    // マカロン画像設定
+    const macaronImg = document.getElementById('macaronImg');
+    const macaronCandidates = [
+      `./public/assets/stage1/macaron_${color}.png`,
+      './public/assets/stage1/macaron_green.png'
+    ];
+    (function tryPickMacaron(i=0){
+      if (i >= macaronCandidates.length) {
+        console.warn('macaron image not found:', color);
+        macaronImg.style.display = 'none';
+        return;
+      }
+      const test = new Image();
+      test.onload = () => {
+        macaronImg.src = test.src;
+      };
+      test.onerror = () => tryPickMacaron(i+1);
+      test.src = macaronCandidates[i];
+    })();
+
+    // マカロンをクリックで進化処理 → API呼び出し or 次のページ
+    macaronImg.addEventListener('click', () => {
+      document.getElementById('message').textContent = `${name} が進化しました！`;
+      setTimeout(() => {
+        window.location.href = 'whoai_talk.html'; // 進化後会話ページへ遷移
+      }, 1500);
     });
+  })();
   </script>
 </body>
 </html>
-
