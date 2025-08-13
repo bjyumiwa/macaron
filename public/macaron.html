@@ -22,21 +22,36 @@
   </div>
 
 <script>
-  // localStorage のキー（whoai_talk.html と合わせる）
-  var K={appear:'whoai_appearance',turns:'whoai_cycleCount',phase:'whoai_phase',flag:'whoai_newCycleFlag'};
+  // whoai_* のキーは他ファイルと完全一致させる
+  var K = {
+    appear:'whoai_appearance',
+    turns:'whoai_cycleCount',
+    phase:'whoai_phase',
+    flag :'whoai_newCycleFlag',
+    must :'whoai_must2ndMacaron' // 2回目マカロンの一度きりフラグ
+  };
 
   function pick(color){
-    localStorage.setItem(K.appear, JSON.stringify(color)); // 見た目を保存
-    localStorage.setItem(K.turns, '0');                    // 回数リセット
-    localStorage.setItem(K.phase, JSON.stringify('evolved'));
-    localStorage.setItem(K.flag,  '1');                    // 戻り画面のUIリセット用
-    // ← public配下から一つ上の whoai_talk.html へ戻る
-    location.href = '../whoai_talk.html';
+    // ★ 進化の確定保存
+    localStorage.setItem(K.appear, JSON.stringify(color));
+    localStorage.setItem(K.phase , JSON.stringify('evolved'));
+    localStorage.setItem(K.turns , '0');
+    localStorage.setItem(K.flag  , '1');
+    localStorage.setItem(K.must  , '0');     // ★ 2回目フラグを消化
+
+    // 進化しました！の演出（任意）
+    const ov = document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35);color:#fff;font-size:28px';
+    ov.textContent='進化しました！';
+    document.body.appendChild(ov);
+
+    setTimeout(function(){ location.href = '../whoai_talk.html'; }, 900);
   }
 
   document.querySelectorAll('.card').forEach(function(el){
     el.addEventListener('click', function(){ pick(el.getAttribute('data-color')); });
   });
 </script>
+
 </body>
 </html>
