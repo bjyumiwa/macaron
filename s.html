@@ -5,39 +5,11 @@
   <title>s - 次の周回へ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html,body {
-      height: 100%;
-      margin: 0;
-      background: #000;
-      display: grid;
-      place-items: center;
-      color: #fff;
-      font-family: "Noto Sans JP", sans-serif;
-    }
-    .box {
-      padding: 22px 26px;
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      text-align: center;
-    }
-    .dot {
-      animation: blink 1.2s infinite;
-    }
-    @keyframes blink {
-      0%,100% { opacity: 0.3; }
-      50% { opacity: 1; }
-    }
-    button {
-      margin-top: 14px;
-      padding: 10px 16px;
-      border-radius: 12px;
-      border: 0;
-      background: #a3e635;
-      color: #0a0a0a;
-      font-weight: 700;
-      cursor: pointer;
-    }
+    html,body { height:100%; margin:0; background:#000; display:grid; place-items:center; color:#fff; font-family:"Noto Sans JP",sans-serif; }
+    .box { padding:22px 26px; border-radius:16px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); text-align:center }
+    .dot { animation: blink 1.2s infinite }
+    @keyframes blink { 0%,100%{opacity:.3} 50%{opacity:1} }
+    button { margin-top:14px; padding:10px 16px; border-radius:12px; border:0; background:#a3e635; color:#0a0a0a; font-weight:700; cursor:pointer }
   </style>
 </head>
 <body>
@@ -46,12 +18,9 @@
     <button onclick="goTalk()">すぐ会話へ</button>
   </div>
   <script>
-    const TALK_URL = 'whoai_talk.html';
-    function goTalk() {
-      location.href = TALK_URL;
-    }
-    // 1.2秒後に自動で会話ページへ遷移
-    setTimeout(goTalk, 1200);
+    const TALK_URL = './whoai_talk.html';
+    const goTalk = () => location.href = TALK_URL;
+    setTimeout(goTalk, 1200); // 1.2秒で自動遷移
   </script>
 </body>
 </html>
