@@ -1,118 +1,80 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <!-- FILE: /macaron/rebirth.html -->
-  <meta charset="UTF-8" />
-  <title>rebirth - 容姿か記録の選択</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      background-image:url("./public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      display:flex;align-items:center;justify-content:center;padding:20px
-    }
-    .card{
-      width:min(780px,95%);background:rgba(0,0,0,.42);
-      border:1px solid rgba(255,255,255,.15);border-radius:18px;
-      padding:20px;text-align:center;box-shadow:0 18px 70px rgba(0,0,0,.5)
-    }
-    h1{margin:4px 0 8px}
-    .desc{opacity:.85;margin:0 0 14px}
-    .choiceRow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-    .opt{
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);
-      border-radius:14px;padding:16px;text-align:left
-    }
-    .opt h3{margin:0 0 6px}
-    .opt p{margin:0;opacity:.85}
-    .buttons{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-    button{
-      border:none;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700
-    }
-    .keep-look{background:#ffd1ec;color:#111}
-    .keep-memory{background:#c9f7ff;color:#111}
-    .back{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
-    .note{font-size:12px;opacity:.75;margin-top:10px}
-  </style>
+<meta charset="UTF-8">
+<title>復活の儀式</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    color:#fff;
+    background:
+      radial-gradient(1200px 900px at 85% 25%,rgba(255,255,255,.08),rgba(0,0,0,0) 60%),
+      radial-gradient(1200px 900px at 15% 70%,rgba(125,116,255,.15),rgba(0,0,0,0) 60%),
+      linear-gradient(180deg,#0a0f1a 0%,#0a0a0a 100%);
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
+  }
+  .card{max-width:720px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);
+        border-radius:20px;padding:24px;backdrop-filter:blur(6px)}
+  h1{margin:0 0 8px}
+  p{opacity:.95;margin:6px 0 18px}
+  .choices{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  button{padding:12px 18px;border-radius:14px;border:0;cursor:pointer;
+         font-weight:800}
+  .keep-look{background:#b4f54a;color:#111}
+  .keep-mem{background:#9ad0ff;color:#111}
+  .ghost{opacity:.7;font-size:.95em;margin-top:10px}
+</style>
 </head>
 <body>
   <div class="card">
     <h1>復活の儀式</h1>
-    <p class="desc">次を選んでください（whoai_talk で10ターン到達）。選択後は <b>Sステージ</b> に進みます。</p>
-
-    <div class="choiceRow">
-      <div class="opt">
-        <h3>容姿を保つ（記録をリセット）</h3>
-        <p>いまの見た目を残し、会話ログを消去。回数は0から再開。</p>
-      </div>
-      <div class="opt">
-        <h3>記録を保つ（容姿を変える）</h3>
-        <p>会話ログは保持し、見た目だけ進化。回数は0から再開。</p>
-      </div>
+    <p>次の周回の始め方を選んでください。</p>
+    <div class="choices">
+      <button class="keep-look" id="btnLook">容姿を保つ</button>
+      <button class="keep-mem"  id="btnMemo">記録を保つ（見た目だけ変える）</button>
     </div>
-
-    <div class="buttons">
-      <button class="keep-look" id="btnKeepLook">容姿を保つ（リセット）</button>
-      <button class="keep-memory" id="btnKeepMemory">記録を保つ（進化）</button>
-      <button class="back" id="btnBack">戻る</button>
-    </div>
-
-    <p class="note">互換キー対応: <code>whoai_chatLog</code>/<code>whoai_chat_log</code> ・ <code>whoai_cycleCount</code>/<code>whoai_turn_count</code> ・ <code>whoai_newCycleFlag</code></p>
+    <p class="ghost">※「容姿を保つ」は進化キャラのまま続行。ログと回数はリセットされます。<br>
+       「記録を保つ」は会話ログを残したまま色を選び直します。</p>
   </div>
 
-  <script>
-    // Sステージへ（演出ページ）
-    const S_STAGE_URL = './s.html';
+<script>
+  // ==== 連携キー（whoai_talk.html と同じ） ====
+  var K = {
+    log:'whoai_chatLog',
+    appear:'whoai_appearance',
+    turns:'whoai_cycleCount',
+    phase:'whoai_phase',     // 'tane' or 'evolved'
+    flag:'whoai_newCycleFlag'
+  };
 
-    // 互換キー（現行/旧どちらでも動くよう両方更新）
-    const KEY_CHATLOG_NEW   = 'whoai_chatLog';     // 配列
-    const KEY_CHATLOG_OLD   = 'whoai_chat_log';    // 配列（旧）
-    const KEY_TURNS_NEW     = 'whoai_cycleCount';  // 数値
-    const KEY_TURNS_OLD     = 'whoai_turn_count';  // 数値（旧）
-    const KEY_APPEARANCE    = 'whoai_appearance';
-    const KEY_NEW_CYCLE     = 'whoai_newCycleFlag';
+  // ページパス（必要ならファイル名を合わせてください）
+  var TALK_URL   = './whoai_talk.html';
+  var SELECT_URL = './macaron.html';
 
-    // 色の巡回順（赤は使わない）
-    const order = ['tane','pink','blue','green','purple'];
-    const nextAppearance = cur => {
-      const i = order.indexOf(cur);
-      return i < 0 ? 'tane' : order[(i+1) % order.length];
-    };
+  // 容姿（見た目）を保つ：進化キャラのまま続行。ログ・回数はゼロから。
+  function keepAppearance(){
+    // 見た目は変更しない（whoai_appearance を触らない）
+    localStorage.setItem(K.phase, JSON.stringify('evolved')); // 進化フェーズを維持
+    localStorage.setItem(K.log,   JSON.stringify([]));        // ログをクリア
+    localStorage.setItem(K.turns, '0');                       // 回数をリセット
+    localStorage.setItem(K.flag,  '1');                       // 次周開始フラグ
+    location.href = TALK_URL;                                 // 会話へ戻る
+  }
 
-    // JSONで統一保存
-    const LS = {
-      get(k, def){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : def }catch{ return def } },
-      set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
-    };
+  // 記録（ログ）を保つ：ログは保持、見た目だけ選び直す
+  function keepMemory(){
+    // ログは触らない（保持）
+    localStorage.setItem(K.phase, JSON.stringify('evolved')); // 次も進化フェーズで続行
+    localStorage.setItem(K.turns, '0');                       // 回数だけゼロから
+    localStorage.setItem(K.flag,  '1');
+    // 見た目を選び直すためにマカロン選択へ
+    location.href = SELECT_URL;
+  }
 
-    const goS = () => location.href = S_STAGE_URL;
-
-    // ① 容姿キープ／記録リセット
-    document.getElementById('btnKeepLook').onclick = () => {
-      const a = LS.get(KEY_APPEARANCE, 'tane');
-      LS.set(KEY_APPEARANCE, a);     // 見た目は維持
-      LS.set(KEY_CHATLOG_NEW, []);   // ログ削除（新）
-      LS.set(KEY_CHATLOG_OLD, []);   // ログ削除（旧）
-      LS.set(KEY_TURNS_NEW, 0);      // 回数0（新）
-      LS.set(KEY_TURNS_OLD, 0);      // 回数0（旧）
-      localStorage.setItem(KEY_NEW_CYCLE, '1'); // 次周スタート合図
-      goS();
-    };
-
-    // ② 記録キープ／容姿変更（回数は0から）
-    document.getElementById('btnKeepMemory').onclick = () => {
-      const cur = LS.get(KEY_APPEARANCE, 'tane');
-      LS.set(KEY_APPEARANCE, nextAppearance(cur)); // 見た目だけ進化
-      // ログは触らない／回数だけ0
-      LS.set(KEY_TURNS_NEW, 0);
-      LS.set(KEY_TURNS_OLD, 0);
-      localStorage.setItem(KEY_NEW_CYCLE, '1');
-      goS();
-    };
-
-    document.getElementById('btnBack').onclick = () => { goS(); };
-  </script>
+  document.getElementById('btnLook').addEventListener('click', keepAppearance);
+  document.getElementById('btnMemo').addEventListener('click', keepMemory);
+</script>
 </body>
 </html>
