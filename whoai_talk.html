@@ -38,17 +38,14 @@
   <div class="container">
     <h1>WhoAI と会話する</h1>
     <div class="notice">マカロンを選択後、このページに直接遷移して会話を開始します。</div>
-
     <div class="top">
-      <div class="avatar"><img id="avatarImg" alt="avatar"/></div>
+      <div class="avatar"><img id="avatarImg" alt="avatar (not found)"/></div>
       <div class="stats">
         <div><b>見た目:</b> <span id="appearanceLabel">-</span></div>
         <div class="small"><b>会話回数(この周回):</b> <span id="cycleCount">0</span>/10</div>
       </div>
     </div>
-
     <div id="chat"></div>
-
     <form id="talkForm">
       <input id="msg" type="text" placeholder="メッセージを入力…" autocomplete="off" />
       <button id="sendBtn" type="submit">送信</button>
@@ -67,15 +64,22 @@
   const KEY_CYCLE_CT   = 'whoai_cycleCount';
   const KEY_NEW_CYCLE  = 'whoai_newCycleFlag';
 
-  /* ===== 画像ローダ（/assets/stage1 に配置） ===== */
-  const PATH_CANDIDATES = ['./assets/stage1/','assets/stage1/']; // publicは付けない
+  /* ===== 画像ローダ（/public/assets/stage1/ も /assets/stage1/ も両対応） ===== */
+  const PATH_CANDIDATES = [
+    './public/assets/stage1/',
+    'public/assets/stage1/',
+    './assets/stage1/',
+    'assets/stage1/'
+  ];
+  // ★ baseNames は "ファイル名だけ" を指定（ここにパスは入れない）
   const spriteFile = {
     bg:     'space_background.png',
-    tane:   'tane_pink.png',     // taneの既定はpinkに寄せる
-    pink:   'tane_pink.png',
-    blue:   'tane_blue.png',
-    green:  'tane_green.png',
-    purple: 'tane_purple.png'
+    // 見た目ごとに "候補ファイル名" を配列で列挙（存在したものを最初に採用）
+    tane:   ['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png','pink_closed.png','blue_closed.png','green_closed.png','purple_closed.png','macaron_pink.png','macaron_blue.png','macaron_green.png','macaron_purple.png'],
+    pink:   ['tane_pink.png','pink_closed.png','pink_open.png','macaron_pink.png'],
+    blue:   ['tane_blue.png','blue_closed.png','blue_open.png','macaron_blue.png'],
+    green:  ['tane_green.png','green_closed.png','green_open.png','macaron_green.png'],
+    purple: ['tane_purple.png','purple_closed.png','purple_open.png','macaron_purple.png']
   };
   function tryLoadImageSequential(names, cb){
     let i=0; const img=new Image();
@@ -84,8 +88,16 @@
     img.src = names[i];
   }
   function resolveFirstExisting(file){
-    const c = PATH_CANDIDATES.map(p=> p + file);
-    return new Promise(res=> tryLoadImageSequential(c, src=> res(src)));
+    const files = Array.isArray(file) ? file : [file];
+    const urls = [];
+    for(const f of files){ for(const p of PATH_CANDIDATES){ urls.push(p + f); } }
+    return new Promise(res=> tryLoadImageSequential(urls, src=> {
+      if(!src){ console.warn('[WhoAI img missing]', files, urls); }
+      res(src);
+    }));
+  }
+      res(src);
+    }));
   }
   async function applyBackground(){
     const bgSrc = await resolveFirstExisting(spriteFile.bg);
@@ -177,7 +189,7 @@
 
     cycleCnt += 1; localStorage.setItem(KEY_CYCLE_CT, String(cycleCnt)); cycleEl.textContent = String(cycleCnt);
 
-    // ★ 10回に到達したら復活の儀式へ
+    // 10回で復活の儀式へ
     if(cycleCnt >= MAX_TURNS_PER_CYCLE){
       localStorage.setItem(KEY_NEW_CYCLE,'1');
       location.href = REBIRTH_URL;
