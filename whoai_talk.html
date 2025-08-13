@@ -26,7 +26,7 @@
     .avatar img{width:70px;height:70px;object-fit:contain;animation:floatY 3s ease-in-out infinite}
     @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     .stats{line-height:1.35}
-    .notice{opacity:.9;margin:8px 0 12px}
+    .notice{opacity:.9;margin:8px 0 12px; text-wrap:pretty;} .nobr{white-space:nowrap;} 
 
     /* ガラス風パネル */
     .panel{padding:16px;border-radius:18px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.15); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
@@ -54,7 +54,7 @@
     </div>
 
     <div class="panel">
-      <div class="notice">10ターン到達で「容姿 or 記録」選択画面へ移動します。 記録を選んだ場合、ログは残り、見た目のみ変わります。</div>
+      <div class="notice">10ターン到達で「容姿 or 記録」選択画面へ移動します。 記録を選んだ場合、ログは残り、<span class="nobr">見た目のみ変わります。</span></div>
       <div id="chat"></div>
       <form id="talkForm">
         <input id="msg" type="text" placeholder="メッセージを入力…" autocomplete="off" />
