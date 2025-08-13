@@ -2,29 +2,28 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（記録保持→見た目変更→以降も10回会話）</title>
+  <title>WhoAI Talk</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- favicon 404 抑止 -->
   <link rel="icon" href="data:," />
   <style>
-    html,body{
+    html,body{height:100%;margin:0}
+    body{
       font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      color:#fff; background:#000;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-      /* 背景が二重に並ばないよう固定＆等倍表示 */
-      background-repeat:no-repeat;        /* ← 重要 */
-      background-size:cover;              /* ← 重要 */
-      background-position:center center;  /* ← 重要 */
-      background-attachment:fixed;        /* ← 重要 */
+      color:#fff;background:#000;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start
     }
-    .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;border:1px solid rgba(255,255,255,.15)}
+    /* 固定背景 (img で描画) */
+    .bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:#000}
+    .bg img{width:100%;height:100%;object-fit:cover;display:block}
+
+    .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:10;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;border:1px solid rgba(255,255,255,.15)}
     .container{width:min(900px,92vw);margin-top:22px}
     h1{margin:0 0 6px;font-size:26px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
     .notice{opacity:.9;margin:4px 0 14px;font-size:14px}
     .top{display:flex;gap:14px;align-items:center}
     .avatar{width:88px;height:88px;border-radius:20px;background:rgba(255,255,255,.08);display:grid;place-items:center;border:1px solid rgba(255,255,255,.12);animation:floatY 3s ease-in-out infinite}
     .avatar img{width:64px;height:64px;object-fit:contain;animation:floatY 3s ease-in-out infinite}
-    @keyframes floatY {0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); }}
+    @keyframes floatY {0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     .stats{line-height:1.3}
     .stats b{font-size:14px}
     .stats .small{font-size:13px;opacity:.9}
@@ -37,15 +36,11 @@
     input[type=text]{flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff}
     button{padding:12px 18px;border-radius:12px;border:0;background:#a3e635;color:#0a0a0a;font-weight:700;cursor:pointer}
     button:disabled{opacity:.6;cursor:not-allowed}
-      /* 固定背景（画像タイル化/未描画対策） */
-    .bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:#000}
-    .bg img{width:100%;height:100%;object-fit:cover;display:block}
   </style>
 </head>
 <body>
-  <!-- 背景を <img> で固定表示（CSS 背景の描画不具合対策） -->
   <div class="bg"><img id="bgImg" alt=""/></div>
-  <div class="whoai-name-badge">FILE: whoai_talk.html ／ パス: /macaron/</div>
+  <div class="whoai-name-badge">FILE: whoai_talk.html /macaron</div>
   <div class="container">
     <h1>WhoAI と会話する</h1>
     <div class="notice">マカロンを選択後、このページに直接遷移して会話を開始します。</div>
@@ -58,25 +53,28 @@
     </div>
     <div id="chat"></div>
     <form id="talkForm">
-      <input id="msg" type="text" placeholder="メッセージを入力…" autocomplete="off" />
+      <input id="msg" type="text" placeholder="メッセージを入力..." autocomplete="off" />
       <button id="sendBtn" type="submit">送信</button>
     </form>
   </div>
 
   <script>
-  /* ===== 基本設定 ===== */
+  'use strict';
+  /* ===== 設定 ===== */
   const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-  const MAX_TURNS_PER_CYCLE = 10;
+  const MAX_TURNS = 10;
   const REBIRTH_URL = './rebirth.html';
 
-  /* ===== キー ===== */
-  const KEY_CHAT_LOG   = 'whoai_chatLog';
-  const KEY_APPEARANCE = 'whoai_appearance';
-  const KEY_CYCLE_CT   = 'whoai_cycleCount';
-  const KEY_NEW_CYCLE  = 'whoai_newCycleFlag';
+  /* ===== ストレージキー ===== */
+  const K = {
+    log: 'whoai_chatLog',
+    appear: 'whoai_appearance',
+    turns: 'whoai_cycleCount',
+    flag: 'whoai_newCycleFlag'
+  };
 
-  /* ===== 画像ローダ（public/assets/stage1 と assets/stage1 両対応） ===== */
-  const PATH_CANDIDATES = [
+  /* ===== 画像パス候補 ===== */
+  const BASES = [
     '/macaron/public/assets/stage1/',
     '/macaron/assets/stage1/',
     '../public/assets/stage1/',
@@ -86,146 +84,161 @@
     './assets/stage1/',
     'assets/stage1/'
   ];
-  // 見た目ごとに "候補ファイル名" を複数用意（最初に見つかったものを採用）
-  const spriteFile = {
-    bg: 'space_background.png',
-    tane:   ['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png','pink_closed.png','blue_closed.png','green_closed.png','purple_closed.png','macaron_pink.png','macaron_blue.png','macaron_green.png','macaron_purple.png'],
-    pink:   ['tane_pink.png','pink_closed.png','pink_open.png','macaron_pink.png'],
-    blue:   ['tane_blue.png','blue_closed.png','blue_open.png','macaron_blue.png'],
-    green:  ['tane_green.png','green_closed.png','green_open.png','macaron_green.png'],
-    purple: ['tane_purple.png','purple_closed.png','purple_open.png','macaron_purple.png']
+  const BG_FILE = 'space_background.png';
+  const SPRITE = {
+    pink:  'tane_pink.png',
+    blue:  'tane_blue.png',
+    green: 'tane_green.png',
+    purple:'tane_purple.png',
+    tane:  'tane_pink.png'
   };
 
-  function tryLoadImageSequential(urls, cb){
-    let i = 0;
-    const img = new Image();
-    img.onload = () => cb(urls[i]);
-    img.onerror = () => { i++; (i < urls.length) ? (img.src = urls[i]) : cb(null); };
-    img.src = urls[i];
+  function pickAppearance(){
+    let raw = localStorage.getItem(K.appear);
+    if(!raw){ localStorage.setItem(K.appear,'pink'); raw = 'pink'; }
+    return String(raw).replace(/^\"|\"$/g,'');
   }
 
-  function resolveFirstExisting(fileOrFiles){
-    const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
-    const urls = [];
-    for(const f of files){
-      for(const base of PATH_CANDIDATES){ urls.push(base + f); }
-    }
-    return new Promise(res => tryLoadImageSequential(urls, src => {
-      if(!src){ console.warn('[WhoAI img missing]', files, urls); }
-      res(src);
-    }));
+  function tryLoad(urls){
+    return new Promise(res=>{
+      let i=0; const img=new Image();
+      img.onload=()=>res(urls[i]);
+      img.onerror=()=>{ i++; (i<urls.length)? img.src=urls[i] : res(null); };
+      img.src=urls[i];
+    });
   }
 
-  async function applyBackground(){
-    const bgSrc = await resolveFirstExisting(spriteFile.bg);
+  async function resolve(file){
+    const urls = BASES.map(b=> b + file);
+    return new Promise(res=>{
+      let i=0; const img=new Image();
+      img.onload=()=> res(urls[i]);
+      img.onerror=()=>{ i++; (i<urls.length)? img.src=urls[i] : res(null); };
+      img.src=urls[i];
+    });
+  }
+
+  async function setBackground(){
+    const ok = await resolve(BG_FILE);
+    const bgWrap = document.querySelector('.bg');
     const imgEl = document.getElementById('bgImg');
-    if(bgSrc && imgEl){ imgEl.src = bgSrc; }
-  }")`;
-      s.backgroundRepeat = 'no-repeat';
-      s.backgroundSize = 'cover';
-      s.backgroundPosition = 'center center';
-      s.backgroundAttachment = 'fixed';
+    if(ok && imgEl){
+      imgEl.src = ok;
+      imgEl.style.display = 'block';
+      if(bgWrap) bgWrap.style.background = '#000';
+    }else{
+      // Canvasプレビュー等でアセットに届かない場合のフォールバック背景
+      if(imgEl) imgEl.style.display = 'none';
+      if(bgWrap){
+        bgWrap.style.background =
+          'radial-gradient(1000px 600px at 20% 10%, rgba(255,255,255,0.15), rgba(0,0,0,0) 60%),' +
+          'radial-gradient(1200px 800px at 80% 40%, rgba(110,100,255,0.18), rgba(0,0,0,0) 60%),' +
+          'linear-gradient(180deg, #0b0f1a 0%, #090909 100%)';
+      }
+      console.warn('[WhoAI bg missing] tried:', BASES.map(b=> b + BG_FILE));
     }
-  }")`; }
   }
 
-  /* ===== DOM ===== */
-  const $ = (q)=>document.querySelector(q);
+  async function setAvatar(name){
+    const file = SPRITE[name] || SPRITE.tane;
+    const ok = await resolve(file);
+    const el = document.getElementById('avatarImg');
+    if(el && ok){
+      el.src = ok;
+    }else if(el){
+      // フォールバック：SVGデータURI（プレビューでも必ず表示）
+      const svg = encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'>
+`+
+        `<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>`+
+        `<stop offset='0%' stop-color='#ffd1ec'/><stop offset='100%' stop-color='#8aa3ff'/></linearGradient></defs>`+
+        `<rect rx='24' ry='24' width='128' height='128' fill='url(#g)'/>`+
+        `<text x='50%' y='58%' text-anchor='middle' dominant-baseline='middle'`+
+        ` font-family='Noto Sans JP, sans-serif' font-size='42' fill='#111'>${name[0].toUpperCase()}</text>`+
+        `</svg>`
+      );
+      el.src = `data:image/svg+xml;charset=utf-8,${svg}`;
+      console.warn('[WhoAI avatar missing] tried:', BASES.map(b=> b + file));
+    }
+  }
+  }
+
+  // === DOM ===
+  const $ = s => document.querySelector(s);
   const chatEl = $('#chat');
   const cycleEl = $('#cycleCount');
   const appearEl= $('#appearanceLabel');
-  const avatarEl= $('#avatarImg');
   const form    = $('#talkForm');
   const input   = $('#msg');
   const sendBtn = $('#sendBtn');
 
-  /* ===== ストレージ ===== */
-  function loadJSON(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)) ?? fallback }catch{ return fallback } }
-  function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+  // === ストレージ util ===
+  const getJSON = (k,d)=>{ try{ const v=localStorage.getItem(k); return v? JSON.parse(v): d }catch{ return d } };
+  const setJSON = (k,v)=> localStorage.setItem(k, JSON.stringify(v));
 
-  // 「新しい周回」フラグがあれば回数だけ 0 に（ログは保持）
-  if(localStorage.getItem(KEY_NEW_CYCLE)){
-    localStorage.removeItem(KEY_NEW_CYCLE);
-    localStorage.setItem(KEY_CYCLE_CT, '0');
+  // 新しい周回なら回数だけ0
+  if(localStorage.getItem(K.flag)){
+    localStorage.removeItem(K.flag);
+    localStorage.setItem(K.turns,'0');
   }
 
-  /* ===== 状態 ===== */
-  let chatLog   = loadJSON(KEY_CHAT_LOG, []);
-  let _apiraw = localStorage.getItem(KEY_APPEARANCE);
-  if(!_apiraw){
-    // 初回は 'pink' を既定に保存（JSON/非JSONどちらでも耐性）
-    try{ localStorage.setItem(KEY_APPEARANCE,'pink'); }catch{}
-    _apiraw = 'pink';
-  }
-  let appearance = (_apiraw || 'pink').replace(/^\"|\"$/g,'');
-  let cycleCnt  = parseInt(localStorage.getItem(KEY_CYCLE_CT) || '0',10);
+  let chatLog = getJSON(K.log, []);
+  let appearance = pickAppearance();
+  let turns = parseInt(localStorage.getItem(K.turns)||'0',10);
 
-  function filesForAppearance(name){
-    return spriteFile[name] || spriteFile.tane;
-  }
-
-  async function renderIdentity(){
+  function renderIdentity(){
     appearEl.textContent = appearance;
-    const src = await resolveFirstExisting(filesForAppearance(appearance));
-    if(src){ avatarEl.src = src; } else { avatarEl.removeAttribute('src'); avatarEl.alt='avatar (not found)'; }
-    cycleEl.textContent = String(cycleCnt);
+    cycleEl.textContent = String(turns);
   }
 
   function renderChat(){
-    chatEl.innerHTML = '';
-    chatLog.forEach(m => {
-      const div = document.createElement('div');
-      div.className = 'bubble ' + (m.role==='user' ? 'me' : (m.role==='assistant' ? 'ai' : 'sys'));
-      div.textContent = m.text;
-      chatEl.appendChild(div);
-    });
-    chatEl.scrollTop = chatEl.scrollHeight;
+    chatEl.innerHTML='';
+    for(const m of chatLog){
+      const d=document.createElement('div');
+      d.className='bubble ' + (m.role==='user'?'me':m.role==='assistant'?'ai':'sys');
+      d.textContent=m.text; chatEl.appendChild(d);
+    }
+    chatEl.scrollTop=chatEl.scrollHeight;
   }
 
-  applyBackground();
-  renderIdentity();
-  renderChat();
+  async function init(){
+    await setBackground();
+    await setAvatar(appearance);
+    renderIdentity();
+    renderChat();
+  }
 
-  /* ===== API ===== */
-  async function talkToAPI(userText){
-    const history = chatLog.slice(-8);
+  init();
+
+  // === 会話処理 ===
+  async function talkAPI(text){
+    const hist = chatLog.slice(-8);
     try{
-      const r = await fetch(TALK_ENDPOINT, {
-        method: 'POST', headers: {'Content-Type':'application/json'},
+      const r = await fetch('https://macaron-one.vercel.app/api/talk',{
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
-          messages: [
+          messages:[
             {role:'system', content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'},
-            ...history.map(m=> ({role:m.role==='assistant'?'assistant':(m.role==='user'?'user':'system'), content:m.text})),
-            {role:'user', content:userText}
+            ...hist.map(m=>({role:m.role==='assistant'?'assistant':m.role==='user'?'user':'system', content:m.text})),
+            {role:'user', content:text}
           ]
         })
       });
       if(!r.ok) throw new Error('status '+r.status);
-      const data = await r.json();
-      const reply = (data.reply || data.message || data.content || '').toString().trim();
-      if(reply) return reply; else throw new Error('empty');
-    }catch(e){
-      return 'なるほど。もう少し詳しく教えて！';
-    }
+      const j = await r.json();
+      const reply = (j.reply||j.message||j.content||'').toString().trim();
+      return reply || 'なるほど。もう少し詳しく教えて!';
+    }catch(_){ return 'なるほど。もう少し詳しく教えて!'; }
   }
 
-  /* ===== 送信処理 ===== */
   form.addEventListener('submit', async (e)=>{
     e.preventDefault();
-    const text = input.value.trim();
-    if(!text) return;
-
-    chatLog.push({role:'user', text}); saveJSON(KEY_CHAT_LOG, chatLog); renderChat(); input.value='';
-    sendBtn.disabled = true; const reply = await talkToAPI(text); sendBtn.disabled = false;
-    chatLog.push({role:'assistant', text: reply}); saveJSON(KEY_CHAT_LOG, chatLog); renderChat();
-
-    cycleCnt += 1; localStorage.setItem(KEY_CYCLE_CT, String(cycleCnt)); cycleEl.textContent = String(cycleCnt);
-
-    // 10回で復活の儀式へ
-    if(cycleCnt >= MAX_TURNS_PER_CYCLE){
-      localStorage.setItem(KEY_NEW_CYCLE,'1');
-      location.href = REBIRTH_URL;
-    }
+    const text = input.value.trim(); if(!text) return;
+    chatLog.push({role:'user', text}); setJSON(K.log, chatLog); renderChat(); input.value='';
+    sendBtn.disabled=true; const reply = await talkAPI(text); sendBtn.disabled=false;
+    chatLog.push({role:'assistant', text: reply}); setJSON(K.log, chatLog); renderChat();
+    turns += 1; localStorage.setItem(K.turns, String(turns)); cycleEl.textContent=String(turns);
+    if(turns >= MAX_TURNS){ localStorage.setItem(K.flag,'1'); location.href = REBIRTH_URL; }
   });
   </script>
 </body>
