@@ -8,18 +8,30 @@
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      background-image:url("./public/assets/stage1/space_background.png"); /* ← 修正済みパス */
+      background-image:url("./public/assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
     }
     .name-badge{
       position:fixed;top:10px;right:10px;z-index:9999;
       background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
       padding:8px 12px;border-radius:12px;font-weight:700;display:none
     }
-    #badgeFace{
-      width:36px;height:36px;vertical-align:middle;margin-right:8px;
-      border-radius:8px;object-fit:contain
+    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px;object-fit:contain}
+    #chatArea{
+      background:rgba(0,0,0,0.35);
+      padding:12px;
+      border-radius:8px;
+      max-width:500px;
+      width:90%;
+      margin-top:60px;
+      overflow-y:auto;
+      flex-grow:1;
     }
+    #inputArea{display:flex;width:90%;max-width:500px;margin:12px auto;}
+    #userInput{flex-grow:1;padding:8px;border-radius:8px;border:none;}
+    #sendBtn{margin-left:8px;padding:8px 16px;border:none;border-radius:8px;background:#ffd1ec;cursor:pointer;}
+    #sendBtn:hover{background:#ffc0e0;}
   </style>
 </head>
 <body>
@@ -27,17 +39,24 @@
   <div id="nameBadge" class="name-badge">
     <img id="badgeFace" alt=""><span id="badgeText"></span>
   </div>
+  <!-- 会話表示 -->
+  <div id="chatArea"></div>
+  <!-- 入力欄 -->
+  <div id="inputArea">
+    <input type="text" id="userInput" placeholder="メッセージを入力..." />
+    <button id="sendBtn">送信</button>
+  </div>
 
   <script>
   (function(){
-    // localStorageの安全な取得
+    const API_URL = 'https://macaron-one.vercel.app/api/talk'; // ← 実際のURLに置き換え
+
     function lsGet(k, d=null){
       const raw = localStorage.getItem(k);
       if (raw === null || raw === undefined) return d;
       try { return JSON.parse(raw); } catch { return raw; }
     }
 
-    // 選択されたマカロン色とキャラクター名を取得
     const picked = lsGet('selectedMacaron') ?? lsGet('whoai_selectedMacaron') ?? 'green';
     const color  = ['pink','blue','green','purple'].includes(picked) ? picked : 'green';
     const name   = lsGet('characterName') ?? lsGet('whoai_characterName') ?? 'なまえ未設定';
@@ -45,31 +64,45 @@
     const badge  = document.getElementById('nameBadge');
     const face   = document.getElementById('badgeFace');
     const text   = document.getElementById('badgeText');
-
     text.textContent = `🪄 ${name}`;
-    face.alt = `${name} の顔`;
+    face.src = `./public/assets/stage1/tane_${color}.png`;
+    badge.style.display = 'inline-block';
 
-    // キャラクター画像候補（public/assets/stage1/ 配下を優先）
-    const candidates = [
-      `./public/assets/stage1/tane_${color}.png`, // 例: tane_pink.png
-      './public/assets/stage1/tane_green.png'     // フォールバック
-    ];
+    const chatArea = document.getElementById('chatArea');
+    const input = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
 
-    // 順に読み込み
-    (function tryPick(i=0){
-      if (i >= candidates.length) {
-        console.warn('tane image not found:', color);
-        badge.style.display = 'none';
-        return;
-      }
-      const test = new Image();
-      test.onload = () => {
-        face.src = test.src;
-        badge.style.display = 'inline-block';
-      };
-      test.onerror = () => tryPick(i+1);
-      test.src = candidates[i];
-    })();
+    function addMessage(text, sender){
+      const p = document.createElement('p');
+      p.textContent = text;
+      p.style.background = sender === 'user' ? 'rgba(255,255,255,0.2)' : 'rgba(255,192,224,0.3)';
+      p.style.padding = '6px 10px';
+      p.style.borderRadius = '8px';
+      p.style.margin = '4px 0';
+      chatArea.appendChild(p);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const msg = input.value.trim();
+      if(!msg) return;
+      addMessage(msg, 'user');
+      input.value = '';
+
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg })
+      })
+      .then(res => res.json())
+      .then(data => {
+        addMessage(data.reply || '（返信なし）', 'bot');
+      })
+      .catch(err => {
+        console.error(err);
+        addMessage('通信エラー', 'bot');
+      });
+    });
   })();
   </script>
 </body>
