@@ -42,25 +42,24 @@
     <h1>復活の儀式</h1>
     <p class="desc">次を選んでください（whoai_talk で10ターン到達）。</p>
 
-    <div class="choiceRow">
-      <div class="opt">
-        <h3>容姿を保つ（記録をリセット）</h3>
-        <p>いまの見た目を残し、会話ログと回数をリセットして最初から。</p>
-      </div>
-      <div class="opt">
-        <h3>記録を保つ（容姿を変える）</h3>
-        <p>会話ログと回数を維持し、見た目だけを次の色へ進化させます。</p>
-      </div>
-    </div>
-
-    <div class="buttons">
-      <button class="keep-look" id="btnKeepLook">容姿を保つ（リセット）</button>
-      <button class="keep-memory" id="btnKeepMemory">記録を保つ（進化）</button>
-      <button class="back" id="btnBack">戻る</button>
-    </div>
-
-    <p class="note">ローカル保存キー: <code>whoai_chat_log</code> / <code>whoai_turn_count</code> / <code>whoai_appearance</code></p>
+   <div class="choiceRow">
+  <div class="opt">
+    <h3>容姿を保つ（記録をリセット）</h3>
+    <p>いまの見た目を残し、会話ログと回数をリセットして最初から。</p>
   </div>
+  <div class="opt">
+    <h3>記録を保つ（容姿を変える）</h3>
+    <p>会話ログと回数を維持し、見た目だけを次の色へ進化させます。</p>
+  </div>
+</div>
+
+<div class="buttons">
+  <button class="keep-look" id="btnKeepLook">容姿を保つ（リセット）</button>
+  <button class="keep-memory" id="btnKeepMemory">記録を保つ（進化）</button>
+  <button class="back" id="btnBack">戻る</button>
+</div>
+
+<p class="note">ローカル保存キー: <code>whoai_chat_log</code> / <code>whoai_turn_count</code> / <code>whoai_appearance</code></p>
 
   <script>
     const LS = {
@@ -101,3 +100,4 @@
   </script>
 </body>
 </html>
+
