@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <title>whoai_talk - 会話（記録保持→見た目変更→以降も10回会話）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- favicon 404 抑止 -->
+  <link rel="icon" href="data:," />
   <style>
     html,body{height:100%;margin:0}
     body{
@@ -64,41 +66,43 @@
   const KEY_CYCLE_CT   = 'whoai_cycleCount';
   const KEY_NEW_CYCLE  = 'whoai_newCycleFlag';
 
-  /* ===== 画像ローダ（/public/assets/stage1/ も /assets/stage1/ も両対応） ===== */
+  /* ===== 画像ローダ（public/assets/stage1 と assets/stage1 両対応） ===== */
   const PATH_CANDIDATES = [
     './public/assets/stage1/',
     'public/assets/stage1/',
     './assets/stage1/',
     'assets/stage1/'
   ];
-  // ★ baseNames は "ファイル名だけ" を指定（ここにパスは入れない）
+  // 見た目ごとに "候補ファイル名" を複数用意（最初に見つかったものを採用）
   const spriteFile = {
-    bg:     'space_background.png',
-    // 見た目ごとに "候補ファイル名" を配列で列挙（存在したものを最初に採用）
+    bg: 'space_background.png',
     tane:   ['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png','pink_closed.png','blue_closed.png','green_closed.png','purple_closed.png','macaron_pink.png','macaron_blue.png','macaron_green.png','macaron_purple.png'],
     pink:   ['tane_pink.png','pink_closed.png','pink_open.png','macaron_pink.png'],
     blue:   ['tane_blue.png','blue_closed.png','blue_open.png','macaron_blue.png'],
     green:  ['tane_green.png','green_closed.png','green_open.png','macaron_green.png'],
     purple: ['tane_purple.png','purple_closed.png','purple_open.png','macaron_purple.png']
   };
-  function tryLoadImageSequential(names, cb){
-    let i=0; const img=new Image();
-    img.onload = ()=> cb(names[i]);
-    img.onerror= ()=> { i++; (i<names.length)? img.src=names[i] : cb(null); };
-    img.src = names[i];
+
+  function tryLoadImageSequential(urls, cb){
+    let i = 0;
+    const img = new Image();
+    img.onload = () => cb(urls[i]);
+    img.onerror = () => { i++; (i < urls.length) ? (img.src = urls[i]) : cb(null); };
+    img.src = urls[i];
   }
-  function resolveFirstExisting(file){
-    const files = Array.isArray(file) ? file : [file];
+
+  function resolveFirstExisting(fileOrFiles){
+    const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
     const urls = [];
-    for(const f of files){ for(const p of PATH_CANDIDATES){ urls.push(p + f); } }
-    return new Promise(res=> tryLoadImageSequential(urls, src=> {
+    for(const f of files){
+      for(const base of PATH_CANDIDATES){ urls.push(base + f); }
+    }
+    return new Promise(res => tryLoadImageSequential(urls, src => {
       if(!src){ console.warn('[WhoAI img missing]', files, urls); }
       res(src);
     }));
   }
-      res(src);
-    }));
-  }
+
   async function applyBackground(){
     const bgSrc = await resolveFirstExisting(spriteFile.bg);
     if(bgSrc){ document.body.style.backgroundImage = `url("${bgSrc}")`; }
@@ -116,7 +120,7 @@
 
   /* ===== ストレージ ===== */
   function loadJSON(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)) ?? fallback }catch{ return fallback } }
-  function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)) }
+  function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
 
   // 「新しい周回」フラグがあれば回数だけ 0 に（ログは保持）
   if(localStorage.getItem(KEY_NEW_CYCLE)){
@@ -126,16 +130,16 @@
 
   /* ===== 状態 ===== */
   let chatLog   = loadJSON(KEY_CHAT_LOG, []);
-  let appearance= localStorage.getItem(KEY_APPEARANCE) || 'tane';
+  let appearance= (localStorage.getItem(KEY_APPEARANCE) || 'tane').replace(/^\"|\"$/g,'');
   let cycleCnt  = parseInt(localStorage.getItem(KEY_CYCLE_CT) || '0',10);
 
-  function fileForAppearance(name){
+  function filesForAppearance(name){
     return spriteFile[name] || spriteFile.tane;
   }
 
   async function renderIdentity(){
     appearEl.textContent = appearance;
-    const src = await resolveFirstExisting(fileForAppearance(appearance));
+    const src = await resolveFirstExisting(filesForAppearance(appearance));
     if(src){ avatarEl.src = src; } else { avatarEl.removeAttribute('src'); avatarEl.alt='avatar (not found)'; }
     cycleEl.textContent = String(cycleCnt);
   }
@@ -172,9 +176,10 @@
       if(!r.ok) throw new Error('status '+r.status);
       const data = await r.json();
       const reply = (data.reply || data.message || data.content || '').toString().trim();
-      if(reply) return reply;
-      throw new Error('empty');
-    }catch(e){ return 'なるほど。もう少し詳しく教えて！'; }
+      if(reply) return reply; else throw new Error('empty');
+    }catch(e){
+      return 'なるほど。もう少し詳しく教えて！';
+    }
   }
 
   /* ===== 送信処理 ===== */
