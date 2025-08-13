@@ -138,11 +138,11 @@
     function applyAppearance(name){
       appName.textContent = name;
       const map = {
-        tane:   './public/assets/characters/tane.png',
-        pink:   './public/assets/characters/pink.png',
-        blue:   './public/assets/characters/blue.png',
-        green:  './public/assets/characters/green.png',
-        purple: './public/assets/characters/purple.png'
+       
+        pink:   './public/assets/stage1/tane_pink.png',
+        blue:   './public/assets/stage1/tane_blue.png',
+        green:  './public/assets/stage1/tane_green.png',
+        purple: './public/assets/stage1tane_purple.png'
       };
       imgEl.src = map[name] || map['tane'];
       imgEl.onerror = () => { imgEl.src = map['tane']; };
