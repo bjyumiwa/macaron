@@ -22,7 +22,7 @@
   </div>
 <script>
   var K={log:'whoai_chatLog',appear:'whoai_appearance',turns:'whoai_cycleCount',phase:'whoai_phase',flag:'whoai_newCycleFlag'};
-  var TALK_URL='./whoai_talk.html', SELECT_URL='./macaron.html';
+  var TALK_URL='./whoai_talk.html', SELECT_URL='./public/macaron.html';
   document.getElementById('btnLook').onclick=function(){
     localStorage.setItem(K.phase,JSON.stringify('evolved'));
     localStorage.setItem(K.log,JSON.stringify([]));
@@ -37,3 +37,4 @@
     location.href= './evolution.html';
   };
 </script></body></html>
+
