@@ -7,11 +7,15 @@
   <!-- favicon 404 抑止 -->
   <link rel="icon" href="data:," />
   <style>
-    html,body{height:100%;margin:0}
-    body{
+    html,body{
       font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      color:#fff;background:#000;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start
+      color:#fff; background:#000;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+      /* 背景が二重に並ばないよう固定＆等倍表示 */
+      background-repeat:no-repeat;        /* ← 重要 */
+      background-size:cover;              /* ← 重要 */
+      background-position:center center;  /* ← 重要 */
+      background-attachment:fixed;        /* ← 重要 */
     }
     .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;border:1px solid rgba(255,255,255,.15)}
     .container{width:min(900px,92vw);margin-top:22px}
@@ -107,7 +111,15 @@
 
   async function applyBackground(){
     const bgSrc = await resolveFirstExisting(spriteFile.bg);
-    if(bgSrc){ document.body.style.backgroundImage = `url("${bgSrc}")`; }
+    if(bgSrc){
+      const s = document.body.style;
+      s.backgroundImage = `url("${bgSrc}")`;
+      s.backgroundRepeat = 'no-repeat';
+      s.backgroundSize = 'cover';
+      s.backgroundPosition = 'center center';
+      s.backgroundAttachment = 'fixed';
+    }
+  }")`; }
   }
 
   /* ===== DOM ===== */
