@@ -1,15 +1,28 @@
-<!DOCTYPE html><html lang="ja"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
 <title>復活の儀式</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0b0f19;color:#fff;font-family:"Noto Sans JP",sans-serif}
-  .card{max-width:720px;padding:24px;border-radius:20px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);text-align:center}
-  .choices{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    color:#fff;background:#0b0f19;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
+  }
+  .card{max-width:720px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);
+        border-radius:20px;padding:24px;backdrop-filter:blur(6px)}
+  h1{margin:0 0 8px}
+  p{opacity:.95;margin:6px 0 18px}
+  .choices{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
   button{padding:12px 18px;border-radius:14px;border:0;cursor:pointer;font-weight:800}
   .keep-look{background:#b4f54a;color:#111}
   .keep-mem{background:#9ad0ff;color:#111}
   .ghost{opacity:.7;font-size:.95em;margin-top:10px}
-</style></head><body>
+</style>
+</head>
+<body>
   <div class="card">
     <h1>復活の儀式</h1>
     <p>次の周回の始め方を選んでください。</p>
@@ -17,24 +30,32 @@
       <button class="keep-look" id="btnLook">容姿を保つ</button>
       <button class="keep-mem"  id="btnMemo">記録を保つ（見た目だけ変える）</button>
     </div>
-    <p class="ghost">「容姿を保つ」は進化キャラのまま、ログと回数をリセットします。<br>
+    <p class="ghost">「容姿を保つ」は進化キャラのまま、ログと回数をリセット。<br>
        「記録を保つ」はログを保持したまま色を選び直します。</p>
   </div>
-<script>
-  var K={log:'whoai_chatLog',appear:'whoai_appearance',turns:'whoai_cycleCount',phase:'whoai_phase',flag:'whoai_newCycleFlag'};
-  var TALK_URL='./whoai_talk.html', SELECT_URL='./public/macaron.html';
-  document.getElementById('btnLook').onclick=function(){
-    localStorage.setItem(K.phase,JSON.stringify('evolved'));
-    localStorage.setItem(K.log,JSON.stringify([]));
-    localStorage.setItem(K.turns,'0');
-    localStorage.setItem(K.flag,'1');
-    location.href=TALK_URL;
-  };
-  document.getElementById('btnMemo').onclick=function(){
-    localStorage.setItem(K.phase,JSON.stringify('evolved'));
-    localStorage.setItem(K.turns,'0');
-    localStorage.setItem(K.flag,'1');
-    location.href= './evolution.html';
-  };
-</script></body></html>
 
+<script>
+  var K={log:'whoai_chatLog',appear:'whoai_appearance',turns:'whoai_cycleCount',
+         phase:'whoai_phase',flag:'whoai_newCycleFlag',reset:'whoai_resetLog'};
+  var TALK_URL='./whoai_talk.html', SELECT_URL='./public/macaron.html';
+
+  // 容姿を保つ：見た目はそのまま／ログは消す → 会話へ戻る
+  document.getElementById('btnLook').onclick=function(){
+    localStorage.setItem(K.phase,'"evolved"');
+    localStorage.setItem(K.turns,'0');
+    localStorage.setItem(K.flag,'1');
+    localStorage.setItem(K.reset,'1'); // ログ消す
+    location.href = TALK_URL;
+  };
+
+  // 記録を保つ：ログ保持のまま色を選び直す → マカロンへ
+  document.getElementById('btnMemo').onclick=function(){
+    localStorage.setItem(K.phase,'"evolved"');
+    localStorage.setItem(K.turns,'0');
+    localStorage.setItem(K.flag,'1');
+    localStorage.setItem(K.reset,'0'); // ログ保持
+    location.href = SELECT_URL;
+  };
+</script>
+</body>
+</html>
