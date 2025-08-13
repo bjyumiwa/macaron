@@ -18,12 +18,7 @@
       background-attachment:fixed; background-size:cover; background-repeat:no-repeat; background-position:center;
       display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
     }
-    .whoai-name-badge{
-      position:fixed;top:10px;right:10px;z-index:20;
-      background:rgba(0,0,0,.45);
-      -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
-      padding:8px 12px;border-radius:12px;font-weight:700;border:1px solid rgba(255,255,255,.15)
-    }
+    .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:20;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;border:1px solid rgba(255,255,255,.15)}
     .container{width:min(980px,94vw);margin:28px auto}
     h1{margin:0 0 6px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
     .top{display:flex;gap:16px;align-items:center;margin-bottom:6px}
@@ -31,12 +26,10 @@
     .avatar img{width:70px;height:70px;object-fit:contain;animation:floatY 3s ease-in-out infinite}
     @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     .stats{line-height:1.35}
-    .panel{
-      padding:16px;border-radius:18px;
-      background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.15);
-      -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)
-    }
     .notice{opacity:.9;margin:8px 0 12px}
+
+    /* ガラス風パネル */
+    .panel{padding:16px;border-radius:18px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.15); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
     #chat{height:56vh;min-height:360px;overflow:auto}
     .bubble{max-width:86%;margin:10px 0;padding:12px 14px;border-radius:16px;line-height:1.6;word-break:break-word;border:1px solid rgba(255,255,255,.12)}
     .ai{background:rgba(255,255,255,.08)}
@@ -50,12 +43,11 @@
 </head>
 <body>
   <div class="whoai-name-badge">FILE: whoai_talk.html ／ パス: /macaron/</div>
-
   <div class="container">
     <h1>WhoAI と会話する</h1>
     <div class="top">
       <div class="avatar"><img id="avatarImg" alt="avatar (not found)"/></div>
-      <div class="stats">
+      <div>
         <div><b>見た目:</b> <span id="appearanceLabel">-</span></div>
         <div><b>会話回数(この周回):</b> <span id="cycleCount">0</span>/10</div>
       </div>
@@ -72,174 +64,102 @@
   </div>
 
   <script>
-  (function(){
-    'use strict';
+  'use strict';
+  /* ============ 設定 ============ */
+  var TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+  var MAX_TURNS = 10;
+  var REBIRTH_URL = './rebirth.html';
 
-    /* ====== 設定 ====== */
-    var TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-    var MAX_TURNS = 10;
-    var REBIRTH_URL = './rebirth.html';
+  /* ============ キー ============ */
+  var K = { log:'whoai_chatLog', appear:'whoai_appearance', turns:'whoai_cycleCount', flag:'whoai_newCycleFlag' };
 
-    /* ====== ストレージキー ====== */
-    var K = { log:'whoai_chatLog', appear:'whoai_appearance', turns:'whoai_cycleCount', flag:'whoai_newCycleFlag' };
+  /* ============ 画像リゾルバ ============ */
+  var BASES = [ './public/assets/stage1/', 'public/assets/stage1/', './assets/stage1/', 'assets/stage1/' ];
+  var BG_NAME = 'space_background.png';
+  // 見た目ごとの候補（先にあるほど優先）
+  var SPRITE_LIST = {
+    // マカロン色 → 同色の「tane_*」を最優先で採用（要望対応）
+    green: ['tane_green.png','macaron_green.png','green_open.png','green_closed.png'],
+    pink:  ['tane_pink.png','macaron_pink.png','pink_open.png','pink_closed.png'],
+    blue:  ['tane_blue.png','macaron_blue.png','blue_open.png','blue_closed.png'],
+    purple:['tane_purple.png','macaron_purple.png','purple_open.png','purple_closed.png'],
+    // フォールバック（色未指定など）
+    tane:  ['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png']
+  };
 
-    /* ====== 画像ルート自動推定（/macaron/ や / を順に試す） ====== */
-    function unique(arr){ var o={}, out=[]; for(var i=0;i<arr.length;i++){ if(!o[arr[i]]){o[arr[i]]=1; out.push(arr[i]);} } return out; }
-    var ROOTS = (function(){
-      var out = [], p = location.pathname.replace(/\/+$/,'').split('/');
-      for(var i=p.length-2;i>=0;i--){ var r=p.slice(0,i+1).join('/')||'/'; if(r[r.length-1]!=='/') r+='/'; out.push(r); }
-      out.push('/macaron/'); out.push('/');
-      return unique(out);
-    })();
+  function tryLoad(urls, cb){ var i=0, img=new Image(); img.onload=function(){cb(urls[i]);}; img.onerror=function(){ i++; if(i<urls.length){ img.src=urls[i]; } else { cb(null); } }; img.src=urls[i]; }
+  function resolveOne(file, cb){ var urls=[]; for(var i=0;i<BASES.length;i++){ urls.push(BASES[i]+file); } tryLoad(urls, cb); }
+  function resolveMany(files, cb){ if(!files||!files.length){ cb(null); return; } var i=0; (function next(){ resolveOne(files[i], function(ok){ if(ok){ cb(ok); } else { i++; (i<files.length)? next(): cb(null); } }); })(); }
 
-    // 2系統のサブパス × 全ルートを総当り
-    var BASES = [];
-    ['public/assets/stage1/','assets/stage1/'].forEach(function(sub){
-      ROOTS.forEach(function(root){ BASES.push(root+sub); });
-    });
-    // 念のため相対も
-    ['public/assets/stage1/','assets/stage1/','./public/assets/stage1/','./assets/stage1/'].forEach(function(rel){ BASES.push(rel); });
+  // 背景適用（CSS背景に上書き）
+  resolveOne(BG_NAME, function(ok){ if(ok){ document.body.style.backgroundImage = 'url("'+ok+'")'; }});
 
-    var BG_NAME = 'space_background.png';
-    var SPRITE_LIST = {
-      green: ['macaron_green.png','tane_green.png','green_open.png','green_closed.png'],
-      pink:  ['macaron_pink.png','tane_pink.png','pink_open.png','pink_closed.png'],
-      blue:  ['macaron_blue.png','tane_blue.png','blue_open.png','blue_closed.png'],
-      purple:['macaron_purple.png','tane_purple.png','purple_open.png','purple_closed.png'],
-      tane:  ['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png']
-    };
+  /* ============ DOM ============ */
+  function $(s){ return document.querySelector(s); }
+  var chatEl = $('#chat');
+  var cycleEl = $('#cycleCount');
+  var appearEl= $('#appearanceLabel');
+  var avatarEl= $('#avatarImg');
+  var form    = $('#talkForm');
+  var input   = $('#msg');
+  var sendBtn = $('#sendBtn');
 
-    function tryLoad(urls, cb){
-      var i=0, img=new Image();
-      img.onload = function(){ cb(urls[i]); };
-      img.onerror = function(){
-        i++; if(i<urls.length){ img.src = urls[i]; } else { cb(null); }
-      };
-      img.src = urls[i];
+  /* ============ Storage ============ */
+  function getJSON(k,d){ try{ var v=localStorage.getItem(k); return v? JSON.parse(v): d; }catch(e){ return d; } }
+  function setJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+
+  // 新しい周回なら回数だけ0
+  if(localStorage.getItem(K.flag)){ localStorage.removeItem(K.flag); localStorage.setItem(K.turns,'0'); }
+
+  // 状態
+  var chatLog = getJSON(K.log, []);
+  var appearance = (localStorage.getItem(K.appear)||'green').replace(/^\"|\"$/g,'');
+  var turns = parseInt(localStorage.getItem(K.turns)||'0',10);
+  if(turns >= MAX_TURNS){ localStorage.setItem(K.flag,'1'); location.href = REBIRTH_URL; }
+
+  // 表示
+  appearEl.textContent = appearance;
+  cycleEl.textContent = String(turns);
+  resolveMany(SPRITE_LIST[appearance]||SPRITE_LIST.tane, function(ok){ if(ok){ avatarEl.src = ok; } });
+
+  function renderChat(){
+    chatEl.innerHTML='';
+    for(var i=0;i<chatLog.length;i++){
+      var m = chatLog[i];
+      var d = document.createElement('div');
+      d.className = 'bubble ' + (m.role==='user'?'me':(m.role==='assistant'?'ai':'sys'));
+      d.textContent = m.text; chatEl.appendChild(d);
     }
-    function resolveOne(file, cb){
-      var urls = []; for(var i=0;i<BASES.length;i++){ urls.push(BASES[i]+file); }
-      tryLoad(urls, function(ok){ if(!ok){console.warn('[assets missing]', file, urls);} cb(ok); });
-    }
-    function resolveMany(files, cb){
-      if(!files || !files.length) return cb(null);
-      var i=0; (function next(){
-        resolveOne(files[i], function(ok){ ok ? cb(ok) : (++i<files.length ? next() : cb(null)); });
-      })();
-    }
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+  // インフォは重複させない
+  if(!chatLog.some(function(m){return m.role==='system' && m.text.indexOf('10ターン到達で')>=0;})){
+    chatLog.unshift({role:'system', text:'10ターン到達で「容姿 or 記録」選択画面へ移動します。記録を選んだ場合、ログは残り、見た目のみ変わります。'});
+    setJSON(K.log, chatLog);
+  }
+  renderChat();
 
-    // CSS背景に上書き（成功時のみ）
-    resolveOne(BG_NAME, function(ok){ if(ok){ document.body.style.backgroundImage = 'url("'+ok+'")'; } });
+  /* ============ API ============ */
+  async function talkAPI(text){
+    var hist = chatLog.slice(-8);
+    try{
+      var r = await fetch(TALK_ENDPOINT,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ messages:[ {role:'system', content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'}, ...hist.map(function(m){return {role:(m.role==='assistant'?'assistant':(m.role==='user'?'user':'system')), content:m.text};}), {role:'user', content:text} ] }) });
+      if(!r.ok) throw new Error('status '+r.status);
+      var j = await r.json(); var reply = (j.reply||j.message||j.content||'').toString().trim();
+      return reply || 'なるほど。もう少し詳しく教えて！';
+    }catch(e){ return 'なるほど。もう少し詳しく教えて！'; }
+  }
 
-    /* ====== DOM ====== */
-    function $(s){ return document.querySelector(s); }
-    var chatEl = $('#chat');
-    var cycleEl = $('#cycleCount');
-    var appearEl= $('#appearanceLabel');
-    var avatarEl= $('#avatarImg');
-    var form    = $('#talkForm');
-    var input   = $('#msg');
-    var sendBtn = $('#sendBtn');
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var text = input.value.trim(); if(!text) return;
+    chatLog.push({role:'user', text:text}); setJSON(K.log, chatLog); renderChat(); input.value='';
+    sendBtn.disabled=true; var reply = await talkAPI(text); sendBtn.disabled=false;
+    chatLog.push({role:'assistant', text:reply}); setJSON(K.log, chatLog); renderChat();
 
-    /* ====== Storage util ====== */
-    function getJSON(k,d){ try{ var v=localStorage.getItem(k); return v? JSON.parse(v): d; }catch(e){ return d; } }
-    function setJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
-
-    /* ====== 周回フラグ処理 ====== */
-    if(localStorage.getItem(K.flag)){ localStorage.removeItem(K.flag); localStorage.setItem(K.turns,'0'); }
-
-    /* ====== 状態 ====== */
-    var chatLog = getJSON(K.log, []);
-    var appearance = (localStorage.getItem(K.appear)||'green').replace(/^\\"|\\"$/g,'');
-    var turns = parseInt(localStorage.getItem(K.turns)||'0',10);
-
-    // 上限に達していたら即リダイレクト
-    if(turns >= MAX_TURNS){ localStorage.setItem(K.flag,'1'); location.href = REBIRTH_URL; return; }
-
-    // 表示
-    appearEl.textContent = appearance;
-    cycleEl.textContent = String(turns);
-    resolveMany(SPRITE_LIST[appearance]||SPRITE_LIST.tane, function(ok){
-      if(ok){ avatarEl.src = ok; }
-      else{
-        // フォールバックSVG（環境依存せず必ず出る）
-        var svg = encodeURIComponent(
-          "<svg xmlns='http://www.w3.org/2000/svg' width='128' height='128'>"+
-          "<defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'>"+
-          "<stop offset='0%' stop-color='#9ef9d8'/><stop offset='100%' stop-color='#63b3ff'/></linearGradient></defs>"+
-          "<rect rx='24' ry='24' width='128' height='128' fill='url(#g)'/>"+
-          "<text x='50%' y='58%' text-anchor='middle' dominant-baseline='middle'"+
-          " font-family='Noto Sans JP, sans-serif' font-size='42' fill='#111'>"+appearance.charAt(0).toUpperCase()+"</text></svg>"
-        );
-        avatarEl.src = "data:image/svg+xml;charset=utf-8,"+svg;
-      }
-    });
-
-    function renderChat(){
-      chatEl.innerHTML='';
-      for(var i=0;i<chatLog.length;i++){
-        var m=chatLog[i];
-        var d=document.createElement('div');
-        d.className='bubble '+(m.role==='user'?'me':(m.role==='assistant'?'ai':'sys'));
-        d.textContent=m.text;
-        chatEl.appendChild(d);
-      }
-      chatEl.scrollTop = chatEl.scrollHeight;
-    }
-    // 案内文は一度だけ
-    if(!chatLog.some(function(m){return m.role==='system' && m.text.indexOf('10ターン到達で')>=0;})){
-      chatLog.unshift({role:'system', text:'10ターン到達で「容姿 or 記録」選択画面へ移動します。記録を選んだ場合、ログは残り、見た目のみ変わります。'});
-      setJSON(K.log, chatLog);
-    }
-    renderChat();
-
-    /* ====== API ====== */
-    function talkAPI(text){
-      // 直近8件の履歴のみ送る
-      var hist = chatLog.slice(-8);
-      var msgs = [{role:'system', content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'}];
-      for(var i=0;i<hist.length;i++){
-        var r = hist[i].role==='assistant'?'assistant':(hist[i].role==='user'?'user':'system');
-        msgs.push({role:r, content:hist[i].text});
-      }
-      msgs.push({role:'user', content:text});
-
-      return fetch(TALK_ENDPOINT,{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ messages: msgs })
-      }).then(function(r){
-        if(!r.ok) throw new Error('status '+r.status);
-        return r.json();
-      }).then(function(j){
-        var reply = (j.reply||j.message||j.content||'').toString().trim();
-        return reply || 'なるほど。もう少し詳しく教えて！';
-      }).catch(function(){
-        return 'なるほど。もう少し詳しく教えて！';
-      });
-    }
-
-    /* ====== 送信 ====== */
-    form.addEventListener('submit', function(e){
-      e.preventDefault();
-      var text = input.value.trim(); if(!text) return;
-
-      chatLog.push({role:'user', text:text}); setJSON(K.log, chatLog); renderChat(); input.value='';
-      sendBtn.disabled = true;
-      talkAPI(text).then(function(reply){
-        sendBtn.disabled = false;
-        chatLog.push({role:'assistant', text:reply}); setJSON(K.log, chatLog); renderChat();
-
-        turns += 1;
-        localStorage.setItem(K.turns, String(turns));
-        cycleEl.textContent = String(Math.min(turns, MAX_TURNS));
-        if(turns >= MAX_TURNS){
-          localStorage.setItem(K.flag,'1');
-          location.href = rebirth_URL;
-        }
-      });
-    });
-
-  })();
+    turns += 1; localStorage.setItem(K.turns,String(turns)); cycleEl.textContent = String(Math.min(turns,MAX_TURNS));
+    if(turns >= MAX_TURNS){ localStorage.setItem(K.flag,'1'); location.href = REBIRTH_URL; }
+  });
   </script>
 </body>
 </html>
