@@ -13,7 +13,6 @@
       background-size:cover;background-position:center;background-attachment:fixed;
       display:flex;flex-direction:column;align-items:center;justify-content:flex-start
     }
-    /* 右上バッジ */
     .whoai-name-badge{
       position:fixed;top:10px;right:10px;z-index:1000;
       background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
@@ -53,8 +52,6 @@
     #sendBtn{background:#ffd1ec;color:#111}
     #sendBtn:disabled{opacity:.5;cursor:not-allowed}
     .note{font-size:12px;opacity:.75;margin-top:8px}
-
-    /* 10回で案内モーダル */
     .modalBackdrop{
       position:fixed;inset:0;background:rgba(0,0,0,.6);
       display:none;align-items:center;justify-content:center;z-index:2000
@@ -72,9 +69,7 @@
   </style>
 </head>
 <body>
-  <div class="whoai-name-badge">
-    FILE: whoai_talk.html ／ パス: /macaron/
-  </div>
+  <div class="whoai-name-badge">FILE: whoai_talk.html ／ パス: /macaron/</div>
 
   <div class="container">
     <div class="panel">
@@ -82,7 +77,7 @@
       <p class="desc">10ターン到達で「容姿 or 記録」の選択画面へ移動します。</p>
 
       <div id="characterRow">
-        <img id="characterImg" alt="character" src="./macaron/public/assets/characters/{pink|blue|green|purple}.png" />
+        <img id="characterImg" alt="character" src="" />
         <div>
           <div id="appearanceTag">見た目: <b id="appearanceName">tane</b></div>
           <div id="turnTag">会話回数: <b id="turnCount">0</b>/10</div>
@@ -113,23 +108,22 @@
   </div>
 
   <script>
-    // ========= 設定 =========
-    // API が動けば使い、失敗時はローカル応答にフォールバック
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // 必要なら変更可
+    // ===== 設定（APIはそのまま） =====
+    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
     const MAX_TURNS = 10;
 
-    // ========= ストレージユーティリティ =========
+    // ===== LocalStorage ユーティリティ =====
     const LS = {
       get(k, def){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : def }catch{ return def } },
       set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
     };
 
-    // ========= 状態 =========
+    // ===== 状態 =====
     let appearance = LS.get('whoai_appearance', 'tane'); // 'tane','pink','blue','green','purple'
-    let chatLog   = LS.get('whoai_chat_log', []);        // [{role:'user'|'assistant',text:string}]
+    let chatLog   = LS.get('whoai_chat_log', []);
     let turnCount = Number(LS.get('whoai_turn_count', 0)) || 0;
 
-    // ========= 要素 =========
+    // ===== 要素 =====
     const chatArea = document.getElementById('chatArea');
     const turnTag  = document.getElementById('turnCount');
     const appName  = document.getElementById('appearanceName');
@@ -140,10 +134,9 @@
     const stayBtn  = document.getElementById('stayBtn');
     const goBtn    = document.getElementById('goRebirthBtn');
 
-    // ========= 初期描画 =========
+    // ===== 画像適用（存在しない時は tane にフォールバック） =====
     function applyAppearance(name){
       appName.textContent = name;
-      // 画像パス（存在しない場合もあるので onerror で種にフォールバック）
       const map = {
         tane:   './public/assets/characters/tane.png',
         pink:   './public/assets/characters/pink.png',
@@ -156,6 +149,7 @@
       LS.set('whoai_appearance', name);
     }
 
+    // ===== チャット描画 =====
     function renderLog(){
       chatArea.innerHTML = '';
       chatLog.forEach(m => {
@@ -170,6 +164,7 @@
       chatArea.scrollTop = chatArea.scrollHeight;
     }
 
+    // ===== UI 同期 =====
     function syncTurnUI(){
       turnTag.textContent = turnCount;
       if (turnCount >= MAX_TURNS){
@@ -179,25 +174,22 @@
       }
     }
 
+    // ===== 10回到達モーダル =====
     function showLimitModal(){
       modal.style.display = 'flex';
-      // 自動遷移予約
       const timerId = setTimeout(() => goRebirth(), 5000);
-      // 操作
       stayBtn.onclick = () => { clearTimeout(timerId); modal.style.display = 'none'; };
       goBtn.onclick   = () => { clearTimeout(timerId); goRebirth(); };
     }
 
+    // ===== rebirth.html へ =====
     function goRebirth(){
-      // 次画面で利用するフラグ
       LS.set('whoai_ready_for_rebirth', true);
-      // 10回に到達した時点での appearance と log / turnCount はすでに保持済み
       location.href = './rebirth.html';
     }
 
-    // ========= 送信処理 =========
+    // ===== 会話（API優先・失敗時フォールバック） =====
     async function talk(message){
-      // API優先
       try{
         const ctrl = new AbortController();
         const t = setTimeout(()=>ctrl.abort(), 8000);
@@ -210,14 +202,60 @@
         clearTimeout(t);
         if(!res.ok) throw new Error('bad status');
         const data = await res.json();
-        // 想定: { reply: string }
         if(data && typeof data.reply === 'string') return data.reply;
         throw new Error('invalid payload');
       }catch(e){
-        // フォールバック応答（色ごとの口調）
         const tone = {
           tane:   ["うん、聞いてるよ。","それ、面白いね。","もう少し教えて？","なるほど…！","次はどうしようか。"],
           pink:   ["情熱が灯るね！","その勢い、好き！","ワクワクしてきた！","もっと攻めていこう！","熱く語ってくれて嬉しい。"],
           blue:   ["落ち着いて考えてみよう。","静かだけど深いね。","静寂の中にヒントがある。","澄んだ視点だ。","心がすっとしたよ。"],
           green:  ["元気が出るね！","一歩踏み出してみよう！","フレッシュなアイデア！","体を動かしたくなる！","パワーを感じる！"],
-          purp
+          purple: ["創造の火花が散った！","発想が広がるね。","まだ見ぬ形を作ろう。","直感を信じてOK。","境界を越えていこう。"]
+        }[appearance] || ["いいね。","続けてみよう。","なるほど。","ふむふむ。","次は？"];
+        return tone[Math.floor(Math.random()*tone.length)];
+      }
+    }
+
+    // ===== 送信処理 =====
+    async function handleSend(){
+      const text = (inputEl.value || '').trim();
+      if(!text) return;
+      if(turnCount >= MAX_TURNS) return;
+
+      chatLog.push({role:'user', text});
+      LS.set('whoai_chat_log', chatLog);
+      renderLog();
+      inputEl.value = '';
+      inputEl.focus();
+
+      sendBtn.disabled = true;
+      const reply = await talk(text);
+      chatLog.push({role:'assistant', text: reply});
+      LS.set('whoai_chat_log', chatLog);
+      renderLog();
+      sendBtn.disabled = false;
+
+      turnCount = Number(LS.get('whoai_turn_count', 0)) + 1;
+      LS.set('whoai_turn_count', turnCount);
+      syncTurnUI();
+
+      if(turnCount >= MAX_TURNS){
+        inputEl.disabled = true;
+        sendBtn.disabled = true;
+        showLimitModal();
+      }
+    }
+
+    // ===== 起動 =====
+    (function init(){
+      applyAppearance(appearance);
+      renderLog();
+      syncTurnUI();
+    })();
+
+    // ===== イベント =====
+    sendBtn.addEventListener('click', handleSend);
+    inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter') handleSend(); });
+  </script>
+</body>
+</html>
