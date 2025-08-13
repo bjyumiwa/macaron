@@ -1,51 +1,35 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>public/macaron.html - マカロン選択</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;
-      background:url("./assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
-    }
-    h1{margin:8px 0 6px;text-shadow:0 2px 10px rgba(0,0,0,.4)}
-    p{opacity:.95;margin:0 0 16px}
-    .grid{display:grid;grid-template-columns:repeat(4,110px);gap:16px}
-    .macaron{
-      width:110px;height:110px;border-radius:16px;backdrop-filter:blur(2px);
-      background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;
-      cursor:pointer;transition:transform .15s ease, background .15s ease; user-select:none;
-      font-weight:700
-    }
-    .macaron:hover{transform:translateY(-4px);background:rgba(255,255,255,.22)}
-    .cap{opacity:.8;font-size:12px;margin-top:12px}
-    .tag{font-size:12px;opacity:.9;margin-top:6px}
-  </style>
+<meta charset="UTF-8">
+<title>マカロンを選ぶ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{margin:0;padding:24px;background:#0b0f19;color:#fff;font-family:"Noto Sans JP",sans-serif;text-align:center}
+  .grid{display:grid;grid-template-columns:repeat(4,120px);gap:16px;justify-content:center;margin-top:20px}
+  .card{padding:14px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);cursor:pointer}
+  .card:hover{background:rgba(255,255,255,.14)}
+</style>
 </head>
 <body>
-  <h1>マカロンを選んでね</h1>
-  <p>色によって性格が少しだけ変わるよ。</p>
+  <h2>マカロンを食べて進化！色を選んでね</h2>
   <div class="grid">
-    <div class="macaron" data-color="pink">PINK<div class="tag">情熱</div></div>
-    <div class="macaron" data-color="blue">BLUE<div class="tag">静寂</div></div>
-    <div class="macaron" data-color="green">GREEN<div class="tag">元気</div></div>
-    <div class="macaron" data-color="purple">PURPLE<div class="tag">創造</div></div>
+    <div class="card" data-color="pink">ピンク（情熱）</div>
+    <div class="card" data-color="blue">ブルー（静寂）</div>
+    <div class="card" data-color="green">グリーン（元気）</div>
+    <div class="card" data-color="purple">パープル（創造）</div>
   </div>
-  <div class="cap">※ 赤は使いません</div>
 
   <script>
-    // APIには一切触りません。選択状態だけ保存して進化ページへ遷移
-    document.querySelectorAll('.macaron').forEach(m => {
-      m.addEventListener('click', () => {
-        const color = m.dataset.color;
-        if(!color) return;
-        localStorage.setItem('selectedMacaron', color);
-        // public/ から ルート(evolution.html)へ
-        location.href = '../evolution.html';
-      });
+    var K = { appear:'whoai_appearance', phase:'whoai_phase', turns:'whoai_cycleCount' };
+    function pick(color){
+      localStorage.setItem(K.appear, JSON.stringify(color)); // 見た目を保存
+      localStorage.setItem(K.turns, '0');                    // 進化後の会話回数リセット
+      // phase は whoai_talk.html 側ですでに 'evolved' に遷移済み
+      location.href = './whoai_talk.html';                   // 会話へ戻る
+    }
+    document.querySelectorAll('.card').forEach(function(el){
+      el.addEventListener('click', function(){ pick(el.getAttribute('data-color')); });
     });
   </script>
 </body>
