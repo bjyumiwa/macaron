@@ -8,7 +8,7 @@
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      background-image:url("./space_background.png");
+      background-image:url("./public/assets/stage1/space_background.png"); /* ← 修正済みパス */
       background-size:cover;background-position:center;background-attachment:fixed;
     }
     .name-badge{
@@ -16,29 +16,30 @@
       background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
       padding:8px 12px;border-radius:12px;font-weight:700;display:none
     }
-    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px;object-fit:contain}
+    #badgeFace{
+      width:36px;height:36px;vertical-align:middle;margin-right:8px;
+      border-radius:8px;object-fit:contain
+    }
   </style>
 </head>
 <body>
-  <!-- 既存の会話UIはこのまま残してOK（fetch/ENDPOINTはノータッチ） -->
+  <!-- 名前バッジ -->
   <div id="nameBadge" class="name-badge">
     <img id="badgeFace" alt=""><span id="badgeText"></span>
   </div>
 
   <script>
   (function(){
-    // localStorage helper（JSON/プレーン文字列どちらでもOK）
+    // localStorageの安全な取得
     function lsGet(k, d=null){
       const raw = localStorage.getItem(k);
       if (raw === null || raw === undefined) return d;
       try { return JSON.parse(raw); } catch { return raw; }
     }
 
-    // 選択色の取得（既存キーを両方見る）
+    // 選択されたマカロン色とキャラクター名を取得
     const picked = lsGet('selectedMacaron') ?? lsGet('whoai_selectedMacaron') ?? 'green';
     const color  = ['pink','blue','green','purple'].includes(picked) ? picked : 'green';
-
-    // 名前（既存キーを両方見る）
     const name   = lsGet('characterName') ?? lsGet('whoai_characterName') ?? 'なまえ未設定';
 
     const badge  = document.getElementById('nameBadge');
@@ -48,19 +49,17 @@
     text.textContent = `🪄 ${name}`;
     face.alt = `${name} の顔`;
 
-    // 候補パス（相対位置の違いに対応）
+    // キャラクター画像候補（public/assets/stage1/ 配下を優先）
     const candidates = [
-      `./tane_${color}.png`,
-      `./public/assets/stage1/tane_${color}.png`,
-      './tane_green.png',
-      './public/assets/stage1/tane_green.png'
+      `./public/assets/stage1/tane_${color}.png`, // 例: tane_pink.png
+      './public/assets/stage1/tane_green.png'     // フォールバック
     ];
 
-    // 画像を順に試す。成功したらバッジ表示、全部失敗なら非表示のまま
+    // 順に読み込み
     (function tryPick(i=0){
       if (i >= candidates.length) {
-        console.warn('tane image not found for color:', color);
-        badge.style.display = 'none'; // 見つからないときは隠す
+        console.warn('tane image not found:', color);
+        badge.style.display = 'none';
         return;
       }
       const test = new Image();
