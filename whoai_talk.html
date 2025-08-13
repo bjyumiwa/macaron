@@ -17,11 +17,8 @@
     .notice{opacity:.9;margin:4px 0 14px;font-size:14px}
     .top{display:flex;gap:14px;align-items:center}
     .avatar{width:88px;height:88px;border-radius:20px;background:rgba(255,255,255,.08);display:grid;place-items:center;border:1px solid rgba(255,255,255,.12);animation:floatY 3s ease-in-out infinite}
-    .avatar img{width:64px;height:64px;object-fit:contain}
-    @keyframes floatY {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
+    .avatar img{width:64px;height:64px;object-fit:contain;animation:floatY 3s ease-in-out infinite}
+    @keyframes floatY {0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); }}
     .stats{line-height:1.3}
     .stats b{font-size:14px}
     .stats .small{font-size:13px;opacity:.9}
@@ -40,7 +37,7 @@
   <div class="whoai-name-badge">FILE: whoai_talk.html ／ パス: /macaron/</div>
   <div class="container">
     <h1>WhoAI と会話する</h1>
-    <div class="notice">このページは「記録」を選んだ後も、<b>ログは保持</b>しつつ、<b>見た目だけ変更</b>。以降も <b>10ターン</b> 会話すると再び選択画面へ遷移します。</div>
+    <div class="notice">マカロンを選択後、このページに直接遷移して会話を開始します。</div>
     <div class="top">
       <div class="avatar"><img id="avatarImg" alt="avatar"/></div>
       <div class="stats">
@@ -56,7 +53,6 @@
   </div>
   <script>
   const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-  const REBIRTH_URL  = 'rebirth.html';
   const MAX_TURNS_PER_CYCLE = 10;
   const KEY_CHAT_LOG   = 'whoai_chatLog';
   const KEY_APPEARANCE = 'whoai_appearance';
@@ -71,6 +67,11 @@
     pink:   './public/assets/stage1/tane_pink.png',
     purple: './public/assets/stage1/tane_purple.png'
   };
+  function chooseMacaron(color) {
+    localStorage.setItem(KEY_APPEARANCE, color);
+    localStorage.setItem(KEY_NEW_CYCLE, '1');
+    location.href = 'whoai_talk.html';
+  }
   function tryLoadImageSequential(names, cb){
     let i = 0; const img = new Image();
     img.onload = ()=> cb(names[i]);
@@ -96,7 +97,6 @@
   const sendBtn = $('#sendBtn');
   function loadJSON(key, fallback){ try{ return JSON.parse(localStorage.getItem(key)) ?? fallback }catch{ return fallback } }
   function saveJSON(key, val){ localStorage.setItem(key, JSON.stringify(val)) }
-  (function initCycle(){ if(localStorage.getItem(KEY_NEW_CYCLE)){ localStorage.removeItem(KEY_NEW_CYCLE); localStorage.setItem(KEY_CYCLE_CT, '0'); } })();
   let chatLog   = loadJSON(KEY_CHAT_LOG, []);
   let appearance= localStorage.getItem(KEY_APPEARANCE) || 'tane';
   let cycleCnt  = parseInt(localStorage.getItem(KEY_CYCLE_CT) || '0',10);
@@ -118,10 +118,6 @@
   applyBackground();
   renderIdentity();
   renderChat();
-  if(!chatLog.length){
-    chatLog.push({role:'system', text:'10ターン到達で「容姿 or 記録」選択画面へ移動します。記録を選んだ場合、ログは残り、見た目のみ変わります。'});
-    saveJSON(KEY_CHAT_LOG, chatLog); renderChat();
-  }
   async function talkToAPI(userText){
     const history = chatLog.slice(-8);
     try{
@@ -142,12 +138,6 @@
       throw new Error('empty');
     }catch(e){ return 'なるほど。もう少し詳しく教えて！'; }
   }
-  function checkLimitAndMaybeRedirect(){
-    if(cycleCnt >= MAX_TURNS_PER_CYCLE){
-      localStorage.setItem(KEY_NEW_CYCLE, '1');
-      window.location.href = REBIRTH_URL;
-    }
-  }
   form.addEventListener('submit', async (e)=>{
     e.preventDefault();
     const text = input.value.trim();
@@ -156,8 +146,119 @@
     sendBtn.disabled = true; const reply = await talkToAPI(text); sendBtn.disabled = false;
     chatLog.push({role:'assistant', text: reply}); saveJSON(KEY_CHAT_LOG, chatLog); renderChat();
     cycleCnt += 1; localStorage.setItem(KEY_CYCLE_CT, String(cycleCnt)); cycleEl.textContent = String(cycleCnt);
-    checkLimitAndMaybeRedirect();
   });
+  </script>
+</body>
+</html>
+
+<!-- ============================================================= -->
+<!-- =============== rebirth.html（復活の儀式） =================== -->
+<!-- 2つのパターン：
+     1) 記録を保つ（容姿を変える）：ログ保持 / カウンタは次周0 / 見た目更新
+     2) 容姿を保つ（記録をリセット）：見た目維持 / ログ消去 / カウンタ0
+   選択後は S ステージ（s.html）へ進む。
+-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>rebirth - 復活の儀式</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#fff;background:#000;display:flex;align-items:center;justify-content:center}
+    .panel{width:min(940px,92vw);background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:18px;padding:24px}
+    h1{margin:0 0 8px}
+    .cols{display:grid;gap:14px;grid-template-columns:1fr 1fr;margin-top:12px}
+    .card{padding:16px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+    .row{display:flex;gap:10px;margin-top:16px}
+    button{padding:12px 16px;border-radius:12px;border:0;background:#a3e635;color:#0a0a0a;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>復活の儀式</h1>
+    <p>どちらかを選んでください（選択後は <b>S ステージ</b> へ進みます）。</p>
+    <div class="cols">
+      <div class="card">
+        <h3>容姿を保つ（記録をリセット）</h3>
+        <p>いまの見た目を維持し、会話ログを消去して 0 から再開。</p>
+        <div class="row">
+          <button onclick="keepAppearanceResetRecords()">容姿を保つ（リセット）</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>記録を保つ（容姿を変える）</h3>
+        <p>会話ログを保持し、見た目だけ次の色へ進化。</p>
+        <div class="row">
+          <button onclick="keepRecordsChangeAppearance('pink')">進化：pink</button>
+          <button onclick="keepRecordsChangeAppearance('blue')">blue</button>
+          <button onclick="keepRecordsChangeAppearance('green')">green</button>
+          <button onclick="keepRecordsChangeAppearance('purple')">purple</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    // URL 設定
+    const S_STAGE_URL = 's.html';
+
+    // キー名（whoai_talk.html と整合）
+    const KEY_CHAT_LOG   = 'whoai_chatLog';
+    const KEY_APPEARANCE = 'whoai_appearance';
+    const KEY_CYCLE_CT   = 'whoai_cycleCount';
+    const KEY_NEW_CYCLE  = 'whoai_newCycleFlag';
+
+    // 1) 容姿キープ・記録リセット
+    function keepAppearanceResetRecords(){
+      // 見た目は触らない
+      localStorage.removeItem(KEY_CHAT_LOG);      // ログ削除
+      localStorage.removeItem(KEY_CYCLE_CT);      // カウント削除
+      localStorage.setItem(KEY_NEW_CYCLE,'1');    // 次周 0 で開始
+      // 次ステージへ
+      location.href = S_STAGE_URL;
+    }
+
+    // 2) 記録キープ・容姿変更
+    function keepRecordsChangeAppearance(color){
+      localStorage.setItem(KEY_APPEARANCE, color); // 見た目だけ更新
+      localStorage.setItem(KEY_NEW_CYCLE,'1');     // 次周 0 で開始
+      // 次ステージへ
+      location.href = S_STAGE_URL;
+    }
+  </script>
+</body>
+</html>
+
+<!-- ============================================================= -->
+<!-- ===================== s.html（S ステージ） ==================== -->
+<!-- 演出用の中継ページ。短い演出の後、自動で whoai_talk.html へ遷移します。
+     もちろん、このページにマカロン演出やSE等を追加してOK。                                         -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>s - 次の周回へ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#fff;background:#000;display:grid;place-items:center}
+    .box{padding:22px 26px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);text-align:center}
+    .dot{animation:blink 1.2s infinite}
+    @keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+    button{margin-top:14px;padding:10px 16px;border-radius:12px;border:0;background:#a3e635;color:#0a0a0a;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div>次の周回を準備中<span class="dot">…</span></div>
+    <button onclick="goTalk()">すぐ会話へ</button>
+  </div>
+  <script>
+    const TALK_URL = 'whoai_talk.html';
+    // whoai_newCycleFlag が立っていれば、whoai_talk 側で周回カウンタは 0 にリセットされます。
+    function goTalk(){ location.href = TALK_URL; }
+    setTimeout(goTalk, 1200); // 1.2秒後に自動遷移（必要に応じて変更）
   </script>
 </body>
 </html>
