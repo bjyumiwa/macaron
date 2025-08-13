@@ -37,9 +37,14 @@
     input[type=text]{flex:1;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff}
     button{padding:12px 18px;border-radius:12px;border:0;background:#a3e635;color:#0a0a0a;font-weight:700;cursor:pointer}
     button:disabled{opacity:.6;cursor:not-allowed}
+      /* 固定背景（画像タイル化/未描画対策） */
+    .bg{position:fixed;inset:0;z-index:-1;overflow:hidden;background:#000}
+    .bg img{width:100%;height:100%;object-fit:cover;display:block}
   </style>
 </head>
 <body>
+  <!-- 背景を <img> で固定表示（CSS 背景の描画不具合対策） -->
+  <div class="bg"><img id="bgImg" alt=""/></div>
   <div class="whoai-name-badge">FILE: whoai_talk.html ／ パス: /macaron/</div>
   <div class="container">
     <h1>WhoAI と会話する</h1>
@@ -72,6 +77,8 @@
 
   /* ===== 画像ローダ（public/assets/stage1 と assets/stage1 両対応） ===== */
   const PATH_CANDIDATES = [
+    '/macaron/public/assets/stage1/',
+    '/macaron/assets/stage1/',
     '../public/assets/stage1/',
     '../assets/stage1/',
     './public/assets/stage1/',
@@ -111,9 +118,9 @@
 
   async function applyBackground(){
     const bgSrc = await resolveFirstExisting(spriteFile.bg);
-    if(bgSrc){
-      const s = document.body.style;
-      s.backgroundImage = `url("${bgSrc}")`;
+    const imgEl = document.getElementById('bgImg');
+    if(bgSrc && imgEl){ imgEl.src = bgSrc; }
+  }")`;
       s.backgroundRepeat = 'no-repeat';
       s.backgroundSize = 'cover';
       s.backgroundPosition = 'center center';
