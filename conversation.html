@@ -11,39 +11,64 @@
       background-image:url("./space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
     }
-    .name-badge{position:fixed;top:10px;right:10px;z-index:9999;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700}
-    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px}
+    .name-badge{
+      position:fixed;top:10px;right:10px;z-index:9999;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+      padding:8px 12px;border-radius:12px;font-weight:700;display:none
+    }
+    #badgeFace{width:36px;height:36px;vertical-align:middle;margin-right:8px;border-radius:8px;object-fit:contain}
   </style>
 </head>
 <body>
   <!-- 既存の会話UIはこのまま残してOK（fetch/ENDPOINTはノータッチ） -->
-  <div id="nameBadge" class="name-badge" style="display:none;">
+  <div id="nameBadge" class="name-badge">
     <img id="badgeFace" alt=""><span id="badgeText"></span>
   </div>
+
   <script>
   (function(){
-    function lsGet(k,d=null){try{return JSON.parse(localStorage.getItem(k))??d}catch{ return localStorage.getItem(k)??d }}
-    const picked = (lsGet('selectedMacaron')||lsGet('whoai_selectedMacaron')||'green');
-    const color  = ['pink','blue','green','purple'].includes(picked)?picked:'green';
+    // localStorage helper（JSON/プレーン文字列どちらでもOK）
+    function lsGet(k, d=null){
+      const raw = localStorage.getItem(k);
+      if (raw === null || raw === undefined) return d;
+      try { return JSON.parse(raw); } catch { return raw; }
+    }
+
+    // 選択色の取得（既存キーを両方見る）
+    const picked = lsGet('selectedMacaron') ?? lsGet('whoai_selectedMacaron') ?? 'green';
+    const color  = ['pink','blue','green','purple'].includes(picked) ? picked : 'green';
+
+    // 名前（既存キーを両方見る）
+    const name   = lsGet('characterName') ?? lsGet('whoai_characterName') ?? 'なまえ未設定';
+
     const badge  = document.getElementById('nameBadge');
     const face   = document.getElementById('badgeFace');
     const text   = document.getElementById('badgeText');
-    text.textContent = `🪄 ${lsGet('characterName','なまえ未設定')}`;
-    badge.style.display='inline-block';
 
+    text.textContent = `🪄 ${name}`;
+    face.alt = `${name} の顔`;
+
+    // 候補パス（相対位置の違いに対応）
     const candidates = [
       `./tane_${color}.png`,
       `./public/assets/stage1/tane_${color}.png`,
-      color==='purple' ? './tane_purplo.png' : null,
       './tane_green.png',
       './public/assets/stage1/tane_green.png'
-    ].filter(Boolean);
+    ];
 
-    (function pick(i=0){
-      if(i>=candidates.length){ console.warn('tane image not found'); return; }
+    // 画像を順に試す。成功したらバッジ表示、全部失敗なら非表示のまま
+    (function tryPick(i=0){
+      if (i >= candidates.length) {
+        console.warn('tane image not found for color:', color);
+        badge.style.display = 'none'; // 見つからないときは隠す
+        return;
+      }
       const test = new Image();
-      test.onload = ()=>{ face.src = test.src; };
-      test.onerror= ()=> pick(i+1);
+      test.onload = () => {
+        face.src = test.src;
+        badge.style.display = 'inline-block';
+      };
+      test.onerror = () => tryPick(i+1);
       test.src = candidates[i];
     })();
   })();
