@@ -68,22 +68,16 @@
       set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
     };
 
-    // safety: whoai_talk から来たかチェック（必須ではないがガード）
-    if(LS.get('whoai_ready_for_rebirth', false) !== true){
-      // 直接開いた場合でも動くように黙ってスルー
-      // location.href = './whoai_talk.html';
-    }
-
-    const order = ['tane','pink','blue','green','purple']; // ※赤は含めない
+    // 色の巡回順（赤は使わない）
+    const order = ['tane','pink','blue','green','purple'];
     function nextAppearance(cur){
       const i = order.indexOf(cur);
       if(i<0) return 'tane';
       return order[(i+1) % order.length];
     }
-
     function goTalk(){ location.href = './whoai_talk.html'; }
 
-    // 容姿を保つ＝見た目そのまま、ログと回数をリセット
+    // 容姿を保つ＝見た目そのまま、ログと回数リセット
     document.getElementById('btnKeepLook').onclick = () => {
       const a = LS.get('whoai_appearance','tane');
       LS.set('whoai_appearance', a);  // そのまま
@@ -93,19 +87,17 @@
       goTalk();
     };
 
-    // 記録を保つ＝ログと回数そのまま、見た目のみ変更
+    // 記録を保つ＝ログ/回数そのまま、見た目のみ進化
     document.getElementById('btnKeepMemory').onclick = () => {
       const a = LS.get('whoai_appearance','tane');
       const na = nextAppearance(a);
       LS.set('whoai_appearance', na); // 進化
-      // chat_log / turn_count は変更しない
+      // chat_log / turn_count はそのまま
       LS.set('whoai_ready_for_rebirth', false);
       goTalk();
     };
 
-    document.getElementById('btnBack').onclick = () => {
-      goTalk();
-    };
+    document.getElementById('btnBack').onclick = () => { goTalk(); };
   </script>
 </body>
 </html>
