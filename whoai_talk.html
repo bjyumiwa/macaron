@@ -68,6 +68,8 @@
 
   /* ===== 画像ローダ（public/assets/stage1 と assets/stage1 両対応） ===== */
   const PATH_CANDIDATES = [
+    '../public/assets/stage1/',
+    '../assets/stage1/',
     './public/assets/stage1/',
     'public/assets/stage1/',
     './assets/stage1/',
@@ -130,7 +132,13 @@
 
   /* ===== 状態 ===== */
   let chatLog   = loadJSON(KEY_CHAT_LOG, []);
-  let appearance= (localStorage.getItem(KEY_APPEARANCE) || 'tane').replace(/^\"|\"$/g,'');
+  let _apiraw = localStorage.getItem(KEY_APPEARANCE);
+  if(!_apiraw){
+    // 初回は 'pink' を既定に保存（JSON/非JSONどちらでも耐性）
+    try{ localStorage.setItem(KEY_APPEARANCE,'pink'); }catch{}
+    _apiraw = 'pink';
+  }
+  let appearance = (_apiraw || 'pink').replace(/^\"|\"$/g,'');
   let cycleCnt  = parseInt(localStorage.getItem(KEY_CYCLE_CT) || '0',10);
 
   function filesForAppearance(name){
