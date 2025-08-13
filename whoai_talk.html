@@ -34,7 +34,7 @@
     input[type=text]{flex:1;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff}
     button{padding:12px 20px;border-radius:14px;border:0;background:#b4f54a;color:#111;font-weight:800;cursor:pointer}
     button:disabled{opacity:.6;cursor:not-allowed}
-    .notice{opacity:.9;margin:8px 0 12px}
+    .notice{opacity:.95;margin:8px 0 12px}
   </style>
 </head>
 <body>
@@ -66,18 +66,17 @@
   /* ======= 設定 ======= */
   var TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
   var MAX_TURNS = 10;
-
-  // ←← ここをあなたの実ファイル名に合わせて変更可能
-  var SELECT_URL  = './macaron.html';   // マカロン色選択（進化）ページ
-  var REBIRTH_URL = './rebirth.html';   // 復活の儀式ページ
+  var SELECT_URL  = './macaron.html';  // マカロン選択
+  var REBIRTH_URL = './rebirth.html';  // 復活の儀式
 
   /* ======= localStorage キー ======= */
   var K = {
     log:'whoai_chatLog',
     appear:'whoai_appearance',
     turns:'whoai_cycleCount',
-    phase:'whoai_phase',          // 'tane' → 'evolved'
-    flag:'whoai_newCycleFlag'
+    phase:'whoai_phase',          // 'tane' or 'evolved'
+    flag:'whoai_newCycleFlag',    // フェーズ切替直後のUIリセット用
+    reset:'whoai_resetLog'        // 1:ログ消去 / 0:保持
   };
 
   /* ======= 画像 ======= */
@@ -111,23 +110,33 @@
   var turns = parseInt(localStorage.getItem(K.turns)||'0',10);
   var chatLog = getJSON(K.log, []);
 
-  // 古いsystemの重複お知らせを消す
+  // （安全）古い system お知らせを除去
   var BEFORE = chatLog.length;
   chatLog = chatLog.filter(function(m){ return !(m.role==='system' && m.text && m.text.indexOf('10ターン到達で')>=0); });
   if(chatLog.length!==BEFORE) setJSON(K.log, chatLog);
 
-  // フェーズ別の案内
+  // rebirth.html からのフラグでログを消す/保持
+  var reset = localStorage.getItem(K.reset);
+  if(reset==='1'){ chatLog=[]; setJSON(K.log, chatLog); }
+  if(reset==='0'){ /* 何もしない（保持） */ }
+  localStorage.removeItem(K.reset);
+
+  // 新フェーズ開始フラグ：回数だけ0に
+  if(localStorage.getItem(K.flag)){
+    localStorage.removeItem(K.flag);
+    turns = 0; localStorage.setItem(K.turns,'0');
+  }
+
+  // 表示
   function phaseNotice(p){
     return (p==='tane')
       ? '（タネ）10ターン到達で「マカロン選択」に移動します。選んだ色で進化します。'
       : '（進化後）10ターン到達で「復活の儀式」に移動します。';
   }
-  noticeEl.textContent = phaseNotice(phase);
-
-  /* ======= UI反映 ======= */
   phaseEl.textContent = (phase==='tane' ? 'タネ' : '進化後');
   appearEl.textContent = appearance;
   cycleEl.textContent = String(turns);
+  noticeEl.textContent = phaseNotice(phase);
   resolveMany(SPRITE_LIST[appearance]||SPRITE_LIST.tane, function(ok){ if(ok){ avatarEl.src = ok; } });
 
   function renderChat(){
@@ -148,8 +157,7 @@
     var hist = chatLog.slice(-8);
     try{
       var r = await fetch(TALK_ENDPOINT,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
+        method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           messages:[
             {role:'system', content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'},
@@ -161,9 +169,15 @@
       if(!r.ok) throw new Error('status '+r.status);
       var j = await r.json(); var reply = (j.reply||j.message||j.content||'').toString().trim();
       return reply || 'なるほど。もう少し詳しく教えて！';
-    }catch(e){
-      return 'なるほど。もう少し詳しく教えて！';
-    }
+    }catch(e){ return 'なるほど。もう少し詳しく教えて！'; }
+  }
+
+  // 404ガード付き遷移
+  async function safeNavigate(url){
+    try{
+      const r = await fetch(url,{method:'HEAD',cache:'no-store'});
+      if(r.ok){ location.href=url; } else { alert('遷移先が見つかりません: '+url); }
+    }catch(e){ alert('遷移先にアクセスできません: '+url); }
   }
 
   /* ======= 送信処理 ======= */
@@ -175,33 +189,14 @@
     sendBtn.disabled=true; var reply = await talkAPI(text); sendBtn.disabled=false;
     chatLog.push({role:'assistant', text:reply}); setJSON(K.log, chatLog); renderChat();
 
-    // カウント更新
     turns += 1;
     localStorage.setItem(K.turns,String(turns));
     cycleEl.textContent = String(Math.min(turns,MAX_TURNS));
 
-    // 到達処理：フェーズにより遷移先を変える
     if(turns >= MAX_TURNS){
       if(phase === 'tane'){
-        // 次は進化パートへ
-        localStorage.setItem(K.phase, JSON.stringify('evolved')); // 進化フェーズに入る
-        localStorage.setItem(K.turns, '0');                       // カウントをリセット
-        localStorage.setItem(K.flag, '1');                        // 新フェーズ開始フラグ
-        location.href = SELECT_URL;                               // マカロン選択へ
-      }else{
-        // 進化フェーズ10回終了 → 復活の儀式へ
+        // 進化へ
+        localStorage.setItem(K.phase, JSON.stringify('evolved'));
+        localStorage.setItem(K.turns, '0');
         localStorage.setItem(K.flag, '1');
-        location.href = REBIRTH_URL;
-      }
-    }
-  });
-
-  // 新フェーズ開始時のUI調整（別ページから戻ってきたときに効く）
-  if(localStorage.getItem(K.flag)){
-    localStorage.removeItem(K.flag);
-    turns = 0; cycleEl.textContent = '0';
-    noticeEl.textContent = phaseNotice((localStorage.getItem(K.phase)||'tane').replace(/^\"|\"$/g,''));
-  }
-  </script>
-</body>
-</html>
+        localStorage.set
