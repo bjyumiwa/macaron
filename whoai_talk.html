@@ -199,4 +199,15 @@
         localStorage.setItem(K.phase, JSON.stringify('evolved'));
         localStorage.setItem(K.turns, '0');
         localStorage.setItem(K.flag, '1');
-        localStorage.set
+        localStorage.setItem(K.reset,'0'); // 進化直後はログ保持（好みで1に可）
+        safeNavigate(SELECT_URL);
+      }else{
+        // 復活の儀式へ
+        localStorage.setItem(K.flag, '1');
+        safeNavigate(REBIRTH_URL);
+      }
+    }
+  });
+  </script>
+</body>
+</html>
