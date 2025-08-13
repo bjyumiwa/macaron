@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>s - 次の周回へ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-family: "Noto Sans JP", sans-serif;
+    }
+    .box {
+      padding: 22px 26px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      text-align: center;
+    }
+    .dot {
+      animation: blink 1.2s infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    button {
+      margin-top: 14px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 0;
+      background: #a3e635;
+      color: #0a0a0a;
+      font-weight: 700;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div>次の周回を準備中<span class="dot">…</span></div>
+    <button onclick="goTalk()">すぐ会話へ</button>
+  </div>
+  <script>
+    const TALK_URL = 'whoai_talk.html';
+    function goTalk() {
+      location.href = TALK_URL;
+    }
+    // 1.2秒後に自動で会話ページへ遷移
+    setTimeout(goTalk, 1200);
+  </script>
+</body>
+</html>
