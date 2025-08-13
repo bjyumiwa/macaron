@@ -10,12 +10,11 @@
     body{
       font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
       color:#fff;
-      /* フォールバック背景（画像が読めなくても雰囲気を維持） */
       background:
         radial-gradient(1200px 900px at 85% 25%,rgba(255,255,255,.08),rgba(0,0,0,0) 60%),
         radial-gradient(1200px 900px at 15% 70%,rgba(125,116,255,.15),rgba(0,0,0,0) 60%),
         linear-gradient(180deg,#0a0f1a 0%,#0a0a0a 100%);
-      background-attachment:fixed; background-size:cover; background-repeat:no-repeat; background-position:center;
+      background-attachment:fixed; background-size:cover; background-position:center;
       display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
     }
     .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:20;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;border:1px solid rgba(255,255,255,.15)}
@@ -25,10 +24,6 @@
     .avatar{width:90px;height:90px;border-radius:24px;background:rgba(255,255,255,.08);display:grid;place-items:center;border:1px solid rgba(255,255,255,.16)}
     .avatar img{width:70px;height:70px;object-fit:contain;animation:floatY 3s ease-in-out infinite}
     @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-    .stats{line-height:1.35}
-    .notice{opacity:.9;margin:8px 0 12px; text-wrap:pretty;} .nobr{white-space:nowrap;} 
-
-    /* ガラス風パネル */
     .panel{padding:16px;border-radius:18px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.15); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px)}
     #chat{height:56vh;min-height:360px;overflow:auto}
     .bubble{max-width:86%;margin:10px 0;padding:12px 14px;border-radius:16px;line-height:1.6;word-break:break-word;border:1px solid rgba(255,255,255,.12)}
@@ -39,6 +34,7 @@
     input[type=text]{flex:1;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff}
     button{padding:12px 20px;border-radius:14px;border:0;background:#b4f54a;color:#111;font-weight:800;cursor:pointer}
     button:disabled{opacity:.6;cursor:not-allowed}
+    .notice{opacity:.9;margin:8px 0 12px}
   </style>
 </head>
 <body>
@@ -48,14 +44,14 @@
     <div class="top">
       <div class="avatar"><img id="avatarImg" alt="avatar"/></div>
       <div>
+        <div><b>フェーズ:</b> <span id="phaseLabel">-</span></div>
         <div><b>見た目:</b> <span id="appearanceLabel">-</span></div>
-        <div><b>会話回数(この周回):</b> <span id="cycleCount">0</span>/10</div>
+        <div><b>会話回数(このフェーズ):</b> <span id="cycleCount">0</span>/10</div>
       </div>
     </div>
 
     <div class="panel">
-      <!-- ✅ お知らせはここに1つだけ表示 -->
-      <div class="notice">10ターン到達で「容姿 or 記録」選択画面へ移動します。 記録を選んだ場合、ログは残り、<span class="nobr">見た目のみ変わります。</span></div>
+      <div class="notice" id="notice"></div>
       <div id="chat"></div>
       <form id="talkForm">
         <input id="msg" type="text" placeholder="メッセージを入力…" autocomplete="off" />
@@ -66,15 +62,25 @@
 
   <script>
   'use strict';
-  /* ============ 設定 ============ */
+
+  /* ======= 設定 ======= */
   var TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
   var MAX_TURNS = 10;
-  var REBIRTH_URL = './rebirth.html';
 
-  /* ============ キー ============ */
-  var K = { log:'whoai_chatLog', appear:'whoai_appearance', turns:'whoai_cycleCount', flag:'whoai_newCycleFlag' };
+  // ←← ここをあなたの実ファイル名に合わせて変更可能
+  var SELECT_URL  = './macaron.html';   // マカロン色選択（進化）ページ
+  var REBIRTH_URL = './rebirth.html';   // 復活の儀式ページ
 
-  /* ============ 画像リゾルバ ============ */
+  /* ======= localStorage キー ======= */
+  var K = {
+    log:'whoai_chatLog',
+    appear:'whoai_appearance',
+    turns:'whoai_cycleCount',
+    phase:'whoai_phase',          // 'tane' → 'evolved'
+    flag:'whoai_newCycleFlag'
+  };
+
+  /* ======= 画像 ======= */
   var BASES = [ './public/assets/stage1/', 'public/assets/stage1/', './assets/stage1/', 'assets/stage1/' ];
   var BG_NAME = 'space_background.png';
   var SPRITE_LIST = {
@@ -84,46 +90,42 @@
     purple:['tane_purple.png','macaron_purple.png','purple_open.png','purple_closed.png'],
     tane:  ['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png']
   };
-
   function tryLoad(urls, cb){ var i=0, img=new Image(); img.onload=function(){cb(urls[i]);}; img.onerror=function(){ i++; if(i<urls.length){ img.src=urls[i]; } else { cb(null); } }; img.src=urls[i]; }
   function resolveOne(file, cb){ var urls=[]; for(var i=0;i<BASES.length;i++){ urls.push(BASES[i]+file); } tryLoad(urls, cb); }
   function resolveMany(files, cb){ if(!files||!files.length){ cb(null); return; } var i=0; (function next(){ resolveOne(files[i], function(ok){ if(ok){ cb(ok); } else { i++; (i<files.length)? next(): cb(null); } }); })(); }
-
-  // 背景適用（CSS背景に上書き）
   resolveOne(BG_NAME, function(ok){ if(ok){ document.body.style.backgroundImage = 'url("'+ok+'")'; }});
 
-  /* ============ DOM ============ */
+  /* ======= DOM ======= */
   function $(s){ return document.querySelector(s); }
-  var chatEl = $('#chat');
-  var cycleEl = $('#cycleCount');
-  var appearEl= $('#appearanceLabel');
-  var avatarEl= $('#avatarImg');
-  var form    = $('#talkForm');
-  var input   = $('#msg');
-  var sendBtn = $('#sendBtn');
+  var chatEl = $('#chat'), cycleEl = $('#cycleCount'), appearEl= $('#appearanceLabel');
+  var phaseEl= $('#phaseLabel'), avatarEl= $('#avatarImg'), noticeEl = $('#notice');
+  var form    = $('#talkForm'), input   = $('#msg'), sendBtn = $('#sendBtn');
 
-  /* ============ Storage ============ */
+  /* ======= Storage util ======= */
   function getJSON(k,d){ try{ var v=localStorage.getItem(k); return v? JSON.parse(v): d; }catch(e){ return d; } }
   function setJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
 
-  // 新しい周回なら回数だけ0
-  if(localStorage.getItem(K.flag)){ localStorage.removeItem(K.flag); localStorage.setItem(K.turns,'0'); }
-
-  // 状態読み込み
-  var chatLog = getJSON(K.log, []);
+  /* ======= 状態読み込み ======= */
+  var phase = (localStorage.getItem(K.phase) || 'tane').replace(/^\"|\"$/g,''); // 'tane' or 'evolved'
   var appearance = (localStorage.getItem(K.appear)||'green').replace(/^\"|\"$/g,'');
   var turns = parseInt(localStorage.getItem(K.turns)||'0',10);
+  var chatLog = getJSON(K.log, []);
 
-  // ✅ 起動時クリーンアップ：以前に保存された重複の system お知らせを除去
+  // 古いsystemの重複お知らせを消す
   var BEFORE = chatLog.length;
-  chatLog = chatLog.filter(function(m){
-    return !(m.role==='system' && m.text && m.text.indexOf('10ターン到達で')>=0);
-  });
-  if (chatLog.length !== BEFORE) { setJSON(K.log, chatLog); }
+  chatLog = chatLog.filter(function(m){ return !(m.role==='system' && m.text && m.text.indexOf('10ターン到達で')>=0); });
+  if(chatLog.length!==BEFORE) setJSON(K.log, chatLog);
 
-  if(turns >= MAX_TURNS){ localStorage.setItem(K.flag,'1'); location.href = REBIRTH_URL; }
+  // フェーズ別の案内
+  function phaseNotice(p){
+    return (p==='tane')
+      ? '（タネ）10ターン到達で「マカロン選択」に移動します。選んだ色で進化します。'
+      : '（進化後）10ターン到達で「復活の儀式」に移動します。';
+  }
+  noticeEl.textContent = phaseNotice(phase);
 
-  // 表示
+  /* ======= UI反映 ======= */
+  phaseEl.textContent = (phase==='tane' ? 'タネ' : '進化後');
   appearEl.textContent = appearance;
   cycleEl.textContent = String(turns);
   resolveMany(SPRITE_LIST[appearance]||SPRITE_LIST.tane, function(ok){ if(ok){ avatarEl.src = ok; } });
@@ -141,7 +143,7 @@
   }
   renderChat();
 
-  /* ============ API ============ */
+  /* ======= API ======= */
   async function talkAPI(text){
     var hist = chatLog.slice(-8);
     try{
@@ -151,9 +153,7 @@
         body: JSON.stringify({
           messages:[
             {role:'system', content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'},
-            ...hist.map(function(m){
-              return {role:(m.role==='assistant'?'assistant':(m.role==='user'?'user':'system')), content:m.text};
-            }),
+            ...hist.map(function(m){ return {role:(m.role==='assistant'?'assistant':(m.role==='user'?'user':'system')), content:m.text}; }),
             {role:'user', content:text}
           ]
         })
@@ -166,18 +166,42 @@
     }
   }
 
+  /* ======= 送信処理 ======= */
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     var text = input.value.trim(); if(!text) return;
 
     chatLog.push({role:'user', text:text}); setJSON(K.log, chatLog); renderChat(); input.value='';
     sendBtn.disabled=true; var reply = await talkAPI(text); sendBtn.disabled=false;
-
     chatLog.push({role:'assistant', text:reply}); setJSON(K.log, chatLog); renderChat();
 
-    turns += 1; localStorage.setItem(K.turns,String(turns)); cycleEl.textContent = String(Math.min(turns,MAX_TURNS));
-    if(turns >= MAX_TURNS){ localStorage.setItem(K.flag,'1'); location.href = REBIRTH_URL; }
+    // カウント更新
+    turns += 1;
+    localStorage.setItem(K.turns,String(turns));
+    cycleEl.textContent = String(Math.min(turns,MAX_TURNS));
+
+    // 到達処理：フェーズにより遷移先を変える
+    if(turns >= MAX_TURNS){
+      if(phase === 'tane'){
+        // 次は進化パートへ
+        localStorage.setItem(K.phase, JSON.stringify('evolved')); // 進化フェーズに入る
+        localStorage.setItem(K.turns, '0');                       // カウントをリセット
+        localStorage.setItem(K.flag, '1');                        // 新フェーズ開始フラグ
+        location.href = SELECT_URL;                               // マカロン選択へ
+      }else{
+        // 進化フェーズ10回終了 → 復活の儀式へ
+        localStorage.setItem(K.flag, '1');
+        location.href = REBIRTH_URL;
+      }
+    }
   });
+
+  // 新フェーズ開始時のUI調整（別ページから戻ってきたときに効く）
+  if(localStorage.getItem(K.flag)){
+    localStorage.removeItem(K.flag);
+    turns = 0; cycleEl.textContent = '0';
+    noticeEl.textContent = phaseNotice((localStorage.getItem(K.phase)||'tane').replace(/^\"|\"$/g,''));
+  }
   </script>
 </body>
 </html>
