@@ -22,25 +22,25 @@
   </div>
 
 <script>
-  // whoai_* のキーは他ファイルと完全一致させる
+  // whoai_* キー（他のファイルと一致させる）
   var K = {
     appear:'whoai_appearance',
-    turns:'whoai_cycleCount',
-    phase:'whoai_phase',
-    flag :'whoai_newCycleFlag',
-    must :'whoai_must2ndMacaron' // 2回目マカロンの一度きりフラグ
+    turns :'whoai_cycleCount',
+    phase :'whoai_phase',
+    flag  :'whoai_newCycleFlag',
+    must  :'whoai_must2ndMacaron' // 2回目マカロンの一度きりフラグ
   };
 
   function pick(color){
-    // ★ 進化の確定保存
+    // ★ 進化の確定保存（見た目・フェーズ）
     localStorage.setItem(K.appear, JSON.stringify(color));
     localStorage.setItem(K.phase , JSON.stringify('evolved'));
     localStorage.setItem(K.turns , '0');
     localStorage.setItem(K.flag  , '1');
-    localStorage.setItem(K.must  , '0');     // ★ 2回目フラグを消化
+    localStorage.setItem(K.must  , '0'); // 2回目フラグ消化
 
-    // 進化しました！の演出（任意）
-    const ov = document.createElement('div');
+    // ちょい演出（0.9秒）
+    const ov=document.createElement('div');
     ov.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.35);color:#fff;font-size:28px';
     ov.textContent='進化しました！';
     document.body.appendChild(ov);
@@ -52,6 +52,5 @@
     el.addEventListener('click', function(){ pick(el.getAttribute('data-color')); });
   });
 </script>
-
 </body>
 </html>
