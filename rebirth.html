@@ -1,70 +1,32 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>復活の儀式</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#0b0f19;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px
-    }
-    .row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
-    button{
-      border:none;border-radius:14px;padding:14px 18px;cursor:pointer;
-      background:#ffd1ec;color:#111;font-weight:800;min-width:240px
-    }
-    .sub{opacity:.8}
-  </style>
+<meta charset="UTF-8">
+<title>復活の儀式</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body{font-family:"Noto Sans JP",sans-serif;background:#0b0f19;color:#fff;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+  button{margin:10px;padding:12px 18px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
+  .choice1{background:#6b46c1;color:#fff}
+  .choice2{background:#ed64a6;color:#fff}
+</style>
 </head>
 <body>
   <h2>復活の儀式</h2>
-  <div class="sub">どちらかを選んでください（次の1回の会話で「魔法のドリンク」へ）</div>
-  <div class="row">
-    <button id="chooseAppearance">容姿を保つ（会話リセット）</button>
-    <button id="chooseMemory">記憶を保つ（容姿変更）</button>
-  </div>
+  <p>どうする？</p>
+  <button class="choice1" id="chooseAppearance">容姿を選ぶ（会話リセット）</button>
+  <button class="choice2" id="keepMemory">記録を選ぶ（容姿変更）</button>
 
 <script>
-const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
-
-function goTalk(){ location.href = `${ROOT}/whoai_talk.html`; }
-
-// localStorage helpers
-function set(k,v){ localStorage.setItem(k,v); }
-function get(k,d=null){ const v=localStorage.getItem(k); return v===null? d:v; }
-
-const K = {
-  color:'whoai_color',
-  stage:'whoai_stage',
-  turn:'whoai_turn',
-  rebirthMode:'whoai_rebirth_mode',
-  rebirthWaitFirst:'whoai_rebirth_wait1'
-};
-
-// 容姿を保つ＝外見そのまま、会話リセット
-document.getElementById('chooseAppearance').addEventListener('click', ()=>{
-  set(K.rebirthMode,'appearance');
-  set(K.rebirthWaitFirst,'1'); // 次の1回でドリンクへ
-  // 進化状態は維持
-  set(K.stage,'evolved');
-  set(K.turn,'0'); // 会話はリセット
-  goTalk();
+document.getElementById('chooseAppearance').addEventListener('click',()=>{
+  localStorage.setItem('whoai_turn','0');
+  localStorage.setItem('whoai_fromRebirth','1');
+  location.href = '/macaron/whoai_talk.html';
 });
 
-// 記憶を保つ＝容姿変更（色を選び直し）＆会話記録はそのまま
-document.getElementById('chooseMemory').addEventListener('click', ()=>{
-  set(K.rebirthMode,'memory');
-  set(K.rebirthWaitFirst,'1'); // 次の1回でドリンクへ
-  // ここで色を変えるUIがない場合はデフォルトで色をローテ／サンプルはblue→pink→green→purple→blue
-  const now = get(K.color,'blue');
-  const order = ['blue','pink','green','purple'];
-  const next = order[(order.indexOf(now)+1)%order.length];
-  set(K.color, next);         // 容姿変更
-  // 会話記録は維持＝turnは変更しない
-  set(K.stage,'evolved');     // 進化のまま
-  goTalk();
+document.getElementById('keepMemory').addEventListener('click',()=>{
+  localStorage.setItem('whoai_fromRebirth','1');
+  location.href = '/macaron/macaron.html';
 });
 </script>
 </body>
