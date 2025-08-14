@@ -10,8 +10,10 @@
   .colors{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
   .macaron{
     width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    cursor:pointer;color:#fff;font-weight:700;font-size:18px;box-shadow:0 4px 12px rgba(0,0,0,.15)
+    cursor:pointer;color:#fff;font-weight:700;font-size:18px;box-shadow:0 4px 12px rgba(0,0,0,.15);
+    transition:transform 0.2s;
   }
+  .macaron:hover{transform:scale(1.05);}
   .pink{background:pink}
   .blue{background:skyblue}
   .green{background:lightgreen}
@@ -32,11 +34,11 @@ document.querySelectorAll('.macaron').forEach(m=>{
   m.addEventListener('click', ()=>{
     const color = m.dataset.color;
     localStorage.setItem('whoai_color', color);
-    // 進化前の状態なら強制的に10回後に進化させるため stage を tane にしておく
+    // 未進化の場合は tane にセット
     if(!localStorage.getItem('whoai_stage')){
       localStorage.setItem('whoai_stage','tane');
     }
-    // 会話ページへ戻る
+    // 会話ページへ
     location.href = '/macaron/whoai_talk.html';
   });
 });
