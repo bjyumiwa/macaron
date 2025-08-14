@@ -8,7 +8,6 @@
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      /* 背景はJSで安全なパスを注入します */
       display:flex;flex-direction:column;align-items:center;justify-content:flex-start
     }
     .whoai-name-badge{
@@ -64,24 +63,40 @@
   </div>
 
 <script>
-/* ---------- 共通: ルート/アセット解決 ---------- */
+/* ---------- パス定義 ---------- */
 const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
 const asset = (p) => `${ROOT}${p}`;
+const IMG_BASE = '/public/assets/stage1';
 
-/* 背景注入（黒画面対策：パスずれを吸収） */
-document.body.style.backgroundImage = `url("${asset('/public/assets/stage1/space_background.png')}")`;
+/* 背景設定（黒画面対策） */
+document.body.style.backgroundImage = `url("${asset(`${IMG_BASE}/space_background.png`)}")`;
 document.body.style.backgroundSize = 'cover';
 document.body.style.backgroundPosition = 'center';
 document.body.style.backgroundAttachment = 'fixed';
 
-/* ---------- 状態管理（localStorage） ---------- */
+/* ---------- 画像定義 ---------- */
+const TANE_IMG = asset(`${IMG_BASE}/tane_closed.png`);
+const EVOLVED_OPEN = {
+  pink  : asset(`${IMG_BASE}/pink_open.png`),
+  blue  : asset(`${IMG_BASE}/blue_open.png`),
+  green : asset(`${IMG_BASE}/green_open.png`),
+  purple: asset(`${IMG_BASE}/purple_open.png`),
+};
+const EVOLVED_CLOSE = {
+  pink  : asset(`${IMG_BASE}/pink_closed.png`),
+  blue  : asset(`${IMG_BASE}/blue_closed.png`),
+  green : asset(`${IMG_BASE}/green_closed.png`),
+  purple: asset(`${IMG_BASE}/purple_closed.png`),
+};
+
+/* ---------- 状態管理 ---------- */
 const LS = {
   get k(){ return {
-    color: 'whoai_color',         // 'pink'|'blue'|'green'|'purple'
-    stage: 'whoai_stage',         // 'tane'|'evolved'
-    turn : 'whoai_turn',          // number
-    evolvedOnce: 'whoai_evolved_once', // '1'|'0'
-    justEvolved: 'whoai_just_evolved', // '1'|'0'（進化直後フラグ）
+    color: 'whoai_color',
+    stage: 'whoai_stage',
+    turn : 'whoai_turn',
+    evolvedOnce: 'whoai_evolved_once',
+    justEvolved: 'whoai_just_evolved'
   }},
   g(key, def=null){ const v=localStorage.getItem(key); return (v===null? def: v); },
   s(key, val){ localStorage.setItem(key, val); },
@@ -89,14 +104,14 @@ const LS = {
   b(key, def=false){ const v=this.g(key); return v===null? def: v==='1'; }
 };
 
-/* 初期デフォルト */
+/* 初期値補填 */
 if(!LS.g(LS.k.stage)) LS.s(LS.k.stage, 'tane');
-if(!LS.g(LS.k.color)) LS.s(LS.k.color, 'blue'); // 仮の初期色（進化前は未使用）
+if(!LS.g(LS.k.color)) LS.s(LS.k.color, 'blue');
 if(!LS.g(LS.k.turn))  LS.s(LS.k.turn,  '0');
 if(!LS.g(LS.k.evolvedOnce)) LS.s(LS.k.evolvedOnce, '0');
 if(!LS.g(LS.k.justEvolved)) LS.s(LS.k.justEvolved, '0');
 
-/* 画面要素 */
+/* ---------- 要素取得 ---------- */
 const stageChip = document.getElementById('stageChip');
 const charImg   = document.getElementById('charImg');
 const turnView  = document.getElementById('turnView');
@@ -106,22 +121,7 @@ const inp       = document.getElementById('inp');
 const sendBtn   = document.getElementById('sendBtn');
 const hint      = document.getElementById('hint');
 
-/* 画像マップ（open/close） */
-const TANE_IMG = asset('/public/assets/stage1/tane_closed.png'); // 進化前
-const EVOLVED_OPEN = {
-  pink  : asset('/public/assets/stage2/pink_open.png'),
-  blue  : asset('/public/assets/stage2/blue_open.png'),
-  green : asset('/public/assets/stage2/green_open.png'),
-  purple: asset('/public/assets/stage2/purple_open.png'),
-};
-const EVOLVED_CLOSE = {
-  pink  : asset('/public/assets/stage2/pink_closed.png'),
-  blue  : asset('/public/assets/stage2/blue_closed.png'),
-  green : asset('/public/assets/stage2/green_closed.png'),
-  purple: asset('/public/assets/stage2/purple_closed.png'),
-};
-
-/* 表示更新 */
+/* ---------- 表示更新 ---------- */
 function refreshHeader(){
   const stage = LS.g(LS.k.stage,'tane');
   const color = LS.g(LS.k.color,'-');
@@ -131,15 +131,12 @@ function refreshHeader(){
   turnView.textContent = turn;
   colorView.textContent = (stage==='tane')? '-' : color;
 
-  // キャラ画像
   if(stage==='tane'){
     charImg.src = TANE_IMG;
   }else{
-    const c = (color in EVOLVED_OPEN)? color : 'blue';
-    charImg.src = EVOLVED_OPEN[c];
+    charImg.src = EVOLVED_OPEN[color] || EVOLVED_OPEN.blue;
   }
 
-  // ヒント
   if(stage==='tane'){
     hint.textContent = 'タネ段階は10ターン到達でマカロン選択へ自動遷移します。';
   }else if(LS.b(LS.k.justEvolved)){
@@ -150,7 +147,7 @@ function refreshHeader(){
 }
 refreshHeader();
 
-/* チャット補助（ダミーAI応答） */
+/* ---------- チャット関数 ---------- */
 function addMsg(role, text){
   const div = document.createElement('div');
   div.className = 'msg ' + (role==='ai'?'ai':'me');
@@ -160,7 +157,7 @@ function addMsg(role, text){
 }
 addMsg('ai','こんにちは！');
 
-/* 送信ハンドラ */
+/* ---------- 送信イベント ---------- */
 async function onSend(){
   const v = inp.value.trim();
   if(!v) return;
@@ -172,29 +169,25 @@ async function onSend(){
   if(stage==='evolved'){
     const c = LS.g(LS.k.color,'blue');
     charImg.src = EVOLVED_OPEN[c] || EVOLVED_OPEN.blue;
-    setTimeout(()=>{ charImg.src = (EVOLVED_CLOSE[c]||EVOLVED_CLOSE.blue); }, 260);
+    setTimeout(()=>{ charImg.src = EVOLVED_CLOSE[c] || EVOLVED_CLOSE.blue; }, 260);
   }
 
-  // 疑似AI返信
   await new Promise(r=>setTimeout(r,200));
   addMsg('ai','うん、なるほど！');
 
-  // ターン更新 & 遷移判定
   let turn = LS.n(LS.k.turn,0) + 1;
   LS.s(LS.k.turn, String(turn));
   refreshHeader();
 
-  // 進化前：10ターンでマカロン選択へ
+  // タネ → 10回でマカロン選択
   if(stage==='tane' && turn>=10){
-    // 次ページのためにフラグを初期化
     LS.s(LS.k.turn, '0');
-    location.href = asset('/macaron.html'); // マカロン選択
+    location.href = asset('/macaron.html');
     return;
   }
 
-  // 進化直後：1回話したら儀式へ
+  // 進化直後 → 1回会話で儀式へ
   if(stage==='evolved' && LS.b(LS.k.justEvolved)){
-    // justEvolved を消して、儀式へ
     LS.s(LS.k.justEvolved, '0');
     LS.s(LS.k.turn, '0');
     location.href = asset('/macaron/rebirth.html');
@@ -202,7 +195,6 @@ async function onSend(){
 }
 sendBtn.addEventListener('click', onSend);
 inp.addEventListener('keydown', (e)=>{ if(e.key==='Enter') onSend(); });
-
 </script>
 </body>
 </html>
