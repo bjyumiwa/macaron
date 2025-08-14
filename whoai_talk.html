@@ -73,14 +73,20 @@ const LS = {
   n(k,d=0){const v=this.g(k);return v===null?d:Number(v);},
   b(k,d=false){const v=this.g(k);return v===null?d:v==='1';}
 };
+
+// 初期値セット
 if(!LS.g(LS.k.stage)) LS.s(LS.k.stage,'tane');
 if(!LS.g(LS.k.color)) LS.s(LS.k.color,'blue');
 if(!LS.g(LS.k.turn)) LS.s(LS.k.turn,'0');
 if(!LS.g(LS.k.evolvedOnce)) LS.s(LS.k.evolvedOnce,'0');
 if(!LS.g(LS.k.justEvolved)) LS.s(LS.k.justEvolved,'0');
+
 (function enforceTane(){
-  if(LS.n(LS.k.turn,0)===0 && !LS.b(LS.k.evolvedOnce)){LS.s(LS.k.stage,'tane');}
+  if(LS.n(LS.k.turn,0)===0 && !LS.b(LS.k.evolvedOnce)){
+    LS.s(LS.k.stage,'tane');
+  }
 })();
+
 const stageChip=document.getElementById('stageChip');
 const charImg=document.getElementById('charImg');
 const turnView=document.getElementById('turnView');
@@ -88,6 +94,7 @@ const colorView=document.getElementById('colorView');
 const chat=document.getElementById('chat');
 const inp=document.getElementById('inp');
 const sendBtn=document.getElementById('sendBtn');
+
 function refreshHeader(){
   const stage=LS.g(LS.k.stage,'tane');
   const color=LS.g(LS.k.color,'-');
@@ -97,6 +104,7 @@ function refreshHeader(){
   charImg.src=stage==='tane'?TANE_IMG:(EVOLVED_OPEN[color]||EVOLVED_OPEN.blue);
 }
 refreshHeader();
+
 function addMsg(role,text){
   const div=document.createElement('div');
   div.className='msg '+(role==='ai'?'ai':'me');
@@ -105,6 +113,7 @@ function addMsg(role,text){
   chat.scrollTop=chat.scrollHeight;
 }
 addMsg('ai','こんにちは！');
+
 async function callTalkAPI(payload){
   const controller=new AbortController();
   const t=setTimeout(()=>controller.abort(),TIMEOUT_MS);
@@ -116,8 +125,10 @@ async function callTalkAPI(payload){
     return data.reply;
   }catch(e){clearTimeout(t);throw e;}
 }
+
 function evolveNow(){
-  const color=LS.g(LS.k.color)||'blue';
+  // マカロンで選んだ色を必ず使う
+  const color=LS.g(LS.k.color) || 'blue';
   LS.s(LS.k.color,color);
   LS.s(LS.k.stage,'evolved');
   LS.s(LS.k.evolvedOnce,'1');
@@ -128,21 +139,43 @@ function evolveNow(){
   addMsg('ai',`…${color}の力が満ちてきた！進化したよ。`);
   refreshHeader();
 }
+
 async function onSend(){
   const user=inp.value.trim();if(!user)return;
   addMsg('me',user);inp.value='';
   const stage=LS.g(LS.k.stage,'tane');
   const color=LS.g(LS.k.color,'blue');
   const turn0=LS.n(LS.k.turn,0);
-  if(stage==='evolved'){charImg.src=EVOLVED_OPEN[color];setTimeout(()=>{charImg.src=EVOLVED_CLOSE[color];},260);}
+
+  if(stage==='evolved'){
+    charImg.src=EVOLVED_OPEN[color];
+    setTimeout(()=>{charImg.src=EVOLVED_CLOSE[color];},260);
+  }
+
   try{
     const reply=await callTalkAPI({message:user,color,stage,turn:turn0});
     const flair=(MOOD[color]||[])[Math.floor(Math.random()*(MOOD[color]||[]).length)]||'';
     addMsg('ai',flair?`${reply} ${flair}`:reply);
-  }catch(e){addMsg('ai','（通信エラー）');}
-  let turn=turn0+1;LS.s(LS.k.turn,String(turn));refreshHeader();
-  if(stage==='tane' && turn>=10){evolveNow();return;}
-  if(stage==='evolved' && LS.b(LS.k.justEvolved)){LS.s(LS.k.justEvolved,'0');LS.s(LS.k.turn,'0');location.href='/macaron/rebirth.html';}
+  }catch(e){
+    addMsg('ai','（通信エラー）');
+  }
+
+  let turn=turn0+1;
+  LS.s(LS.k.turn,String(turn));
+  refreshHeader();
+
+  // ★ 進化判定はここで即return
+  if(stage==='tane' && turn>=10){
+    evolveNow();
+    return;
+  }
+
+  if(stage==='evolved' && LS.b(LS.k.justEvolved)){
+    LS.s(LS.k.justEvolved,'0');
+    LS.s(LS.k.turn,'0');
+    location.href='/macaron/rebirth.html';
+    return;
+  }
 }
 sendBtn.addEventListener('click',onSend);
 inp.addEventListener('keydown',e=>{if(e.key==='Enter')onSend();});
