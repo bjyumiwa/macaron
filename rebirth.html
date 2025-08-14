@@ -1,61 +1,51 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>復活の儀式</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-    color:#fff;background:#0b0f19;
-    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px
-  }
-  .card{max-width:720px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);
-        border-radius:20px;padding:24px;backdrop-filter:blur(6px)}
-  h1{margin:0 0 8px}
-  p{opacity:.95;margin:6px 0 18px}
-  .choices{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-  button{padding:12px 18px;border-radius:14px;border:0;cursor:pointer;font-weight:800}
-  .keep-look{background:#b4f54a;color:#111}
-  .keep-mem{background:#9ad0ff;color:#111}
-  .ghost{opacity:.7;font-size:.95em;margin-top:10px}
-</style>
+  <meta charset="UTF-8" />
+  <title>rebirth - 復活の儀式</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#0b0f19;
+      display:flex;flex-direction:column;align-items:center;justify-content:center
+    }
+    .row{display:flex;gap:16px;flex-wrap:wrap}
+    button{
+      border:none;border-radius:14px;padding:14px 18px;cursor:pointer;
+      background:#ffd1ec;color:#111;font-weight:800;min-width:220px
+    }
+    .sub{opacity:.8;margin-top:10px}
+  </style>
 </head>
 <body>
-  <div class="card">
-    <h1>復活の儀式</h1>
-    <p>次の周回の始め方を選んでください。</p>
-    <div class="choices">
-      <button class="keep-look" id="btnLook">容姿を保つ</button>
-      <button class="keep-mem"  id="btnMemo">記録を保つ（見た目だけ変える）</button>
-    </div>
-    <p class="ghost">「容姿を保つ」は進化キャラのまま、ログと回数をリセット。<br>
-       「記録を保つ」はログを保持したまま色を選び直します。</p>
+  <h2>復活の儀式</h2>
+  <div class="sub">どちらかを選んでください</div>
+  <div class="row" style="margin-top:16px">
+    <button id="keepMemory">記録（メモリ）を保つ（容姿は変化）</button>
+    <button id="keepAppearance">容姿を保つ（記録リセット）</button>
   </div>
 
 <script>
-  var K={log:'whoai_chatLog',appear:'whoai_appearance',turns:'whoai_cycleCount',
-         phase:'whoai_phase',flag:'whoai_newCycleFlag',reset:'whoai_resetLog'};
-  var TALK_URL='./whoai_talk.html', SELECT_URL='./public/macaron.html';
+const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
+const goTalk = ()=> location.href = `${ROOT}/whoai_talk.html`;
 
-  // 容姿を保つ：見た目はそのまま／ログは消す → 会話へ戻る
-  document.getElementById('btnLook').onclick=function(){
-    localStorage.setItem(K.phase,'"evolved"');
-    localStorage.setItem(K.turns,'0');
-    localStorage.setItem(K.flag,'1');
-    localStorage.setItem(K.reset,'1'); // ログ消す
-    location.href = TALK_URL;
-  };
+document.getElementById('keepMemory').addEventListener('click', ()=>{
+  // 記録（会話ログ/ターン）維持 → 外見だけ変える（=カラー選び直しに遷移）
+  // ここでは turn は維持、stage は tane に戻して「見た目だけ変わる」分岐も可
+  // 今回は仕様どおり：記録維持 ＋ 見た目再選択へ（= マカロンへ）
+  localStorage.setItem('whoai_stage','tane');
+  // turn は維持（whoai_talkで10に達すればまた進化へ）
+  location.href = `${ROOT}/macaron.html`;
+});
 
-  // 記録を保つ：ログ保持のまま色を選び直す → マカロンへ
-  document.getElementById('btnMemo').onclick=function(){
-    localStorage.setItem(K.phase,'"evolved"');
-    localStorage.setItem(K.turns,'0');
-    localStorage.setItem(K.flag,'1');
-    localStorage.setItem(K.reset,'0'); // ログ保持
-    location.href = SELECT_URL;
-  };
+document.getElementById('keepAppearance').addEventListener('click', ()=>{
+  // 容姿維持（色・進化状態は保持）、記録をリセット
+  localStorage.setItem('whoai_turn','0');
+  localStorage.setItem('whoai_stage','evolved');
+  // 再び justEvolved は false のままでOK（通常会話へ）
+  goTalk();
+});
 </script>
 </body>
 </html>
