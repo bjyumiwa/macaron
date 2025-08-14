@@ -2,220 +2,207 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>WhoAI と会話する</title>
+  <title>whoai_talk - 会話（10回で進化→1回で儀式）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="data:," />
   <style>
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      color:#fff;
-      background:
-        radial-gradient(1200px 900px at 85% 25%,rgba(255,255,255,.08),rgba(0,0,0,0) 60%),
-        radial-gradient(1200px 900px at 15% 70%,rgba(125,116,255,.15),rgba(0,0,0,0) 60%),
-        linear-gradient(180deg,#0a0f1a 0%,#0a0a0a 100%);
-      background-attachment:fixed; background-size:cover; background-position:center;
-      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      /* 背景はJSで安全なパスを注入します */
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start
     }
-    .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:20;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;border:1px solid rgba(255,255,255,.15)}
-    .container{width:min(980px,94vw);margin:28px auto}
-    h1{margin:0 0 6px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
-    .top{display:flex;gap:16px;align-items:center;margin-bottom:6px}
-    .avatar{width:90px;height:90px;border-radius:24px;background:rgba(255,255,255,.08);display:grid;place-items:center;border:1px solid rgba(255,255,255,.16)}
-    .avatar img{width:70px;height:70px;object-fit:contain;animation:floatY 3s ease-in-out infinite}
-    @keyframes floatY{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-    .panel{padding:16px;border-radius:18px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(6px)}
-    #chat{height:56vh;min-height:360px;overflow:auto}
-    .bubble{max-width:86%;margin:10px 0;padding:12px 14px;border-radius:16px;line-height:1.6;word-break:break-word;border:1px solid rgba(255,255,255,.12)}
-    .ai{background:rgba(255,255,255,.08)}
-    .me{background:rgba(55,115,255,.28);margin-left:auto}
-    .sys{background:rgba(255,255,255,.06);text-align:center}
-    form{display:flex;gap:10px;margin-top:10px}
-    input[type=text]{flex:1;padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:#fff}
-    button{padding:12px 20px;border-radius:14px;border:0;background:#b4f54a;color:#111;font-weight:800;cursor:pointer}
-    button:disabled{opacity:.6;cursor:not-allowed}
-    .notice{opacity:.95;margin:8px 0 12px}
+    .whoai-name-badge{
+      position:fixed;top:10px;right:10px;z-index:1000;
+      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
+      padding:8px 12px;border-radius:12px;font-weight:700;font-size:14px
+    }
+    h2{margin:18px 0 8px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+    .stage-chip{
+      margin-bottom:8px;font-size:12px;opacity:.8
+    }
+    .wrap{width:min(720px,94vw);margin:16px auto 24px}
+    .char{display:flex;gap:12px;align-items:center}
+    .char img{width:120px;height:auto;image-rendering:auto}
+    .chat{
+      margin-top:16px;background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;min-height:240px
+    }
+    .msg{margin:8px 0;max-width:92%}
+    .ai{color:#e7f0ff}
+    .me{color:#ffe8f0;text-align:right;margin-left:auto}
+    .row{display:flex;gap:8px;margin-top:10px}
+    input[type="text"]{
+      flex:1;border-radius:10px;border:1px solid #333;background:#0b0f19;color:#fff;padding:10px
+    }
+    button{
+      border:none;border-radius:10px;padding:10px 14px;cursor:pointer;background:#ffd1ec;color:#111;font-weight:700
+    }
+    .hint{opacity:.8;font-size:12px;margin-top:6px}
   </style>
 </head>
 <body>
-  <div class="whoai-name-badge">FILE: whoai_talk.html ／ パス: /macaron/</div>
-  <div class="container">
-    <h1>WhoAI と会話する</h1>
-    <div class="top">
-      <div class="avatar"><img id="avatarImg" alt="avatar"/></div>
+  <div class="whoai-name-badge">whoai_talk.html</div>
+  <div class="wrap">
+    <h2>お話ししよう</h2>
+    <div class="stage-chip" id="stageChip"></div>
+
+    <div class="char">
+      <img id="charImg" alt="character">
       <div>
-        <div><b>フェーズ:</b> <span id="phaseLabel">-</span></div>
-        <div><b>見た目:</b> <span id="appearanceLabel">-</span></div>
-        <div><b>会話回数(このフェーズ):</b> <span id="cycleCount">0</span>/10</div>
+        <div>ターン: <span id="turnView">0</span></div>
+        <div>色: <span id="colorView">-</span></div>
       </div>
     </div>
 
-    <div class="panel">
-      <div class="notice" id="notice"></div>
-      <div id="chat"></div>
-      <form id="talkForm">
-        <input id="msg" type="text" placeholder="メッセージを入力…" autocomplete="off" />
-        <button id="sendBtn" type="submit">送信</button>
-      </form>
+    <div id="chat" class="chat"></div>
+
+    <div class="row">
+      <input id="inp" type="text" placeholder="メッセージを入力…" />
+      <button id="sendBtn">送信</button>
     </div>
+    <div class="hint" id="hint"></div>
   </div>
 
-  <script>
-  'use strict';
+<script>
+/* ---------- 共通: ルート/アセット解決 ---------- */
+const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
+const asset = (p) => `${ROOT}${p}`;
 
-  /* ===== 設定 ===== */
-  var TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-  var MAX_TURNS = 10;
-  var SELECT_URL  = './public/macaron.html'; // マカロン選択（public内）
-  var REBIRTH_URL = './rebirth.html';        // 復活の儀式
+/* 背景注入（黒画面対策：パスずれを吸収） */
+document.body.style.backgroundImage = `url("${asset('/public/assets/stage1/space_background.png')}")`;
+document.body.style.backgroundSize = 'cover';
+document.body.style.backgroundPosition = 'center';
+document.body.style.backgroundAttachment = 'fixed';
 
-  /* ===== localStorage キー ===== */
-  var K = {
-    log:'whoai_chatLog',
-    appear:'whoai_appearance',
-    turns:'whoai_cycleCount',
-    phase:'whoai_phase',        // 'tane' or 'evolved'
-    flag:'whoai_newCycleFlag',  // UIリセット
-    reset:'whoai_resetLog',     // 1=ログ消す, 0=保持
-    must:'whoai_must2ndMacaron' // ★2回目は必ずマカロンへ行くフラグ
-  };
+/* ---------- 状態管理（localStorage） ---------- */
+const LS = {
+  get k(){ return {
+    color: 'whoai_color',         // 'pink'|'blue'|'green'|'purple'
+    stage: 'whoai_stage',         // 'tane'|'evolved'
+    turn : 'whoai_turn',          // number
+    evolvedOnce: 'whoai_evolved_once', // '1'|'0'
+    justEvolved: 'whoai_just_evolved', // '1'|'0'（進化直後フラグ）
+  }},
+  g(key, def=null){ const v=localStorage.getItem(key); return (v===null? def: v); },
+  s(key, val){ localStorage.setItem(key, val); },
+  n(key, def=0){ const v=this.g(key); return v===null? def: Number(v); },
+  b(key, def=false){ const v=this.g(key); return v===null? def: v==='1'; }
+};
 
-  /* ===== 画像まわり ===== */
-  var BASES=['./public/assets/stage1/','public/assets/stage1/','./assets/stage1/','assets/stage1/'];
-  var BG_NAME='space_background.png';
-  var SPRITE_LIST={
-    green:['tane_green.png','macaron_green.png','green_open.png','green_closed.png'],
-    pink:['tane_pink.png','macaron_pink.png','pink_open.png','pink_closed.png'],
-    blue:['tane_blue.png','macaron_blue.png','blue_open.png','blue_closed.png'],
-    purple:['tane_purple.png','macaron_purple.png','purple_open.png','purple_closed.png'],
-    tane:['tane_pink.png','tane_blue.png','tane_green.png','tane_purple.png']
-  };
-  function tryLoad(urls,cb){var i=0,img=new Image();img.onload=function(){cb(urls[i]);};img.onerror=function(){i++;if(i<urls.length){img.src=urls[i];}else{cb(null);}};img.src=urls[i];}
-  function resolveOne(file,cb){var urls=[];for(var i=0;i<BASES.length;i++){urls.push(BASES[i]+file);}tryLoad(urls,cb);}
-  function resolveMany(files,cb){if(!files||!files.length){cb(null);return;}var i=0;(function next(){resolveOne(files[i],function(ok){if(ok){cb(ok);}else{i++;(i<files.length)?next():cb(null);}});})(); }
-  resolveOne(BG_NAME,function(ok){ if(ok){ document.body.style.backgroundImage='url("'+ok+'")'; }});
+/* 初期デフォルト */
+if(!LS.g(LS.k.stage)) LS.s(LS.k.stage, 'tane');
+if(!LS.g(LS.k.color)) LS.s(LS.k.color, 'blue'); // 仮の初期色（進化前は未使用）
+if(!LS.g(LS.k.turn))  LS.s(LS.k.turn,  '0');
+if(!LS.g(LS.k.evolvedOnce)) LS.s(LS.k.evolvedOnce, '0');
+if(!LS.g(LS.k.justEvolved)) LS.s(LS.k.justEvolved, '0');
 
-  /* ===== DOM ===== */
-  function $(s){return document.querySelector(s);}
-  var chatEl=$('#chat'), cycleEl=$('#cycleCount'), appearEl=$('#appearanceLabel');
-  var phaseEl=$('#phaseLabel'), avatarEl=$('#avatarImg'), noticeEl=$('#notice');
-  var form=$('#talkForm'), input=$('#msg'), sendBtn=$('#sendBtn');
+/* 画面要素 */
+const stageChip = document.getElementById('stageChip');
+const charImg   = document.getElementById('charImg');
+const turnView  = document.getElementById('turnView');
+const colorView = document.getElementById('colorView');
+const chat      = document.getElementById('chat');
+const inp       = document.getElementById('inp');
+const sendBtn   = document.getElementById('sendBtn');
+const hint      = document.getElementById('hint');
 
-  /* ===== Storage util ===== */
-  function getJSON(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
-  function setJSON(k,v){localStorage.setItem(k,JSON.stringify(v));}
+/* 画像マップ（open/close） */
+const TANE_IMG = asset('/public/assets/stage1/tane_closed.png'); // 進化前
+const EVOLVED_OPEN = {
+  pink  : asset('/public/assets/stage2/pink_open.png'),
+  blue  : asset('/public/assets/stage2/blue_open.png'),
+  green : asset('/public/assets/stage2/green_open.png'),
+  purple: asset('/public/assets/stage2/purple_open.png'),
+};
+const EVOLVED_CLOSE = {
+  pink  : asset('/public/assets/stage2/pink_closed.png'),
+  blue  : asset('/public/assets/stage2/blue_closed.png'),
+  green : asset('/public/assets/stage2/green_closed.png'),
+  purple: asset('/public/assets/stage2/purple_closed.png'),
+};
 
-  /* ===== 状態 ===== */
-  var phase=(localStorage.getItem(K.phase)||'tane').replace(/^\"|\"$/g,'');
-  var appearance=(localStorage.getItem(K.appear)||'tane').replace(/^\"|\"$/g,''); // 初期は 'tane'
-  var turns=parseInt(localStorage.getItem(K.turns)||'0',10);
-  var chatLog=getJSON(K.log,[]);
-  var validColors={pink:1,blue:1,green:1,purple:1};
+/* 表示更新 */
+function refreshHeader(){
+  const stage = LS.g(LS.k.stage,'tane');
+  const color = LS.g(LS.k.color,'-');
+  const turn  = LS.n(LS.k.turn,0);
 
-  // 古い system お知らせを削除（重複防止）
-  var BEFORE=chatLog.length;
-  chatLog=chatLog.filter(function(m){return !(m.role==='system' && m.text && m.text.indexOf('10ターン到達で')>=0);});
-  if(chatLog.length!==BEFORE) setJSON(K.log,chatLog);
+  stageChip.textContent = `ステージ: ${stage==='tane'?'タネ':'進化'} / 進化一度目: ${LS.b(LS.k.evolvedOnce)?'済':'未'}`;
+  turnView.textContent = turn;
+  colorView.textContent = (stage==='tane')? '-' : color;
 
-  // rebirth からのリセット指示
-  var reset=localStorage.getItem(K.reset);
-  if(reset==='1'){ chatLog=[]; setJSON(K.log,chatLog); }
-  localStorage.removeItem(K.reset);
-
-  // フェーズ開始フラグ：回数だけ0に
-  if(localStorage.getItem(K.flag)){
-    localStorage.removeItem(K.flag);
-    turns=0; localStorage.setItem(K.turns,'0');
+  // キャラ画像
+  if(stage==='tane'){
+    charImg.src = TANE_IMG;
+  }else{
+    const c = (color in EVOLVED_OPEN)? color : 'blue';
+    charImg.src = EVOLVED_OPEN[c];
   }
 
-  // 進化フェーズなのに色未選択 → 自動でマカロンへ
-  (function guardEvolvedWithoutColor(){
-    if(phase==='evolved' && !validColors[appearance]){
-      noticeEl.textContent='進化フェーズ：色が未選択のためマカロンを選びます。';
-      setTimeout(function(){ location.replace(SELECT_URL); }, 80);
-    }
-  })();
-
-  // 表示
-  function phaseNotice(p){
-    return (p==='tane')
-      ? '（タネ）10ターン到達で「マカロン選択」に移動します。選んだ色で進化します。'
-      : '（進化後）10ターン到達で「復活の儀式」（※2回目のみマカロンへ戻ります）。';
+  // ヒント
+  if(stage==='tane'){
+    hint.textContent = 'タネ段階は10ターン到達でマカロン選択へ自動遷移します。';
+  }else if(LS.b(LS.k.justEvolved)){
+    hint.textContent = '進化直後：このページで1回会話すると「復活の儀式」へ進みます。';
+  }else{
+    hint.textContent = '';
   }
-  phaseEl.textContent=(phase==='tane'?'タネ':'進化後');
-  appearEl.textContent=appearance;
-  cycleEl.textContent=String(turns);
-  noticeEl.textContent=phaseNotice(phase);
-  resolveMany(SPRITE_LIST[validColors[appearance]?appearance:'tane'],function(ok){ if(ok){ avatarEl.src=ok; } });
+}
+refreshHeader();
 
-  function renderChat(){
-    chatEl.innerHTML='';
-    for(var i=0;i<chatLog.length;i++){
-      var m=chatLog[i];
-      var d=document.createElement('div');
-      d.className='bubble '+(m.role==='user'?'me':(m.role==='assistant'?'ai':'sys'));
-      d.textContent=m.text;
-      chatEl.appendChild(d);
-    }
-    chatEl.scrollTop=chatEl.scrollHeight;
-  }
-  renderChat();
+/* チャット補助（ダミーAI応答） */
+function addMsg(role, text){
+  const div = document.createElement('div');
+  div.className = 'msg ' + (role==='ai'?'ai':'me');
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+addMsg('ai','こんにちは！');
 
-  /* ===== API ===== */
-  async function talkAPI(text){
-    var hist=chatLog.slice(-8);
-    try{
-      var r=await fetch(TALK_ENDPOINT,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          messages:[
-            {role:'system',content:'You are WhoAI. Keep responses short (max 80 Japanese characters).'},
-            ...hist.map(function(m){return {role:(m.role==='assistant'?'assistant':(m.role==='user'?'user':'system')),content:m.text};}),
-            {role:'user',content:text}
-          ]
-        })
-      });
-      if(!r.ok) throw new Error('status '+r.status);
-      var j=await r.json(); var reply=(j.reply||j.message||j.content||'').toString().trim();
-      return reply || 'なるほど。もう少し詳しく教えて！';
-    }catch(e){ return 'なるほど。もう少し詳しく教えて！'; }
+/* 送信ハンドラ */
+async function onSend(){
+  const v = inp.value.trim();
+  if(!v) return;
+  addMsg('me', v);
+  inp.value='';
+
+  // 口パク（open→close）
+  const stage = LS.g(LS.k.stage,'tane');
+  if(stage==='evolved'){
+    const c = LS.g(LS.k.color,'blue');
+    charImg.src = EVOLVED_OPEN[c] || EVOLVED_OPEN.blue;
+    setTimeout(()=>{ charImg.src = (EVOLVED_CLOSE[c]||EVOLVED_CLOSE.blue); }, 260);
   }
 
-  /* ===== 送信処理 ===== */
-  form.addEventListener('submit', async function(e){
-    e.preventDefault();
-    var text=input.value.trim(); if(!text) return;
+  // 疑似AI返信
+  await new Promise(r=>setTimeout(r,200));
+  addMsg('ai','うん、なるほど！');
 
-    chatLog.push({role:'user',text:text}); setJSON(K.log,chatLog); renderChat(); input.value='';
-    sendBtn.disabled=true; var reply=await talkAPI(text); sendBtn.disabled=false;
-    chatLog.push({role:'assistant',text:reply}); setJSON(K.log,chatLog); renderChat();
+  // ターン更新 & 遷移判定
+  let turn = LS.n(LS.k.turn,0) + 1;
+  LS.s(LS.k.turn, String(turn));
+  refreshHeader();
 
-    turns+=1; localStorage.setItem(K.turns,String(turns));
-    cycleEl.textContent=String(Math.min(turns,MAX_TURNS));
+  // 進化前：10ターンでマカロン選択へ
+  if(stage==='tane' && turn>=10){
+    // 次ページのためにフラグを初期化
+    LS.s(LS.k.turn, '0');
+    location.href = asset('/macaron.html'); // マカロン選択
+    return;
+  }
 
-    if(turns>=MAX_TURNS){
-      localStorage.setItem(K.flag,'1'); // 次画面で回数を0表示へ
+  // 進化直後：1回話したら儀式へ
+  if(stage==='evolved' && LS.b(LS.k.justEvolved)){
+    // justEvolved を消して、儀式へ
+    LS.s(LS.k.justEvolved, '0');
+    LS.s(LS.k.turn, '0');
+    location.href = asset('/macaron/rebirth.html');
+  }
+}
+sendBtn.addEventListener('click', onSend);
+inp.addEventListener('keydown', (e)=>{ if(e.key==='Enter') onSend(); });
 
-      if(phase==='tane'){
-        // 1周目終了 → 進化へ。次周は必ずマカロンへ戻すフラグを立てる
-        localStorage.setItem(K.phase,'"evolved"');
-        localStorage.setItem(K.turns,'0');
-        localStorage.setItem(K.must,'1'); // ★2回目はマカロンへ
-        location.href=SELECT_URL;
-      }else{
-        // 進化後の周回終了
-        if(localStorage.getItem(K.must)==='1'){
-          // ★2回目：マカロンへ（フラグ消化）
-          localStorage.setItem(K.must,'0');
-          localStorage.setItem(K.turns,'0');
-          location.href=SELECT_URL;
-        }else{
-          // 3回目以降：復活の儀式へ
-          location.href=REBIRTH_URL;
-        }
-      }
-    }
-  });
-  </script>
+</script>
 </body>
 </html>
