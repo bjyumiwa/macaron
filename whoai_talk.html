@@ -63,7 +63,7 @@ const EVOLVED_CLOSE = {
 };
 const MOOD = {
   pink:["情熱的だね！","ワクワクするね！","その調子！","燃えてきた！"],
-  blue:["落ち着いてるね。","静かでいい感じ。","深呼吸してみよう。","ゆっくり考えよう。"],
+  blue:["落ち着いてるね。","静かでいい感じ。","深呼吸してみよう。","ゆっくり考えよう！"],
   green:["元気いっぱい！","パワー全開だね！","走り出したくなる！","よし、動いてみよう！"],
   purple:["創造的だね！","新しい発想だ！","面白いアイデアだね！","ひらめきが来てる！"]
 };
@@ -162,7 +162,6 @@ async function onSend(){
 
   // evolved → 初回復活
   if(stage==='evolved' && turn>=10 && !LS.b(LS.k.fromRebirth)){
-    LS.s(LS.k.fromRebirth,'0');
     setTimeout(()=>location.href='/macaron/rebirth.html',1500);
     return;
   }
