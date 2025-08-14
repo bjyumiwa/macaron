@@ -1,53 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>macaron - マカロンを食べて進化！色を選んでね</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#0b0f19;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start
-    }
-    h2{margin:22px 0 18px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;width:min(900px,94vw)}
-    .card{
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
-      padding:24px;border-radius:16px;cursor:pointer;text-align:center
-    }
-    .card:hover{outline:2px solid rgba(255,255,255,.28)}
-    .tag{opacity:.8;margin-top:8px}
-  </style>
+<meta charset="UTF-8">
+<title>マカロンを選ぶ</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+  h2{margin-bottom:20px}
+  .colors{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
+  .macaron{
+    width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;color:#fff;font-weight:700;font-size:18px;box-shadow:0 4px 12px rgba(0,0,0,.15)
+  }
+  .pink{background:pink}
+  .blue{background:skyblue}
+  .green{background:lightgreen}
+  .purple{background:plum}
+</style>
 </head>
 <body>
-  <h2>マカロンを食べて進化！色を選んでね</h2>
-  <div class="grid">
-    <div class="card" data-color="pink">ピンク（情熱）<div class="tag">熱く前向き</div></div>
-    <div class="card" data-color="blue">ブルー（静寂）<div class="tag">落ち着き</div></div>
-    <div class="card" data-color="green">グリーン（元気）<div class="tag">活発</div></div>
-    <div class="card" data-color="purple">パープル（創造）<div class="tag">ひらめき</div></div>
+  <h2>好きなマカロンを選んでね</h2>
+  <div class="colors">
+    <div class="macaron pink"   data-color="pink">ピンク</div>
+    <div class="macaron blue"   data-color="blue">ブルー</div>
+    <div class="macaron green"  data-color="green">グリーン</div>
+    <div class="macaron purple" data-color="purple">パープル</div>
   </div>
 
 <script>
-const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
-const asset = (p)=> `${ROOT}${p}`;
-
-const LS_KEYS = {
-  color:'whoai_color', stage:'whoai_stage',
-  evolvedOnce:'whoai_evolved_once', justEvolved:'whoai_just_evolved',
-  turn:'whoai_turn'
-};
-
-document.querySelectorAll('.card').forEach(el=>{
-  el.addEventListener('click', ()=>{
-    const color = el.dataset.color;
-    localStorage.setItem(LS_KEYS.color, color);
-    localStorage.setItem(LS_KEYS.stage, 'evolved');
-    localStorage.setItem(LS_KEYS.evolvedOnce, '1');
-    localStorage.setItem(LS_KEYS.justEvolved, '1'); // ← 進化直後フラグON
-    localStorage.setItem(LS_KEYS.turn, '0');
-    location.href = asset('/evolution.html');
+document.querySelectorAll('.macaron').forEach(m=>{
+  m.addEventListener('click', ()=>{
+    const color = m.dataset.color;
+    localStorage.setItem('whoai_color', color);
+    // 進化前の状態なら強制的に10回後に進化させるため stage を tane にしておく
+    if(!localStorage.getItem('whoai_stage')){
+      localStorage.setItem('whoai_stage','tane');
+    }
+    // 会話ページへ戻る
+    location.href = '/macaron/whoai_talk.html';
   });
 });
 </script>
