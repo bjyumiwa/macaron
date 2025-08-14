@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（API＋色別性格）</title>
+  <title>whoai_talk - 会話（API／進化フロー完全版）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
@@ -22,8 +22,7 @@
     .char img{width:120px;height:auto;image-rendering:auto}
     .chat{
       margin-top:16px;background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:14px;padding:12px;min-height:240px
+      border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;min-height:240px
     }
     .msg{margin:8px 0;max-width:92%}
     .ai{color:#e7f0ff}
@@ -36,6 +35,7 @@
       border:none;border-radius:10px;padding:10px 14px;cursor:pointer;background:#ffd1ec;color:#111;font-weight:700
     }
     .hint{opacity:.8;font-size:12px;margin-top:6px}
+    .err{opacity:.9;color:#ffdede}
   </style>
 </head>
 <body>
@@ -62,18 +62,20 @@
   </div>
 
 <script>
-/* ---------- パス定義 ---------- */
+/* ===== API設定（昨日と同じ想定） ===== */
+const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+const TIMEOUT_MS = 15000;
+
+/* ===== パス・画像 ===== */
 const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
 const asset = (p) => `${ROOT}${p}`;
 const IMG_BASE = '/public/assets/stage1';
 
-/* 背景設定 */
 document.body.style.backgroundImage = `url("${asset(`${IMG_BASE}/space_background.png`)}")`;
 document.body.style.backgroundSize = 'cover';
 document.body.style.backgroundPosition = 'center';
 document.body.style.backgroundAttachment = 'fixed';
 
-/* ---------- 画像定義 ---------- */
 const TANE_IMG = asset(`${IMG_BASE}/tane_closed.png`);
 const EVOLVED_OPEN = {
   pink  : asset(`${IMG_BASE}/pink_open.png`),
@@ -88,22 +90,25 @@ const EVOLVED_CLOSE = {
   purple: asset(`${IMG_BASE}/purple_closed.png`),
 };
 
-/* ---------- 性格別の口調 ---------- */
-const PERSONALITY = {
-  pink:   ["情熱的だね！","ワクワクするね！","その調子！"],
-  blue:   ["落ち着いてるね。","静かでいい感じ。","深呼吸してみよう。"],
-  green:  ["元気いっぱい！","パワー全開だね！","走り出したくなる！"],
-  purple: ["創造的だね！","新しい発想だ！","面白いアイデアだね！"]
+/* ===== 性格の一言（API返答に添える） ===== */
+const MOOD = {
+  pink:   ["情熱的だね！","ワクワクするね！","その調子！","燃えてきた！"],
+  blue:   ["落ち着いてるね。","静かでいい感じ。","深呼吸してみよう。","ゆっくり考えよう。"],
+  green:  ["元気いっぱい！","パワー全開だね！","走り出したくなる！","よし、動いてみよう！"],
+  purple: ["創造的だね！","新しい発想だ！","面白いアイデアだね！","ひらめきが来てる！"]
 };
 
-/* ---------- 状態管理 ---------- */
+/* ===== 状態管理 ===== */
 const LS = {
   get k(){ return {
     color: 'whoai_color',
     stage: 'whoai_stage',
     turn : 'whoai_turn',
     evolvedOnce: 'whoai_evolved_once',
-    justEvolved: 'whoai_just_evolved'
+    justEvolved: 'whoai_just_evolved',
+    // 追加：
+    rebirthMode: 'whoai_rebirth_mode',          // 'appearance' | 'memory' | null
+    rebirthWaitFirst: 'whoai_rebirth_wait1',    // '1' の間は「1回会話したらドリンクへ」
   }},
   g(key, def=null){ const v=localStorage.getItem(key); return (v===null? def: v); },
   s(key, val){ localStorage.setItem(key, val); },
@@ -111,14 +116,27 @@ const LS = {
   b(key, def=false){ const v=this.g(key); return v===null? def: v==='1'; }
 };
 
-/* 初期値補填 */
+/* ===== 初期値（最初は必ず tane） ===== */
 if(!LS.g(LS.k.stage)) LS.s(LS.k.stage, 'tane');
 if(!LS.g(LS.k.color)) LS.s(LS.k.color, 'blue');
 if(!LS.g(LS.k.turn))  LS.s(LS.k.turn,  '0');
 if(!LS.g(LS.k.evolvedOnce)) LS.s(LS.k.evolvedOnce, '0');
 if(!LS.g(LS.k.justEvolved)) LS.s(LS.k.justEvolved, '0');
+if(!LS.g(LS.k.rebirthMode)) LS.s(LS.k.rebirthMode, '');
+if(!LS.g(LS.k.rebirthWaitFirst)) LS.s(LS.k.rebirthWaitFirst, '0');
 
-/* ---------- 要素取得 ---------- */
+/* ★最初の会話は tane 強制（未進化かつ turn=0 のとき） */
+(function enforceTaneOnFirstConversation(){
+  const turn0 = LS.n(LS.k.turn, 0);
+  const evolvedOnce = LS.b(LS.k.evolvedOnce, false);
+  if (turn0 === 0 && !evolvedOnce) {
+    LS.s(LS.k.stage, 'tane');
+    LS.s(LS.k.color, 'blue');
+    LS.s(LS.k.justEvolved, '0');
+  }
+})();
+
+/* ===== 要素 ===== */
 const stageChip = document.getElementById('stageChip');
 const charImg   = document.getElementById('charImg');
 const turnView  = document.getElementById('turnView');
@@ -128,13 +146,13 @@ const inp       = document.getElementById('inp');
 const sendBtn   = document.getElementById('sendBtn');
 const hint      = document.getElementById('hint');
 
-/* ---------- 表示更新 ---------- */
+/* ===== 表示更新 ===== */
 function refreshHeader(){
   const stage = LS.g(LS.k.stage,'tane');
   const color = LS.g(LS.k.color,'-');
   const turn  = LS.n(LS.k.turn,0);
 
-  stageChip.textContent = `ステージ: ${stage==='tane'?'タネ':'進化'} / 進化一度目: ${LS.b(LS.k.evolvedOnce)?'済':'未'}`;
+  stageChip.textContent = `ステージ: ${stage==='tane'?'タネ':'進化'} / 進化一度目: ${LS.b(LS.k.evolvedOnce)?'済':'未'} / 儀式待ち: ${LS.b(LS.k.rebirthWaitFirst)?'はい':'いいえ'}`;
   turnView.textContent = turn;
   colorView.textContent = (stage==='tane')? '-' : color;
 
@@ -145,16 +163,34 @@ function refreshHeader(){
   }
 
   if(stage==='tane'){
-    hint.textContent = 'タネ段階は10ターン到達でマカロン選択へ自動遷移します。';
+    hint.textContent = 'タネは10ターンでその場で進化します。';
   }else if(LS.b(LS.k.justEvolved)){
-    hint.textContent = '進化直後：このページで1回会話すると「復活の儀式」へ進みます。';
+    hint.textContent = '進化直後：このページで1回会話すると「復活の儀式」へ。';
+  }else if(LS.b(LS.k.rebirthWaitFirst)){
+    hint.textContent = '儀式後：このページで1回会話すると「魔法のドリンク」へ。';
   }else{
     hint.textContent = '';
   }
 }
 refreshHeader();
 
-/* ---------- チャット関数 ---------- */
+/* ===== 進化（その場でopen→close） ===== */
+function evolveNow(){
+  const color = LS.g(LS.k.color) || 'blue';
+  LS.s(LS.k.color, color);
+  LS.s(LS.k.stage, 'evolved');
+  LS.s(LS.k.evolvedOnce, '1');
+  LS.s(LS.k.justEvolved, '1'); // 次の1回で儀式へ
+  LS.s(LS.k.turn, '0');
+
+  charImg.src = (EVOLVED_OPEN[color] || EVOLVED_OPEN.blue);
+  setTimeout(()=>{ charImg.src = (EVOLVED_CLOSE[color] || EVOLVED_CLOSE.blue); }, 600);
+
+  addMsg('ai', '…力が満ちてきた！進化したよ。');
+  refreshHeader();
+}
+
+/* ===== チャットUI ===== */
 function addMsg(role, text){
   const div = document.createElement('div');
   div.className = 'msg ' + (role==='ai'?'ai':'me');
@@ -164,62 +200,81 @@ function addMsg(role, text){
 }
 addMsg('ai','こんにちは！');
 
-/* ---------- 送信イベント ---------- */
+/* ===== API ===== */
+async function callTalkAPI(payload){
+  const controller = new AbortController();
+  const t = setTimeout(()=>controller.abort(), TIMEOUT_MS);
+  try{
+    const res = await fetch(TALK_ENDPOINT, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(t);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    if(!data || typeof data.reply !== 'string') throw new Error('Bad JSON');
+    return data.reply;
+  }catch(e){
+    clearTimeout(t);
+    throw e;
+  }
+}
+
+/* ===== 送信処理 ===== */
 async function onSend(){
-  const v = inp.value.trim();
-  if(!v) return;
-  addMsg('me', v);
+  const user = inp.value.trim();
+  if(!user) return;
+  addMsg('me', user);
   inp.value='';
 
   const stage = LS.g(LS.k.stage,'tane');
   const color = LS.g(LS.k.color,'blue');
+  const turn0 = LS.n(LS.k.turn,0);
 
-  // 口パク（open→close）
+  // 口パク
   if(stage==='evolved'){
     charImg.src = EVOLVED_OPEN[color] || EVOLVED_OPEN.blue;
     setTimeout(()=>{ charImg.src = EVOLVED_CLOSE[color] || EVOLVED_CLOSE.blue; }, 260);
   }
 
-  // API呼び出し
-  let apiReply = '';
-  try {
-    const res = await fetch('https://macaron-one.vercel.app/api/talk', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: v })
-    });
-    const data = await res.json();
-    apiReply = data.reply || '';
-  } catch(err) {
-    apiReply = '(API通信に失敗しました)';
+  // API
+  try{
+    const reply = await callTalkAPI({ message:user, color, stage, turn:turn0 });
+    const flair = (MOOD[color]||[])[Math.floor(Math.random()* (MOOD[color]||[]).length)] || '';
+    addMsg('ai', flair ? `${reply} ${flair}` : reply);
+  }catch(e){
+    addMsg('ai','（通信エラー：APIに接続できませんでした）');
+    const small = document.createElement('div'); small.className='msg ai err';
+    small.textContent = '※ TALK_ENDPOINT / CORS / OPENAI_API_KEY / デプロイ状態を確認してください';
+    chat.appendChild(small);
   }
 
-  // 性格に応じた一言を追加
-  if(stage==='evolved' && PERSONALITY[color]){
-    const list = PERSONALITY[color];
-    const mood = list[Math.floor(Math.random()*list.length)];
-    addMsg('ai', `${apiReply} ${mood}`);
-  } else {
-    addMsg('ai', apiReply || 'うん、なるほど！');
-  }
-
-  // ターン管理
-  let turn = LS.n(LS.k.turn,0) + 1;
+  // ターン加算
+  let turn = turn0 + 1;
   LS.s(LS.k.turn, String(turn));
   refreshHeader();
 
-  // タネ → 10回でマカロン選択
+  // タネ → 10回でその場進化
   if(stage==='tane' && turn>=10){
-    LS.s(LS.k.turn, '0');
-    location.href = asset('/macaron.html');
+    evolveNow();
     return;
   }
 
-  // 進化直後 → 1回会話で儀式へ
+  // 進化直後 → 1回で儀式へ
   if(stage==='evolved' && LS.b(LS.k.justEvolved)){
-    LS.s(LS.k.justEvolved, '0');
-    LS.s(LS.k.turn, '0');
-    location.href = asset('/macaron/rebirth.html');
+    LS.s(LS.k.justEvolved,'0');
+    LS.s(LS.k.turn,'0');
+    location.href = asset('/rebirth.html');
+    return;
+  }
+
+  // 儀式後 → 1回でドリンクへ
+  if(LS.b(LS.k.rebirthWaitFirst)){
+    LS.s(LS.k.rebirthWaitFirst,'0');
+    location.href = asset('/drink.html');
+    return;
   }
 }
 sendBtn.addEventListener('click', onSend);
