@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（10回で進化→1回で儀式）</title>
+  <title>whoai_talk - 会話（API＋色別性格）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
@@ -16,15 +16,14 @@
       padding:8px 12px;border-radius:12px;font-weight:700;font-size:14px
     }
     h2{margin:18px 0 8px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
-    .stage-chip{
-      margin-bottom:8px;font-size:12px;opacity:.8
-    }
+    .stage-chip{margin-bottom:8px;font-size:12px;opacity:.8}
     .wrap{width:min(720px,94vw);margin:16px auto 24px}
     .char{display:flex;gap:12px;align-items:center}
     .char img{width:120px;height:auto;image-rendering:auto}
     .chat{
       margin-top:16px;background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;min-height:240px
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;padding:12px;min-height:240px
     }
     .msg{margin:8px 0;max-width:92%}
     .ai{color:#e7f0ff}
@@ -68,7 +67,7 @@ const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
 const asset = (p) => `${ROOT}${p}`;
 const IMG_BASE = '/public/assets/stage1';
 
-/* 背景設定（黒画面対策） */
+/* 背景設定 */
 document.body.style.backgroundImage = `url("${asset(`${IMG_BASE}/space_background.png`)}")`;
 document.body.style.backgroundSize = 'cover';
 document.body.style.backgroundPosition = 'center';
@@ -87,6 +86,14 @@ const EVOLVED_CLOSE = {
   blue  : asset(`${IMG_BASE}/blue_closed.png`),
   green : asset(`${IMG_BASE}/green_closed.png`),
   purple: asset(`${IMG_BASE}/purple_closed.png`),
+};
+
+/* ---------- 性格別の口調 ---------- */
+const PERSONALITY = {
+  pink:   ["情熱的だね！","ワクワクするね！","その調子！"],
+  blue:   ["落ち着いてるね。","静かでいい感じ。","深呼吸してみよう。"],
+  green:  ["元気いっぱい！","パワー全開だね！","走り出したくなる！"],
+  purple: ["創造的だね！","新しい発想だ！","面白いアイデアだね！"]
 };
 
 /* ---------- 状態管理 ---------- */
@@ -164,17 +171,39 @@ async function onSend(){
   addMsg('me', v);
   inp.value='';
 
-  // 口パク（open→close）
   const stage = LS.g(LS.k.stage,'tane');
+  const color = LS.g(LS.k.color,'blue');
+
+  // 口パク（open→close）
   if(stage==='evolved'){
-    const c = LS.g(LS.k.color,'blue');
-    charImg.src = EVOLVED_OPEN[c] || EVOLVED_OPEN.blue;
-    setTimeout(()=>{ charImg.src = EVOLVED_CLOSE[c] || EVOLVED_CLOSE.blue; }, 260);
+    charImg.src = EVOLVED_OPEN[color] || EVOLVED_OPEN.blue;
+    setTimeout(()=>{ charImg.src = EVOLVED_CLOSE[color] || EVOLVED_CLOSE.blue; }, 260);
   }
 
-  await new Promise(r=>setTimeout(r,200));
-  addMsg('ai','うん、なるほど！');
+  // API呼び出し
+  let apiReply = '';
+  try {
+    const res = await fetch('https://macaron-one.vercel.app/api/talk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: v })
+    });
+    const data = await res.json();
+    apiReply = data.reply || '';
+  } catch(err) {
+    apiReply = '(API通信に失敗しました)';
+  }
 
+  // 性格に応じた一言を追加
+  if(stage==='evolved' && PERSONALITY[color]){
+    const list = PERSONALITY[color];
+    const mood = list[Math.floor(Math.random()*list.length)];
+    addMsg('ai', `${apiReply} ${mood}`);
+  } else {
+    addMsg('ai', apiReply || 'うん、なるほど！');
+  }
+
+  // ターン管理
   let turn = LS.n(LS.k.turn,0) + 1;
   LS.s(LS.k.turn, String(turn));
   refreshHeader();
