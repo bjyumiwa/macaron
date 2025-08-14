@@ -1,86 +1,8 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>同一性の選択（記憶 or 容姿）</title>
-<style>
-  :root{ --glass: rgba(255,255,255,.10); --accent:#ffd1ec; }
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px
-  }
-  h1{margin:6px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
-  .panel{width:min(820px,95vw);background:var(--glass);border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:16px}
-  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(160px,1fr));margin-top:8px}
-  .card{background:rgba(0,0,0,.25);border:2px solid transparent;border-radius:16px;padding:14px;text-align:center;cursor:pointer;transition:.12s}
-  .card:hover{transform:translateY(-3px)}
-  .card.selected{border-color:var(--accent);box-shadow:0 0 0 4px rgba(255,209,236,.25) inset}
-  .actions{display:flex;gap:12px;margin-top:12px}
-  button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
-  .primary{background:var(--accent);color:#222}
-  .ghost{background:#444;color:#fff}
-  pre{white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.35);padding:10px;border-radius:10px}
-</style>
+  <meta charset="UTF-8">
+  <title>空ページ</title>
 </head>
-<body>
-  <h1>最後の選択：どちらを残す？</h1>
-  <div class="panel">
-    <p>これまでの会話は保存されています。復活するなら「記憶」と「容姿」のどちらを優先しますか？</p>
-    <div class="grid">
-      <div id="memory" class="card">記憶（会話の内容・性格を重視）</div>
-      <div id="appearance" class="card">容姿（見た目・色・姿を重視）</div>
-    </div>
-    <div class="actions">
-      <button id="backBtn" class="ghost">会話に戻る</button>
-      <button id="decideBtn" class="primary" disabled>この選択で決定</button>
-    </div>
-  </div>
-
-  <div class="panel">
-    <h3>保存されている情報（参考）</h3>
-    <p>直近の会話（最大5件）と選んだマカロン：</p>
-    <pre id="preview"></pre>
-  </div>
-
-<script>
-  const memoryCard = document.getElementById("memory");
-  const appearanceCard = document.getElementById("appearance");
-  const decideBtn = document.getElementById("decideBtn");
-  const backBtn = document.getElementById("backBtn");
-  const preview = document.getElementById("preview");
-
-  let selected = null;
-
-  function select(card, key){
-    document.querySelectorAll(".card").forEach(el=>el.classList.remove("selected"));
-    card.classList.add("selected");
-    selected = key;
-    decideBtn.disabled = false;
-  }
-  memoryCard.addEventListener("click", ()=>select(memoryCard,"memory"));
-  appearanceCard.addEventListener("click", ()=>select(appearanceCard,"appearance"));
-
-  decideBtn.addEventListener("click", ()=>{
-    if(!selected) return;
-    const choice = { pick:selected, decidedAt:new Date().toISOString() };
-    localStorage.setItem("identity_choice", JSON.stringify(choice));
-    alert(`「${selected==="memory"?"記憶":"容姿"}」を選びました。データを保存しました。`);
-    location.href = "rebirth.html"; // 次の画面があれば
-  });
-
-  backBtn.addEventListener("click", ()=> location.href = "whoai_talk.html");
-
-  function showPreview(){
-    const conv = JSON.parse(localStorage.getItem("conversation") || "[]");
-    const mac = JSON.parse(localStorage.getItem("macaron_choice") || "{}");
-    const last = conv.slice(-5).map(m=>`${m.role==="user"?"あなた":"AI"}: ${m.text}`).join("\n");
-    const macLine = mac.macaron ? `選んだマカロン: ${mac.macaronLabel ?? mac.macaron}` : "マカロン未選択";
-    preview.textContent = macLine + "\n---\n" + (last || "（会話がまだありません）");
-  }
-  showPreview();
-</script>
-</body>
+<body></body>
 </html>
