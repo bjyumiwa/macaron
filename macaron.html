@@ -34,11 +34,8 @@ document.querySelectorAll('.macaron').forEach(m=>{
   m.addEventListener('click', ()=>{
     const color = m.dataset.color;
     localStorage.setItem('whoai_color', color);
-    // 未進化の場合は tane にセット
-    if(!localStorage.getItem('whoai_stage')){
-      localStorage.setItem('whoai_stage','tane');
-    }
-    // 会話ページへ
+    localStorage.setItem('whoai_stage','tane');
+    localStorage.setItem('whoai_turn','0');
     location.href = '/macaron/whoai_talk.html';
   });
 });
