@@ -1,268 +1,151 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>whoai_talk - API会話版</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start
-    }
-    .whoai-name-badge{
-      position:fixed;top:10px;right:10px;z-index:1000;
-      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
-      padding:8px 12px;border-radius:12px;font-weight:700;font-size:14px
-    }
-    h2{margin:18px 0 8px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
-    .stage-chip{margin-bottom:8px;font-size:12px;opacity:.8}
-    .wrap{width:min(720px,94vw);margin:16px auto 24px}
-    .char{display:flex;gap:12px;align-items:center}
-    .char img{width:120px;height:auto}
-    .chat{
-      margin-top:16px;background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px;min-height:240px
-    }
-    .msg{margin:8px 0;max-width:92%}
-    .ai{color:#e7f0ff}
-    .me{color:#ffe8f0;text-align:right;margin-left:auto}
-    .row{display:flex;gap:8px;margin-top:10px}
-    input[type="text"]{
-      flex:1;border-radius:10px;border:1px solid #333;background:#0b0f19;color:#fff;padding:10px
-    }
-    button{
-      border:none;border-radius:10px;padding:10px 14px;cursor:pointer;background:#ffd1ec;color:#111;font-weight:700
-    }
-    .hint{opacity:.8;font-size:12px;margin-top:6px}
-    .err{opacity:.9;color:#ffdede}
-  </style>
+<meta charset="UTF-8">
+<title>whoai_talk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html,body{height:100%;margin:0}
+  body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;display:flex;flex-direction:column;align-items:center}
+  .whoai-name-badge{position:fixed;top:10px;right:10px;background:rgba(0,0,0,.45);padding:6px 10px;border-radius:10px;font-size:12px}
+  h2{margin-top:20px}
+  .stage-chip{font-size:12px;opacity:.8}
+  .wrap{width:min(720px,94vw)}
+  .char{display:flex;gap:10px;align-items:center;margin-top:10px}
+  .char img{width:120px}
+  .chat{margin-top:14px;background:rgba(255,255,255,.08);border-radius:10px;padding:10px;min-height:240px}
+  .msg{margin:6px 0;max-width:92%}
+  .ai{color:#e7f0ff}
+  .me{color:#ffe8f0;text-align:right;margin-left:auto}
+  .row{display:flex;gap:8px;margin-top:8px}
+  input{flex:1;border-radius:8px;border:1px solid #333;background:#0b0f19;color:#fff;padding:8px}
+  button{border:none;border-radius:8px;padding:8px 12px;background:#ffd1ec;color:#111;font-weight:700}
+</style>
 </head>
 <body>
   <div class="whoai-name-badge">whoai_talk.html</div>
   <div class="wrap">
     <h2>お話ししよう</h2>
     <div class="stage-chip" id="stageChip"></div>
-
     <div class="char">
-      <img id="charImg" alt="character">
-      <div>
-        <div>ターン: <span id="turnView">0</span></div>
-        <div>色: <span id="colorView">-</span></div>
-      </div>
+      <img id="charImg">
+      <div>ターン: <span id="turnView">0</span><br>色: <span id="colorView">-</span></div>
     </div>
-
     <div id="chat" class="chat"></div>
-
     <div class="row">
-      <input id="inp" type="text" placeholder="メッセージを入力…" />
+      <input id="inp" type="text" placeholder="メッセージを入力…">
       <button id="sendBtn">送信</button>
     </div>
-    <div class="hint" id="hint"></div>
   </div>
 
 <script>
-/* ===== API設定 ===== */
 const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 const TIMEOUT_MS = 15000;
-
-/* ===== 画像パス ===== */
 const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
 const asset = (p) => `${ROOT}${p}`;
 const IMG_BASE = '/public/assets/stage1';
 document.body.style.backgroundImage = `url("${asset(`${IMG_BASE}/space_background.png`)}")`;
 document.body.style.backgroundSize = 'cover';
-document.body.style.backgroundPosition = 'center';
-document.body.style.backgroundAttachment = 'fixed';
 
 const TANE_IMG = asset(`${IMG_BASE}/tane_closed.png`);
 const EVOLVED_OPEN = {
-  pink  : asset(`${IMG_BASE}/pink_open.png`),
-  blue  : asset(`${IMG_BASE}/blue_open.png`),
-  green : asset(`${IMG_BASE}/green_open.png`),
+  pink:   asset(`${IMG_BASE}/pink_open.png`),
+  blue:   asset(`${IMG_BASE}/blue_open.png`),
+  green:  asset(`${IMG_BASE}/green_open.png`),
   purple: asset(`${IMG_BASE}/purple_open.png`),
 };
 const EVOLVED_CLOSE = {
-  pink  : asset(`${IMG_BASE}/pink_closed.png`),
-  blue  : asset(`${IMG_BASE}/blue_closed.png`),
-  green : asset(`${IMG_BASE}/green_closed.png`),
+  pink:   asset(`${IMG_BASE}/pink_closed.png`),
+  blue:   asset(`${IMG_BASE}/blue_closed.png`),
+  green:  asset(`${IMG_BASE}/green_closed.png`),
   purple: asset(`${IMG_BASE}/purple_closed.png`),
 };
-
-/* ===== 性格フレーズ ===== */
 const MOOD = {
-  pink:   ["情熱的だね！","ワクワクするね！","その調子！","燃えてきた！"],
-  blue:   ["落ち着いてるね。","静かでいい感じ。","深呼吸してみよう。","ゆっくり考えよう。"],
-  green:  ["元気いっぱい！","パワー全開だね！","走り出したくなる！","よし、動いてみよう！"],
-  purple: ["創造的だね！","新しい発想だ！","面白いアイデアだね！","ひらめきが来てる！"]
+  pink:["情熱的だね！","ワクワクするね！","その調子！","燃えてきた！"],
+  blue:["落ち着いてるね。","静かでいい感じ。","深呼吸してみよう。","ゆっくり考えよう。"],
+  green:["元気いっぱい！","パワー全開だね！","走り出したくなる！","よし、動いてみよう！"],
+  purple:["創造的だね！","新しい発想だ！","面白いアイデアだね！","ひらめきが来てる！"]
 };
-
-/* ===== ローカルストレージ ===== */
 const LS = {
-  get k(){ return {
-    color: 'whoai_color',
-    stage: 'whoai_stage',
-    turn : 'whoai_turn',
-    evolvedOnce: 'whoai_evolved_once',
-    justEvolved: 'whoai_just_evolved',
-    rebirthWaitFirst: 'whoai_rebirth_wait1'
-  }},
-  g(key, def=null){ const v=localStorage.getItem(key); return (v===null? def: v); },
-  s(key, val){ localStorage.setItem(key, val); },
-  n(key, def=0){ const v=this.g(key); return v===null? def: Number(v); },
-  b(key, def=false){ const v=this.g(key); return v===null? def: v==='1'; }
+  k:{color:'whoai_color',stage:'whoai_stage',turn:'whoai_turn',evolvedOnce:'whoai_evolved_once',justEvolved:'whoai_just_evolved'},
+  g(k,d=null){const v=localStorage.getItem(k);return v===null?d:v;},
+  s(k,v){localStorage.setItem(k,v);},
+  n(k,d=0){const v=this.g(k);return v===null?d:Number(v);},
+  b(k,d=false){const v=this.g(k);return v===null?d:v==='1';}
 };
-
-/* ===== 初期値補填・最初はtane固定 ===== */
-if(!LS.g(LS.k.stage)) LS.s(LS.k.stage, 'tane');
-if(!LS.g(LS.k.color)) LS.s(LS.k.color, 'blue');
-if(!LS.g(LS.k.turn))  LS.s(LS.k.turn,  '0');
-if(!LS.g(LS.k.evolvedOnce)) LS.s(LS.k.evolvedOnce, '0');
-if(!LS.g(LS.k.justEvolved)) LS.s(LS.k.justEvolved, '0');
-if(!LS.g(LS.k.rebirthWaitFirst)) LS.s(LS.k.rebirthWaitFirst, '0');
-
-(function enforceTaneOnFirstConversation(){
-  const turn0 = LS.n(LS.k.turn, 0);
-  const evolvedOnce = LS.b(LS.k.evolvedOnce, false);
-  if (turn0 === 0 && !evolvedOnce) {
-    LS.s(LS.k.stage, 'tane');
-    LS.s(LS.k.color, 'blue');
-    LS.s(LS.k.justEvolved, '0');
-  }
+if(!LS.g(LS.k.stage)) LS.s(LS.k.stage,'tane');
+if(!LS.g(LS.k.color)) LS.s(LS.k.color,'blue');
+if(!LS.g(LS.k.turn)) LS.s(LS.k.turn,'0');
+if(!LS.g(LS.k.evolvedOnce)) LS.s(LS.k.evolvedOnce,'0');
+if(!LS.g(LS.k.justEvolved)) LS.s(LS.k.justEvolved,'0');
+(function enforceTane(){
+  if(LS.n(LS.k.turn,0)===0 && !LS.b(LS.k.evolvedOnce)){LS.s(LS.k.stage,'tane');}
 })();
-
-/* ===== 要素 ===== */
-const stageChip = document.getElementById('stageChip');
-const charImg   = document.getElementById('charImg');
-const turnView  = document.getElementById('turnView');
-const colorView = document.getElementById('colorView');
-const chat      = document.getElementById('chat');
-const inp       = document.getElementById('inp');
-const sendBtn   = document.getElementById('sendBtn');
-const hint      = document.getElementById('hint');
-
-/* ===== 表示更新 ===== */
+const stageChip=document.getElementById('stageChip');
+const charImg=document.getElementById('charImg');
+const turnView=document.getElementById('turnView');
+const colorView=document.getElementById('colorView');
+const chat=document.getElementById('chat');
+const inp=document.getElementById('inp');
+const sendBtn=document.getElementById('sendBtn');
 function refreshHeader(){
-  const stage = LS.g(LS.k.stage,'tane');
-  const color = LS.g(LS.k.color,'-');
-  const turn  = LS.n(LS.k.turn,0);
-
-  stageChip.textContent = `ステージ: ${stage==='tane'?'タネ':'進化'} / 進化一度目: ${LS.b(LS.k.evolvedOnce)?'済':'未'}`;
-  turnView.textContent = turn;
-  colorView.textContent = (stage==='tane')? '-' : color;
-
-  if(stage==='tane'){
-    charImg.src = TANE_IMG;
-    hint.textContent = 'タネは10ターンで進化します。';
-  }else{
-    charImg.src = EVOLVED_OPEN[color] || EVOLVED_OPEN.blue;
-    if(LS.b(LS.k.justEvolved)){
-      hint.textContent = '進化直後：次の会話で「復活の儀式」へ';
-    }else if(LS.b(LS.k.rebirthWaitFirst)){
-      hint.textContent = '儀式後：次の会話で「魔法のドリンク」へ';
-    }else{
-      hint.textContent = '';
-    }
-  }
+  const stage=LS.g(LS.k.stage,'tane');
+  const color=LS.g(LS.k.color,'-');
+  turnView.textContent=LS.n(LS.k.turn,0);
+  colorView.textContent=stage==='tane'?'-':color;
+  stageChip.textContent=`ステージ: ${stage}`;
+  charImg.src=stage==='tane'?TANE_IMG:(EVOLVED_OPEN[color]||EVOLVED_OPEN.blue);
 }
 refreshHeader();
-
-/* ===== 進化（その場でopen→close） ===== */
-function evolveNow(){
-  const color = LS.g(LS.k.color) || 'blue';
-  LS.s(LS.k.color, color);
-  LS.s(LS.k.stage, 'evolved');
-  LS.s(LS.k.evolvedOnce, '1');
-  LS.s(LS.k.justEvolved, '1');
-  LS.s(LS.k.turn, '0');
-
-  charImg.src = EVOLVED_OPEN[color] || EVOLVED_OPEN.blue;
-  setTimeout(()=>{ charImg.src = EVOLVED_CLOSE[color] || EVOLVED_CLOSE.blue; }, 600);
-
-  addMsg('ai', '…力が満ちてきた！進化したよ。');
-  refreshHeader();
-}
-
-/* ===== チャットUI ===== */
-function addMsg(role, text){
-  const div = document.createElement('div');
-  div.className = 'msg ' + (role==='ai'?'ai':'me');
-  div.textContent = text;
+function addMsg(role,text){
+  const div=document.createElement('div');
+  div.className='msg '+(role==='ai'?'ai':'me');
+  div.textContent=text;
   chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
+  chat.scrollTop=chat.scrollHeight;
 }
 addMsg('ai','こんにちは！');
-
-/* ===== API呼び出し ===== */
 async function callTalkAPI(payload){
-  const controller = new AbortController();
-  const t = setTimeout(()=>controller.abort(), TIMEOUT_MS);
+  const controller=new AbortController();
+  const t=setTimeout(()=>controller.abort(),TIMEOUT_MS);
   try{
-    const res = await fetch(TALK_ENDPOINT, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
+    const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:controller.signal});
     clearTimeout(t);
     if(!res.ok) throw new Error('HTTP '+res.status);
-    const data = await res.json();
-    if(!data || typeof data.reply !== 'string') throw new Error('Bad JSON');
+    const data=await res.json();
     return data.reply;
-  }catch(e){
-    clearTimeout(t);
-    throw e;
-  }
+  }catch(e){clearTimeout(t);throw e;}
 }
-
-/* ===== 送信処理 ===== */
-async function onSend(){
-  const user = inp.value.trim();
-  if(!user) return;
-  addMsg('me', user);
-  inp.value='';
-
-  const stage = LS.g(LS.k.stage,'tane');
-  const color = LS.g(LS.k.color,'blue');
-  const turn0 = LS.n(LS.k.turn,0);
-
-  if(stage==='evolved'){
-    charImg.src = EVOLVED_OPEN[color] || EVOLVED_OPEN.blue;
-    setTimeout(()=>{ charImg.src = EVOLVED_CLOSE[color] || EVOLVED_CLOSE.blue; }, 260);
-  }
-
-  try{
-    const reply = await callTalkAPI({ message:user, color, stage, turn:turn0 });
-    const flair = (MOOD[color]||[])[Math.floor(Math.random()* (MOOD[color]||[]).length)] || '';
-    addMsg('ai', flair ? `${reply} ${flair}` : reply);
-  }catch(e){
-    addMsg('ai','（通信エラー：APIに接続できませんでした）');
-  }
-
-  let turn = turn0 + 1;
-  LS.s(LS.k.turn, String(turn));
+function evolveNow(){
+  const color=LS.g(LS.k.color)||'blue';
+  LS.s(LS.k.color,color);
+  LS.s(LS.k.stage,'evolved');
+  LS.s(LS.k.evolvedOnce,'1');
+  LS.s(LS.k.justEvolved,'1');
+  LS.s(LS.k.turn,'0');
+  charImg.src=EVOLVED_OPEN[color]||EVOLVED_OPEN.blue;
+  setTimeout(()=>{charImg.src=EVOLVED_CLOSE[color]||EVOLVED_CLOSE.blue;},600);
+  addMsg('ai',`…${color}の力が満ちてきた！進化したよ。`);
   refreshHeader();
-
-  if(stage==='tane' && turn>=10){
-    evolveNow();
-    return;
-  }
-
-  if(stage==='evolved' && LS.b(LS.k.justEvolved)){
-    LS.s(LS.k.justEvolved,'0');
-    LS.s(LS.k.turn,'0');
-    location.href = asset('/rebirth.html');
-    return;
-  }
-
-  if(LS.b(LS.k.rebirthWaitFirst)){
-    LS.s(LS.k.rebirthWaitFirst,'0');
-    location.href = asset('/drink.html');
-    return;
-  }
 }
-sendBtn.addEventListener('click', onSend);
-inp.addEventListener('keydown', (e)=>{ if(e.key==='Enter') onSend(); });
+async function onSend(){
+  const user=inp.value.trim();if(!user)return;
+  addMsg('me',user);inp.value='';
+  const stage=LS.g(LS.k.stage,'tane');
+  const color=LS.g(LS.k.color,'blue');
+  const turn0=LS.n(LS.k.turn,0);
+  if(stage==='evolved'){charImg.src=EVOLVED_OPEN[color];setTimeout(()=>{charImg.src=EVOLVED_CLOSE[color];},260);}
+  try{
+    const reply=await callTalkAPI({message:user,color,stage,turn:turn0});
+    const flair=(MOOD[color]||[])[Math.floor(Math.random()*(MOOD[color]||[]).length)]||'';
+    addMsg('ai',flair?`${reply} ${flair}`:reply);
+  }catch(e){addMsg('ai','（通信エラー）');}
+  let turn=turn0+1;LS.s(LS.k.turn,String(turn));refreshHeader();
+  if(stage==='tane' && turn>=10){evolveNow();return;}
+  if(stage==='evolved' && LS.b(LS.k.justEvolved)){LS.s(LS.k.justEvolved,'0');LS.s(LS.k.turn,'0');location.href='/macaron/rebirth.html';}
+}
+sendBtn.addEventListener('click',onSend);
+inp.addEventListener('keydown',e=>{if(e.key==='Enter')onSend();});
 </script>
 </body>
 </html>
