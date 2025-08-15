@@ -7,7 +7,7 @@
 <style>
   body {
     font-family: "Noto Sans JP", sans-serif;
-    margin: 0; padding: 20px; color: white;    /* 背景はJSで設定 */
+    margin: 0; padding: 20px; color: white;
   }
   .badge { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; }
   #characterImg { width: 140px; margin-bottom: 10px; display: block; }
@@ -49,11 +49,11 @@ window.WhoAI = window.WhoAI || (function(){
 
 /* ===== 設定 ===== */
 const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
-const TALK_ENDPOINT = '/api/talk'; // 同一プロジェクト内API
+const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // ← VercelのAPIに変更
 
 let s = WhoAI.ensureInit();
 
-/* ===== 画像/背景のベースパス自動検出（public/ 有無や /macaron/ 配下も吸収） ===== */
+/* ===== 画像/背景のベースパス自動検出 ===== */
 let WHOAI_ASSET_BASE = null;
 (async function resolveAssetBase(){
   const CANDIDATES = [
@@ -68,13 +68,11 @@ let WHOAI_ASSET_BASE = null;
   }
   if(!WHOAI_ASSET_BASE) WHOAI_ASSET_BASE = CANDIDATES[0];
 
-  // 背景
   document.body.style.backgroundImage = `url("${WHOAI_ASSET_BASE}space_background.png")`;
   document.body.style.backgroundPosition = 'center';
   document.body.style.backgroundSize = 'cover';
   document.body.style.backgroundAttachment = 'fixed';
 
-  // キャラ画像
   renderCharacter();
 })();
 
@@ -94,7 +92,7 @@ function renderBadge(){
 renderBadge();
 
 function renderCharacter(){
-  if(!WHOAI_ASSET_BASE) return; // まだ未解決
+  if(!WHOAI_ASSET_BASE) return;
   const img = document.getElementById('characterImg');
   const color = s.color || 'pink';
   const stage = s.stage || 'tane';
@@ -124,7 +122,7 @@ function append(role, text){
   chat.scrollTop = chat.scrollHeight;
 }
 
-/* ===== 送信（/api/talk 直通） ===== */
+/* ===== 送信 ===== */
 async function send(){
   const input = document.getElementById('msg');
   const q = input.value.trim();
@@ -141,11 +139,9 @@ async function send(){
     const data = await r.json();
     if(r.ok && data.reply){
       append('WhoAI', data.reply);
-    } else if(!r.ok){
-      append('WhoAI', `(APIエラー: ${data.error || r.status})`);
-      console.warn('API error', data);
     } else {
-      append('WhoAI', '(応答なし)');
+      append('WhoAI', `(APIエラー: ${data.error || r.status})`);
+      console.warn('API error detail:', data);
     }
   }catch(e){
     console.error('通信エラー', e);
