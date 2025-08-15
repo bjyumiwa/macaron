@@ -1,125 +1,71 @@
+<!-- FILE: macaron_select.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk.html - 会話（記録モード）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>マカロン再選択 - 進化のきっかけ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html, body { height: 100%; margin: 0; }
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background: #000 url("/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      background-color: #000;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 20px;
+      text-align: center;
+      padding: 40px 20px;
     }
-    #characterImg {
-      width: 160px;
+    h1 {
+      font-size: 2em;
       margin-bottom: 12px;
-      animation: float 2.5s ease-in-out infinite;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
-    @keyframes float {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-12px); }
-      100% { transform: translateY(0); }
-    }
-    #chatArea {
-      background: rgba(255,255,255,0.08);
-      border-radius: 10px;
-      padding: 16px;
-      max-width: 600px;
-      width: 100%;
-      height: 300px;
-      overflow-y: auto;
-      margin-bottom: 12px;
-    }
-    input[type="text"] {
-      width: 80%;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      margin-top: 8px;
-      font-size: 1em;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 1em;
-      border-radius: 8px;
-      border: none;
-      background: #f0c2ff;
-      margin-top: 8px;
+    .macaron {
+      display: inline-block;
+      margin: 16px;
       cursor: pointer;
+      transition: transform 0.3s ease;
     }
-    .whoai-name-badge {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      background: rgba(0, 0, 0, 0.4);
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-weight: bold;
+    .macaron:hover {
+      transform: scale(1.15);
+    }
+    img {
+      width: 100px;
+      height: 100px;
+    }
+    p {
+      margin-top: 8px;
+      font-size: 0.95em;
     }
   </style>
 </head>
 <body>
-  <div class="whoai-name-badge" id="whoaiNameBadge">...</div>
-  <img id="characterImg" src="" alt="キャラクター">
-  <div id="chatArea"></div>
-  <input type="text" id="userInput" placeholder="あなたの言葉を入力...">
-  <button onclick="sendMessage()">送信</button>
+  <h1>ふたたびマカロンを選んでください</h1>
+  <p>どの力を取り入れて、進化しますか？</p>
+
+  <div class="macaron" onclick="selectMacaron('pink')">
+    <img src="public/assets/stage1/macaron_pink.png" alt="ピンクのマカロン" />
+    <p>情熱（ピンク）</p>
+  </div>
+  <div class="macaron" onclick="selectMacaron('blue')">
+    <img src="public/assets/stage1/macaron_blue.png" alt="青のマカロン" />
+    <p>静寂（ブルー）</p>
+  </div>
+  <div class="macaron" onclick="selectMacaron('green')">
+    <img src="public/assets/stage1/macaron_green.png" alt="緑のマカロン" />
+    <p>元気（グリーン）</p>
+  </div>
+  <div class="macaron" onclick="selectMacaron('purple')">
+    <img src="public/assets/stage1/macaron_purple.png" alt="紫のマカロン" />
+    <p>創造（パープル）</p>
+  </div>
 
   <script>
-    const name = localStorage.getItem("whoai_name") || "あなた";
-    document.getElementById("whoaiNameBadge").textContent = name + " AI";
-
-    const color = localStorage.getItem("macaronColor") || "green";
-    const evolved = localStorage.getItem("evolved") === "true";
-    const imagePath = evolved ? `/public/assets/stage1/evolved_${color}.png` : `/public/assets/stage1/${color}_closed.png`;
-    document.getElementById("characterImg").src = imagePath;
-
-    const chatArea = document.getElementById("chatArea");
-    const userInput = document.getElementById("userInput");
-    let turnCount = parseInt(localStorage.getItem("turnCount") || "0");
-    const MAX_TURNS = 10;
-    const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
-
-    const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
-    chatLog.forEach(msg => addMessage(msg.sender, msg.text));
-
-    function addMessage(sender, text) {
-      const p = document.createElement("p");
-      p.innerHTML = `<strong>${sender}:</strong> ${text}`;
-      chatArea.appendChild(p);
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function sendMessage() {
-      const text = userInput.value.trim();
-      if (!text) return;
-      addMessage(name, text);
-      chatLog.push({ sender: name, text });
-      userInput.value = "";
-
-      fetch(TALK_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
-      })
-      .then(res => res.json())
-      .then(data => {
-        const reply = data.reply || "...";
-        addMessage("AI", reply);
-        chatLog.push({ sender: "AI", text: reply });
-        localStorage.setItem("chatLog", JSON.stringify(chatLog));
-        turnCount++;
-        localStorage.setItem("turnCount", turnCount);
-        if (turnCount >= MAX_TURNS) {
-          window.location.href = "identity_check.html";
-        }
-      });
+    function selectMacaron(color) {
+      localStorage.setItem('evolvedColor', color); // 進化後の色を保存
+      window.location.href = "evolution.html";     // 次の画面へ遷移
     }
   </script>
 </body>
