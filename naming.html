@@ -1,42 +1,46 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<title>naming.html - 命名</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px
-  }
-  .card{background:rgba(0,0,0,.35);padding:18px 20px;border-radius:16px;max-width:480px;width:92%}
-  input{
-    width:100%;padding:12px 14px;border-radius:12px;border:none;margin:10px 0 12px;font-size:16px
-  }
-  button{padding:10px 18px;border:none;border-radius:12px;background:#ffd1ec;color:#111;font-weight:700;cursor:pointer}
-</style>
+  <meta charset="UTF-8" />
+  <title>WhoAI - 名前をつけよう</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      height: 100%; margin: 0; font-family: "Noto Sans JP", sans-serif;
+      background: black; color: white; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover; background-position: center;
+    }
+    input {
+      padding: 10px; font-size: 1.2rem; margin-top: 12px;
+      border-radius: 8px; border: none; width: 240px;
+    }
+    button {
+      margin-top: 20px; padding: 10px 24px; font-size: 1.1rem;
+      background: #d1ffd7; color: #000; border: none; border-radius: 12px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #a6f5b7;
+    }
+  </style>
 </head>
 <body>
-  <div class="card">
-    <h2>キャラクターの名前をつけよう</h2>
-    <input id="charName" type="text" maxlength="20" placeholder="例：みわっち" />
-    <button id="saveName">決定</button>
-  </div>
+  <h2>この子に名前をつけてね</h2>
+  <input type="text" id="nameInput" placeholder="名前を入力" />
+  <button onclick="saveName()">決定！</button>
 
-<script>
-  const input = document.getElementById('charName');
-  const prev = localStorage.getItem('characterName');
-  if(prev) input.value = prev;
-
-  document.getElementById('saveName').addEventListener('click', ()=>{
-    const name = (input.value || '').trim();
-    if(!name){ alert('名前を入れてください'); return; }
-    localStorage.setItem('characterName', name);
-    // 命名後は現在のステージに戻る想定：tane期は whoai_talk.html、進化後も whoai_talk.html
-    location.href = 'whoai_talk.html';
-  });
-</script>
+  <script>
+    function saveName() {
+      const name = document.getElementById("nameInput").value.trim();
+      if (!name) {
+        alert("名前を入力してください！");
+        return;
+      }
+      localStorage.setItem("whoai_name", name);
+      location.href = "macaron.html";
+    }
+  </script>
 </body>
 </html>
