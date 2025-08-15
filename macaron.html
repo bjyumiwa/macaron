@@ -1,76 +1,157 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>マカロンを選ぶ</title>
-<style>
-  body{font-family:"Noto Sans JP",sans-serif;margin:0;min-height:100vh;color:#fff;
-       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
-       background:url("./assets/stage1/space_background.png") center/cover fixed;}
-  .grid{display:grid;grid-template-columns:repeat(2, min(320px,40vw));gap:22px}
-  .card{background:rgba(0,0,0,.35);border-radius:16px;padding:20px;cursor:pointer;text-align:center}
-  .card img{width:96px;height:96px;display:block;margin:6px auto 10px}
-  #evo{margin-top:18px;padding:10px 16px;border:none;border-radius:12px;font-weight:700}
-</style>
+  <meta charset="UTF-8" />
+  <title>マカロンを選ぶ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      height: 100%; margin: 0;
+      font-family: "Noto Sans JP", sans-serif;
+      background: #000;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+    h1 {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    p {
+      font-size: 14px;
+      color: #ccc;
+      margin-bottom: 24px;
+    }
+    .card-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: rgba(255,255,255,0.08);
+      padding: 16px;
+      border-radius: 16px;
+      width: 100px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.05);
+      background: rgba(255,255,255,0.2);
+    }
+    .card img {
+      width: 60px;
+      margin-bottom: 8px;
+    }
+    .buttons {
+      margin-top: 16px;
+    }
+    .buttons button {
+      font-size: 14px;
+      padding: 10px 20px;
+      margin: 0 8px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      background: #444; color: white;
+    }
+    .btn-go {
+      background: pink; color: #111;
+    }
+  </style>
 </head>
 <body>
-<h1>好きなマカロンを選んでね</h1>
-<p>クリックで選択 →「決定する」で開始。1回目は <b>tane</b> で3回 → もう一度ここへ。2回目は <b>openclause</b> に進化 → 10回で儀式。</p>
+  <h1>マカロンを選ぶ</h1>
+  <p>色を変えても進化状態は維持します（見た目だけ変わります）。</p>
 
-<div class="grid">
-  <div class="card" data-color="pink"><img src="./assets/stage1/macaron_pink.png"><div>ピンク</div></div>
-  <div class="card" data-color="blue"><img src="./assets/stage1/macaron_blue.png"><div>ブルー</div></div>
-  <div class="card" data-color="green"><img src="./assets/stage1/macaron_green.png"><div>グリーン</div></div>
-  <div class="card" data-color="purple"><img src="./assets/stage1/macaron_purple.png"><div>パープル</div></div>
-</div>
+  <div class="card-container">
+    <div class="card" data-color="pink"><img src="" alt="ピンク" /><div>ピンク</div></div>
+    <div class="card" data-color="blue"><img src="" alt="ブルー" /><div>ブルー</div></div>
+    <div class="card" data-color="green"><img src="" alt="グリーン" /><div>グリーン</div></div>
+    <div class="card" data-color="purple"><img src="" alt="パープル" /><div>パープル</div></div>
+  </div>
 
-<div style="margin-top:14px;display:flex;gap:10px">
-  <button id="clear">クリア</button>
-  <button id="decide" style="background:#ffd1ec;border:none;border-radius:12px;padding:8px 14px;font-weight:700">決定する</button>
-</div>
+  <div class="buttons">
+    <button class="btn-cancel" onclick="window.location.href='whoai_talk.html'">キャンセル</button>
+    <button class="btn-go" onclick="saveSelection()">進化する</button>
+  </div>
 
-<button id="evo" style="display:none;background:#fff;color:#111">進化して openclause へ</button>
+  <script>
+    const BASE_CANDIDATES = [
+      './public/assets/stage1/', './assets/stage1/',
+      '/public/assets/stage1/', '/assets/stage1/'
+    ];
 
-<script>
-const KEY='whoai_progress';
-function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(_){return{}} }
-function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-function init(){ const s=load(); if(!s.stage) s.stage='tane'; if(typeof s.talkCount!=='number') s.talkCount=0; if(!s.phase) s.phase='preRebirth'; return s; }
-let s=init();
+    async function pickBase() {
+      for (const b of BASE_CANDIDATES) {
+        try {
+          const r = await fetch(b + 'space_background.png', { method:'HEAD' });
+          if (r.ok) return b;
+        } catch(e) {}
+      }
+      return BASE_CANDIDATES[0];
+    }
 
-let selected=null;
-document.querySelectorAll('.card').forEach(el=>{
-  el.onclick=()=>{ selected=el.getAttribute('data-color'); document.querySelectorAll('.card').forEach(c=>c.style.outline=''); el.style.outline='3px solid #ffd1ec'; };
-});
-document.getElementById('clear').onclick=()=>{ selected=null; document.querySelectorAll('.card').forEach(c=>c.style.outline=''); };
+    async function findAsset(base, names) {
+      for (const n of names) {
+        try {
+          const r = await fetch(base + n, { method:'HEAD' });
+          if (r.ok) return base + n;
+        } catch(e) {}
+      }
+      return null;
+    }
 
-document.getElementById('decide').onclick=()=>{
-  if(!selected) return alert('色を選んでね');
-  s.color=selected;
-  if(!s._cameBackAfter3){ s.stage='tane'; s.talkCount=0; }
-  save(s);
-  // URL/Session/Localにも積む（保険）
-  sessionStorage.setItem('whoai_color', selected);
-  localStorage.setItem('whoai_color', selected);
-  location.href='whoai_talk.html?color='+encodeURIComponent(selected);
-};
+    (async () => {
+      const BASE = await pickBase();
+      document.body.style.backgroundImage = `url("${BASE}space_background.png")`;
 
-// 2周目（taneで3回→戻ってきた）なら進化ボタン表示
-const evo=document.getElementById('evo');
-if(s._cameBackAfter3){
-  evo.style.display='inline-block';
-  evo.onclick=()=>{
-    s.stage='openclause';
-    s.phase='preRebirth';
-    s.talkCount=0;            // ★ここが肝
-    delete s._cameBackAfter3;
-    delete s.postMode;
-    delete s.postTalkCount;
-    save(s);
-    location.href='whoai_talk.html';
-  };
-}
-</script>
+      const cards = document.querySelectorAll('.card');
+      for (const card of cards) {
+        const color = card.getAttribute('data-color');
+        const img = card.querySelector('img');
+        const src = await findAsset(BASE, [
+          `macaron_${color}.png`,
+          `${color}_macaron.png`,
+          `${color}.png`
+        ]);
+        if (src) img.src = src;
+      }
+    })();
+
+    function saveSelection() {
+      const selected = document.querySelector('.card.selected');
+      if (!selected) return alert('色を選んでください');
+      const color = selected.getAttribute('data-color');
+
+      let progress = {};
+      try {
+        progress = JSON.parse(localStorage.getItem('whoai_progress')) || {};
+      } catch (_) {}
+
+      progress.color = color;
+      localStorage.setItem('whoai_progress', JSON.stringify(progress));
+      window.location.href = "whoai_talk.html";
+    }
+
+    // カード選択処理
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      });
+    });
+  </script>
 </body>
 </html>
