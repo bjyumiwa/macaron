@@ -1,33 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>復活の儀式</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  body{font-family:"Noto Sans JP",sans-serif;background:#0b0f19;color:#fff;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
-  button{margin:10px;padding:12px 18px;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
-  .choice1{background:#6b46c1;color:#fff}
-  .choice2{background:#ed64a6;color:#fff}
-</style>
+  <meta charset="UTF-8" />
+  <title>rebirth - 復活の儀式</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      background-image:url("./public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center
+    }
+    .card{background:rgba(0,0,0,.45);backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.15);
+      padding:20px;border-radius:16px;width:min(680px,92%)}
+    button{border:none;border-radius:14px;padding:12px 16px;cursor:pointer;font-weight:700}
+    #keepAppearanceBtn{background:#ffd1ec;color:#111}
+  </style>
 </head>
 <body>
-  <h2>復活の儀式</h2>
-  <p>どうする？</p>
-  <button class="choice1" id="chooseAppearance">容姿を選ぶ（会話リセット）</button>
-  <button class="choice2" id="keepMemory">記録を選ぶ（容姿変更）</button>
+  <div class="card">
+    <h2>復活の儀式</h2>
+    <p>ドリンクを飲んで、次へ進みます。今回は <b>「容姿を残す」</b> ルートのみ実装（Phase 1）。</p>
+    <p style="opacity:.85">この選択では、<b>姿はそのまま</b>で<b>会話カウントが0</b>にリセットされ、10回会話するとアンケートへ進みます。</p>
+    <button id="keepAppearanceBtn">容姿を残して続ける（ドリンク）</button>
+  </div>
 
-<script>
-document.getElementById('chooseAppearance').addEventListener('click',()=>{
-  localStorage.setItem('whoai_turn','0');
-  localStorage.setItem('whoai_fromRebirth','1');
-  location.href = '/macaron/whoai_talk.html';
-});
+  <!-- 共通ストレージ -->
+  <script>
+  window.WhoAI = window.WhoAI || (function(){
+    const KEY='whoai_progress';
+    function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}}}
+    function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+    function ensureInit(){
+      const s = load();
+      if(!s.stage) s.stage='tane';
+      if(!('talkCount' in s)) s.talkCount=0;
+      if(!s.phase) s.phase='preRebirth';
+      return s;
+    }
+    return {KEY,load,save,ensureInit};
+  })();
+  </script>
 
-document.getElementById('keepMemory').addEventListener('click',()=>{
-  localStorage.setItem('whoai_fromRebirth','1');
-  location.href = '/macaron/macaron.html';
-});
-</script>
+  <script>
+  (()=>{
+    const btn = document.getElementById('keepAppearanceBtn');
+    btn.addEventListener('click', ()=>{
+      const s = WhoAI.ensureInit();
+      // 姿は現状の openclause を維持（stageは変更しない）
+      s.phase = 'postRebirth';
+      s.postMode = 'keepAppearance';
+      s.postTalkCount = 0;   // 会話はリセット
+      // 以降のために前半のカウントはクリアしておくと安全
+      s.talkCount = 0;
+      // 進化周回フラグは不要化
+      delete s._cameBackAfter3;
+      WhoAI.save(s);
+
+      // ちょっとした演出の待ち
+      setTimeout(()=> location.href='whoai_talk.html', 600);
+    });
+  })();
+  </script>
 </body>
 </html>
