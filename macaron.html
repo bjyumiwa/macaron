@@ -1,43 +1,78 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>マカロンを選ぶ</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>復活の儀式</title>
 <style>
-  body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
-  h2{margin-bottom:20px}
-  .colors{display:flex;gap:20px;flex-wrap:wrap;justify-content:center}
-  .macaron{
-    width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    cursor:pointer;color:#fff;font-weight:700;font-size:18px;box-shadow:0 4px 12px rgba(0,0,0,.15);
-    transition:transform 0.2s;
+  html,body{height:100%;margin:0}
+  body{
+    font-family:"Noto Sans JP",system-ui,Arial,sans-serif;
+    color:#fff;
+    background:#000 url("./public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
   }
-  .macaron:hover{transform:scale(1.05);}
-  .pink{background:pink}
-  .blue{background:skyblue}
-  .green{background:lightgreen}
-  .purple{background:plum}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(1.5px);z-index:0}
+  .panel{
+    position:relative;z-index:1;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+    padding:28px 30px;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.35);
+    min-width:min(560px,92vw)
+  }
+  h1{margin:0 0 10px;font-size:32px;text-shadow:0 3px 8px rgba(0,0,0,.4)}
+  p.sub{margin:0 0 18px;opacity:.9}
+  .actions{display:flex;flex-direction:column;gap:14px;align-items:center;margin-top:8px}
+  .btn{
+    display:inline-block;padding:14px 18px;border-radius:14px;border:0;cursor:pointer;font-weight:800;
+    box-shadow:0 8px 18px rgba(0,0,0,.25);text-decoration:none
+  }
+  .keep-appearance{background:#8f6cf6;color:#fff}  /* 容姿を残す */
+  .keep-memory{background:#ff8db0;color:#222}     /* 記録を選ぶ */
+  .meta{margin-top:14px;font-size:.9rem;opacity:.9}
 </style>
 </head>
 <body>
-  <h2>好きなマカロンを選んでね</h2>
-  <div class="colors">
-    <div class="macaron pink"   data-color="pink">ピンク</div>
-    <div class="macaron blue"   data-color="blue">ブルー</div>
-    <div class="macaron green"  data-color="green">グリーン</div>
-    <div class="macaron purple" data-color="purple">パープル</div>
+  <div class="scrim"></div>
+  <div class="panel">
+    <h1>復活の儀式</h1>
+    <p class="sub">どうする？</p>
+    <div class="actions">
+      <button id="btnKeepAppearance" class="btn keep-appearance">容姿を残す（会話リセット）</button>
+      <button id="btnKeepMemory" class="btn keep-memory">記録を選ぶ（容姿変更）</button>
+    </div>
+    <div class="meta" id="stateView"></div>
   </div>
 
 <script>
-document.querySelectorAll('.macaron').forEach(m=>{
-  m.addEventListener('click', ()=>{
-    const color = m.dataset.color;
-    localStorage.setItem('whoai_color', color);
-    localStorage.setItem('whoai_stage','tane');
-    localStorage.setItem('whoai_turn','0');
-    location.href = '/macaron/whoai_talk.html';
-  });
+const V = 'v=20250815';
+const BASE_DIR = location.href.replace(/[^/]*$/, '');
+const TALK_URL = new URL('./whoai_talk.html', BASE_DIR).toString() + '?' + V;
+const MACARON_URL = new URL('./macaron.html', BASE_DIR).toString() + '?' + V;
+
+// 状態の可視化（任意）
+const view = document.getElementById('stateView');
+const color = (localStorage.getItem('whoai_color') || 'pink').toLowerCase();
+const stage = (localStorage.getItem('whoai_stage') || 'evolved');
+view.textContent = `現在：色=${color} / ステージ=${stage}`;
+
+// ① 容姿を残す（色そのまま、会話だけリセット）
+document.getElementById('btnKeepAppearance').addEventListener('click', ()=>{
+  // 外見は保持 → whoai_color は触らない
+  localStorage.setItem('whoai_stage', 'evolved'); // 進化後で続行
+  localStorage.setItem('whoai_turn', '0');        // 回数リセット
+  localStorage.removeItem('whoai_log');           // ログもリセット（=会話まっさら）
+
+  // 互換キー（古いページ用）
+  localStorage.setItem('stage', 'evolved');
+
+  location.href = TALK_URL;
+});
+
+// ② 記録を選ぶ（ログ保持で容姿変更＝マカロンへ）
+document.getElementById('btnKeepMemory').addEventListener('click', ()=>{
+  // ログは触らない（保持）
+  // 進化状態で色だけ選び直すため macaron.html へ
+  location.href = MACARON_URL;
 });
 </script>
 </body>
