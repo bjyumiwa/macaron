@@ -2,111 +2,124 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（taneキャラ表示）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>whoai_talk - タネキャラ（3回会話）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html, body {
       height: 100%;
       margin: 0;
       font-family: "Noto Sans JP", sans-serif;
+      background: black;
       background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
-      background-attachment: fixed;
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
-
-    .character {
-      width: 120px;
-      height: auto;
-      margin: 20px;
-    }
-
-    #chat-box {
-      background: rgba(0,0,0,0.4);
-      padding: 20px;
-      border-radius: 12px;
-      width: 90%;
+    .container {
       max-width: 600px;
-      height: 300px;
-      overflow-y: auto;
-      margin-bottom: 12px;
+      margin: 80px auto 20px;
+      padding: 20px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
     }
-
-    #input-area {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 24px;
+    #characterImg {
+      width: 160px;
+      margin: 16px auto;
+      display: block;
     }
-
-    input[type="text"] {
-      width: 60%;
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
+    .chat {
+      margin-bottom: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
     }
-
-    button {
-      padding: 10px 16px;
+    #userInput {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-top: 8px;
+    }
+    #sendBtn {
+      margin-top: 12px;
+      padding: 10px 20px;
       background: #ffd1ec;
+      color: #000;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-    }
-
-    .badge {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.4);
-      padding: 6px 12px;
-      border-radius: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="badge" id="status">loading...</div>
-
-  <img id="characterImg" class="character" src="" alt="キャラ画像" />
-
-  <div id="chat-box"></div>
-
-  <div id="input-area">
-    <input type="text" id="message" placeholder="メッセージを入力..." />
-    <button onclick="sendMessage()">送信</button>
+  <div class="container">
+    <h2>話しかけてみてね（あと <span id="remainCount">3</span> 回）</h2>
+    <img id="characterImg" src="" alt="AIキャラ" />
+    <div id="chatArea"></div>
+    <input type="text" id="userInput" placeholder="あなたのメッセージを入力" />
+    <button id="sendBtn">送信</button>
   </div>
 
   <script>
-    const color = localStorage.getItem("selectedColor") || "pink";
-    const stage = "stage1";
-    let talkCount = 1;
+    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+    const color = localStorage.getItem("whoai_color") || "pink";
+    const stage = localStorage.getItem("whoai_stage") || "tane";
+    let turnCount = parseInt(localStorage.getItem("whoai_turnCount") || "0");
 
-    // キャラ画像表示
-    const charImg = document.getElementById("characterImg");
-    charImg.src = `public/assets/stage1/${color}_closed.png`;
+    const characterImg = document.getElementById("characterImg");
+    const chatArea = document.getElementById("chatArea");
+    const remainSpan = document.getElementById("remainCount");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
 
-    document.getElementById("status").innerText = `stage: ${stage} | talk ${talkCount}/10 | color:${color}`;
+    characterImg.src = `public/assets/stage1/${color}_closed.png`;
+    remainSpan.textContent = 3 - turnCount;
 
-    function sendMessage() {
-      const input = document.getElementById("message");
-      const text = input.value.trim();
-      if (text === "") return;
-
-      const chatBox = document.getElementById("chat-box");
-      chatBox.innerHTML += `<div><strong>あなた:</strong> ${text}</div>`;
-      input.value = "";
-
-      setTimeout(() => {
-        chatBox.innerHTML += `<div><strong>フージ:</strong> なるほどね〜</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
-        talkCount++;
-        document.getElementById("status").innerText = `stage: ${stage} | talk ${talkCount}/10 | color:${color}`;
-      }, 400);
+    function appendMessage(sender, text) {
+      const div = document.createElement("div");
+      div.className = "chat";
+      div.textContent = `${sender}: ${text}`;
+      chatArea.appendChild(div);
     }
+
+    async function sendMessage() {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      appendMessage("あなた", message);
+      userInput.value = "";
+      turnCount++;
+      localStorage.setItem("whoai_turnCount", turnCount);
+
+      try {
+        const response = await fetch(TALK_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: message,
+            color: color,
+            stage: stage,
+            turn: turnCount
+          })
+        });
+        const data = await response.json();
+        appendMessage("AI", data.reply || "…");
+
+        if (turnCount >= 3) {
+          setTimeout(() => {
+            location.href = "macaron_select.html";
+          }, 2000);
+        } else {
+          remainSpan.textContent = 3 - turnCount;
+        }
+      } catch (err) {
+        appendMessage("エラー", "通信に失敗しました");
+      }
+    }
+
+    sendBtn.onclick = sendMessage;
+    userInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
   </script>
 </body>
 </html>
