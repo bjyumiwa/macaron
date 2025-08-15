@@ -2,10 +2,11 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>WhoAI 会話</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  body{font-family:"Noto Sans JP",sans-serif;margin:0;padding:20px;color:#fff}
+  body{font-family:"Noto Sans JP",sans-serif;margin:0;padding:20px;color:#fff;
+       background:url("./assets/stage1/space_background.png") center/cover fixed;}
   .badge{position:fixed;top:10px;right:10px;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:8px}
   #characterImg{width:140px;margin:10px 0;display:block}
   #chat{min-height:300px;background:rgba(255,255,255,.08);border-radius:12px;padding:10px;margin-bottom:10px;overflow-y:auto}
@@ -13,15 +14,11 @@
   input,button{border:none;border-radius:12px;padding:10px}
   input{flex:1}
   button{background:#ffd1ec;color:#111;font-weight:700;cursor:pointer}
-  .tools{position:fixed;bottom:10px;right:10px;display:flex;gap:8px}
-  .tools button{background:#333;color:#fff}
-  #ping{position:fixed;bottom:10px;left:10px;border:none;padding:8px 10px;border-radius:10px;background:#444;color:#fff;opacity:.85}
 </style>
 </head>
 <body>
 
 <div class="badge" id="stateBadge">…</div>
-
 <h2>会話</h2>
 <img id="characterImg" alt="character" />
 <div id="chat"></div>
@@ -31,74 +28,26 @@
 </div>
 <div id="hint"></div>
 
-<div class="tools">
-  <button id="resetBtn" title="一旦すべて初期化">進行リセット</button>
-</div>
-<button id="ping">API Ping</button>
-
 <script>
-/* ========= 進行ストレージ ========= */
+/* 進行状況 */
 const KEY='whoai_progress';
 function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(_){return{}} }
 function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-function ensureInit(){
-  const s=load();
-  if(!s.stage) s.stage='tane';
-  if(typeof s.talkCount!=='number') s.talkCount=0;
-  if(!s.phase) s.phase='preRebirth';
-  return s;
-}
-let s = ensureInit();
+function ensureInit(){ const s=load(); if(!s.stage) s.stage='tane'; if(typeof s.talkCount!=='number') s.talkCount=0; if(!s.phase) s.phase='preRebirth'; return s; }
+let s=ensureInit();
 
-/* ========= 色を必ず決める（URL > session > local > 既存 > pink） ========= */
-function ensureColor(progress){
+/* 色を確実に決める（URL > session > local > 既存 > pink） */
+(function ensureColor(){
   const urlC=new URLSearchParams(location.search).get('color');
-  const ssC =sessionStorage.getItem('whoai_color');
-  const lsC =localStorage.getItem('whoai_color');
-  const decided=urlC||ssC||lsC||progress.color||'pink';
-  progress.color=decided;
-  localStorage.setItem('whoai_color',decided);
-  sessionStorage.setItem('whoai_color',decided);
-  return decided;
-}
-ensureColor(s);
-
-/* ========= 設定 ========= */
-const SURVEY='https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
-
-/* ========= 画像/背景ベースパス 自動検出（public 有無を吸収） ========= */
-let ASSET_BASE=null;
-(async()=>{
-  const CAND=['./public/assets/stage1/','./assets/stage1/','/public/assets/stage1/','/assets/stage1/'];
-  async function head(u){try{const r=await fetch(u,{method:'HEAD',cache:'no-store'});return r.ok;}catch(_){return false;}}
-  for(const b of CAND){ if(await head(b+'space_background.png')){ ASSET_BASE=b; break; } }
-  ASSET_BASE ||= CAND[0];
-
-  Object.assign(document.body.style,{
-    backgroundImage:`url("${ASSET_BASE}space_background.png")`,
-    backgroundPosition:'center', backgroundSize:'cover', backgroundAttachment:'fixed'
-  });
-  renderCharacter();
+  const ssC=sessionStorage.getItem('whoai_color');
+  const lsC=localStorage.getItem('whoai_color');
+  const decided=urlC||ssC||lsC||s.color||'pink';
+  s.color=decided; save(s);
+  sessionStorage.setItem('whoai_color', decided);
+  localStorage.setItem('whoai_color', decided);
 })();
 
-/* ========= API エンドポイント自動選択 =========
-   必要なら一番上の URL をあなたの Vercel URL に変えてください。 */
-const TALK_CANDIDATES = [
-  'https://macaron-one.vercel.app/api/talk',   // ← ここをあなたの本番URLに
-  location.origin + '/api/talk'                // 同一オリジン（ローカル開発など）
-];
-async function pickAliveEndpoint(){
-  for(const u of TALK_CANDIDATES){
-    try{
-      const r = await fetch(u,{method:'GET',cache:'no-store',mode:'cors'});
-      if(r.ok) return u;
-    }catch(_){}
-  }
-  throw new Error('No API reachable');
-}
-let TALK_ENDPOINT=null; (async()=>{ try{ TALK_ENDPOINT=await pickAliveEndpoint(); }catch(e){ console.error(e); }})();
-
-/* ========= 表示 ========= */
+/* 表示 */
 function renderBadge(){
   const stageLabel=s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
   const phaseLabel=s.phase==='preRebirth'?'前半':'復活後';
@@ -112,89 +61,71 @@ function renderBadge(){
     (s.phase==='preRebirth'&&s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
     (s.phase==='postRebirth'&&s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' : '';
 }
-renderBadge();
-
 function renderCharacter(){
-  if(!ASSET_BASE) return;
   const img=document.getElementById('characterImg');
   const color=s.color||'pink';
-  const stage=s.stage||'tane';
-  img.src = stage==='tane' ? `${ASSET_BASE}tane_${color}.png` : `${ASSET_BASE}${color}_open.png`;
+  img.src = (s.stage==='tane')
+    ? `./assets/stage1/tane_${color}.png`
+    : `./assets/stage1/${color}_open.png`;
 }
+renderBadge(); renderCharacter();
 
 function append(role,text){
-  const d=document.createElement('div');
-  d.innerHTML=`<b>${role}:</b> ${text}`;
-  const chat=document.getElementById('chat');
-  chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
+  const d=document.createElement('div'); d.innerHTML=`<b>${role}:</b> ${text}`;
+  const chat=document.getElementById('chat'); chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
 }
 
-/* ========= 送信（JSON以外でも中身を見せる） ========= */
+/* APIエンドポイント（VercelのURLに固定。必要なら置き換えてOK） */
+const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+
+/* 送信 */
 async function send(){
   const input=document.getElementById('msg');
   const q=input.value.trim(); if(!q) return;
   input.value=''; append('You', q);
 
-  try{ if(!TALK_ENDPOINT) TALK_ENDPOINT=await pickAliveEndpoint(); }
-  catch(e){ append('WhoAI','(API未接続: エンドポイントが見つかりません)'); console.error(e); return advance(); }
-
-  let data=null, text='';
   try{
-    const r=await fetch(TALK_ENDPOINT,{
+    const r = await fetch(TALK_ENDPOINT, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ message:q })
+      body: JSON.stringify({ message: q })
     });
-    text=await r.text(); try{ data=text?JSON.parse(text):null; }catch{ data=null; }
-    if(r.ok && data && data.reply){
-      append('WhoAI', data.reply);
-    }else{
+    const text = await r.text();
+    let data=null; try{ data=JSON.parse(text); }catch{}
+    if(r.ok && data && data.reply){ append('WhoAI', data.reply); }
+    else{
       const msg=(data&&(data.error||data.detail)) ? `${data.error||''} ${data.detail||''}`.trim()
                : (text ? (text.length>180?text.slice(0,180)+'…':text) : `HTTP ${r.status}`);
       append('WhoAI', `(APIエラー: ${msg})`);
-      console.warn('API error detail:',{status:r.status,data,raw:text});
+      console.warn('API error:', {status:r.status, data, raw:text});
     }
   }catch(e){
-    append('WhoAI','(通信エラー: 接続できません)');
-    console.error('Network/parse error', e);
+    console.error('通信エラー', e);
+    append('WhoAI', '(通信エラー)');
   }
-  advance(); // 送信後のみカウント進行
+  advance();
 }
 
-/* ========= 進行 ========= */
+/* 進行（安全版） */
+function toInt(n){ n=Number(n); return Number.isFinite(n)?Math.floor(n):0; }
 function advance(){
   if(s.phase==='preRebirth' && s.stage==='tane'){
-    s.talkCount=(s.talkCount||0)+1; save(s); renderBadge();
+    s.talkCount = toInt(s.talkCount)+1; save(s); renderBadge();
     if(s.talkCount>=3){ s.talkCount=0; s._cameBackAfter3=true; save(s); location.href='macaron.html'; }
     return;
   }
   if(s.phase==='preRebirth' && s.stage==='openclause'){
-    s.talkCount=(s.talkCount||0)+1; save(s); renderBadge();
+    s.talkCount = toInt(s.talkCount)+1; save(s); renderBadge();
     if(s.talkCount>=10){ save(s); location.href='rebirth.html'; }
     return;
   }
   if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
-    s.postTalkCount=(s.postTalkCount||0)+1; save(s); renderBadge();
-    if(s.postTalkCount>=10){ location.href=SURVEY; }
+    s.postTalkCount = toInt(s.postTalkCount)+1; save(s); renderBadge();
+    if(s.postTalkCount>=10){ location.href='https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header'; }
   }
 }
 
-/* ========= リセット & Ping ========= */
-document.getElementById('resetBtn').onclick=()=>{
-  localStorage.removeItem(KEY); s=ensureInit(); ensureColor(s);
-  renderBadge(); renderCharacter(); document.getElementById('chat').innerHTML='';
-  alert('進行を初期化しました');
-};
-document.getElementById('ping').onclick=async()=>{
-  try{
-    if(!TALK_ENDPOINT) TALK_ENDPOINT=await pickAliveEndpoint();
-    const r=await fetch(TALK_ENDPOINT);
-    const t=await r.text();
-    alert(`GET /api/talk -> ${r.status}\n${t.slice(0,200)}`);
-  }catch(e){ alert('ネットワークエラー: '+e); }
-};
-
-/* ========= イベント ========= */
+/* イベント */
 document.getElementById('sendBtn').addEventListener('click', send);
 document.getElementById('msg').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
 </script>
