@@ -2,48 +2,26 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <title>WhoAI - はじめに</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WhoAI - スタート</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: url("public/assets/stage1/space_background.png") center/cover no-repeat fixed;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      font-family: "Noto Sans JP", sans-serif;
-      color: white;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
-    }
-
-    .start-btn {
-      margin-top: 30px;
-      padding: 14px 32px;
-      font-size: 1.2rem;
-      background-color: #ffcce0;
-      color: black;
+    html, body { margin: 0; padding: 0; height: 100%; font-family: "Noto Sans JP", sans-serif; background: #000; color: white; text-align: center; }
+    body { display: flex; flex-direction: column; justify-content: center; align-items: center; background-image: url("public/assets/stage1/space_background.png"); background-size: cover; background-position: center; }
+    h1 { font-size: 2rem; margin-bottom: 20px; }
+    button {
+      padding: 12px 24px;
+      background: #ffcdf2;
       border: none;
-      border-radius: 18px;
+      border-radius: 12px;
+      font-size: 1.2rem;
       cursor: pointer;
-      font-weight: bold;
-      transition: all 0.3s;
     }
-
-    .start-btn:hover {
-      background-color: #ffb6d1;
-      transform: scale(1.05);
-    }
+    button:hover { background: #ffa4e0; }
   </style>
 </head>
 <body>
   <h1>WhoAIへようこそ</h1>
-  <button class="start-btn" onclick="location.href='fortune.html'">スタート</button>
+  <p>あなたの分身がどんな存在になるか、探ってみよう。</p>
+  <button onclick="location.href='fortune.html'">はじめる</button>
 </body>
 </html>
