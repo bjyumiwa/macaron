@@ -1,277 +1,148 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <!-- FILE: /macaron/whoai_talk.html -->
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>whoai_talk - 会話（10回で進行）</title>
+  <title>whoai_talk - 会話（tane3→openclause10→儀式→姿保持10）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",system-ui,Arial,sans-serif;color:#fff;background:#000;
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
       background-image:url("./public/assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start
+      display:flex;flex-direction:column;align-items:center;padding:16px
     }
-    /* 背景を暗くして文字を読みやすく */
-    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(1.5px);z-index:0}
-
-    /* 右上バッジ */
-    .whoai-name-badge{
-      position:fixed;top:10px;right:10px;z-index:3;
-      background:rgba(0,0,0,.45);padding:8px 12px;border-radius:12px;font-weight:700
+    .wrap{width:min(880px,92%);}
+    .badge{
+      position:fixed;top:8px;right:8px;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:12px;
+      font-weight:700;backdrop-filter:blur(3px)
     }
-    .meta{font-size:.8rem;opacity:.85}
-
-    /* レイアウト */
-    .wrap{
-      position:relative;z-index:1;margin-top:70px;
-      width:min(860px,92vw);
-      display:grid;grid-template-columns:140px 1fr;gap:16px;align-items:start
-    }
-    @media (max-width:700px){.wrap{grid-template-columns:1fr}}
-
-    /* キャラカード */
-    .char-card{
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-      border-radius:20px;padding:14px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)
-    }
-    .char-img{width:120px;height:120px;object-fit:contain;display:block;margin:6px auto 2px}
-
-    /* チャット */
-    .chat{
-      background:rgba(17,17,22,.55);backdrop-filter:blur(3px);
-      border:1px solid rgba(255,255,255,.12);border-radius:20px;
-      padding:16px;min-height:440px;max-height:60vh;overflow:auto
-    }
-    .bubble{max-width:86%;margin:8px 0;padding:10px 12px;border-radius:14px;line-height:1.6;text-shadow:0 1px 2px rgba(0,0,0,.55)}
-    .me{background:rgba(255,255,255,.12);margin-left:auto;border-top-right-radius:6px}
-    .ai{background:rgba(255,255,255,.08);margin-right:auto;border-top-left-radius:6px}
-
-    .count{margin-top:8px;font-size:.9rem;opacity:.9;display:flex;gap:8px;align-items:center}
-
-    /* 入力 */
-    .input-row{margin-top:12px;display:flex;gap:8px;align-items:center}
-    .input-row input{
-      flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.45);color:#fff;outline:none
-    }
-    .btn{padding:12px 16px;border-radius:12px;border:0;cursor:pointer;font-weight:700}
-    .btn-primary{background:#ffd1ec;color:#171717}
-    .btn-ghost{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25)}
-    .btn:disabled{opacity:.6;cursor:not-allowed}
-
-    /* 10回到達後の案内 */
-    .notice{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:.95rem}
-    .cta{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    #chat{min-height:320px;background:rgba(255,255,255,.08);border-radius:14px;padding:12px;margin:10px 0;overflow:auto}
+    #controls{display:flex;gap:8px}
+    input,button{border:none;border-radius:12px;padding:10px 12px}
+    input{flex:1;background:rgba(255,255,255,.9);color:#111}
+    button{background:#ffd1ec;color:#111;font-weight:700;cursor:pointer}
   </style>
 </head>
 <body>
-  <div class="scrim"></div>
-
-  <!-- 右上バッジ -->
-  <div class="whoai-name-badge">
-    WhoAI: <span id="whoaiName">あなた</span>
-    <div class="meta">会話 <span id="turnNow">0</span>/<span id="turnMax">10</span></div>
-  </div>
-
+  <div class="badge" id="stateBadge">loading…</div>
   <div class="wrap">
-    <!-- 左：キャラ -->
-    <aside class="side">
-      <div class="char-card">
-        <img id="charImg" class="char-img" src="" alt="character" />
-        <div id="charLabel">tane</div>
-        <div class="meta">color: <span id="colorTag">pink</span></div>
-      </div>
-    </aside>
-
-    <!-- 右：チャット -->
-    <main>
-      <div id="chat" class="chat" aria-live="polite"></div>
-
-      <div class="count">
-        <div>会話回数：<strong id="turnText">0/10</strong></div>
-        <div id="phaseText" class="meta"></div>
-      </div>
-
-      <div class="input-row">
-        <input id="userInput" type="text" placeholder="メッセージを入力…" />
-        <button id="sendBtn" class="btn btn-primary">送信</button>
-        <button id="resetBtn" class="btn btn-ghost" title="このページの記録を消去">記録リセット</button>
-      </div>
-
-      <div id="afterLimit" style="display:none">
-        <div class="notice" id="limitMsg"></div>
-        <div class="cta">
-          <a id="ctaBtn" class="btn btn-primary" href="#">次へ進む</a>
-          <button id="stayBtn" class="btn btn-ghost">このまま見る</button>
-        </div>
-      </div>
-    </main>
+    <h2>会話</h2>
+    <div id="chat"></div>
+    <div id="controls">
+      <input id="msg" placeholder="メッセージを入力…" />
+      <button id="sendBtn">送信</button>
+    </div>
+    <div id="hint" style="opacity:.85;margin-top:6px;font-size:.95em"></div>
   </div>
+
+  <!-- 共通ストレージ -->
+  <script>
+  window.WhoAI = window.WhoAI || (function(){
+    const KEY='whoai_progress';
+    function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}}}
+    function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+    function ensureInit(){
+      const s = load();
+      if(!s.stage) s.stage='tane';
+      if(!('talkCount' in s)) s.talkCount=0;
+      if(!s.phase) s.phase='preRebirth';
+      return s;
+    }
+    return {KEY,load,save,ensureInit};
+  })();
+  </script>
 
   <script>
-  /************ 設定（必要なら編集） ************/
-  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-  const MAX_TURNS = 10;
-  const V = 'v=20250815';                    // キャッシュバスター
-  const ASSETS_ROOT = './public/assets';     // 画像のルート（変えるならここだけ）
+  (()=>{
+    const chat = document.getElementById('chat');
+    const sendBtn = document.getElementById('sendBtn');
+    const msg = document.getElementById('msg');
+    const hint = document.getElementById('hint');
+    const badge = document.getElementById('stateBadge');
+    const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
 
-  // 同階層の macaron.html / rebirth.html へ確実に遷移（404回避）
-  const BASE_DIR   = location.href.replace(/[^/]*$/, '');
-  const URL_EVOLVE = new URL('./macaron.html', BASE_DIR).toString();
-  const URL_REBIRTH= new URL('./rebirth.html', BASE_DIR).toString();
+    let s = WhoAI.ensureInit();
+    renderBadge();
 
-  /************ 互換キー吸収＋正規化 ************/
-  const getAny = (...keys)=>{
-    for(const k of keys){
-      const v = localStorage.getItem(k);
-      if(v && v!=='undefined' && v!=='null') return v;
+    function renderBadge(){
+      const stageLabel = s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
+      const phaseLabel = s.phase==='preRebirth'?'前半':'復活後';
+      const countLabel = (s.phase==='postRebirth' && s.postMode==='keepAppearance')
+        ? `postTalk ${s.postTalkCount||0}/10`
+        : `talk ${s.talkCount||0}/${s.stage==='tane'?3:10}`;
+      badge.textContent = `${stageLabel} | ${phaseLabel} | ${countLabel} | color:${s.color||'-'}`;
+      hint.textContent =
+        (s.phase==='preRebirth' && s.stage==='tane') ? 'taneで3回会話すると、もう一度マカロンへ' :
+        (s.phase==='preRebirth' && s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
+        (s.phase==='postRebirth' && s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' :
+        '';
     }
-    return null;
-  };
 
-  const COLOR_MAP = {
-    pink:'pink', blue:'blue', green:'green', purple:'purple',
-    violet:'purple', magenta:'pink'
-  };
-
-  const name  = getAny('whoai_name','player_name') || 'あなた';
-  const rawColor = (getAny('whoai_color','selectedColor','macaron_color','macaronSelected','color') || 'pink').toLowerCase();
-  const color = COLOR_MAP[rawColor] || 'pink';
-  const stage = (getAny('whoai_stage','stage','whoai_phase') || 'tane').toLowerCase(); // 'tane' | 'evolved'
-
-  // 統一キーへ書き戻し（以降は常に同じキーを参照）
-  localStorage.setItem('whoai_name', name);
-  localStorage.setItem('whoai_color', color);
-  localStorage.setItem('whoai_stage', stage);
-
-  let turn = Number(getAny('whoai_turn')) || 0;
-  let log = []; try{ log = JSON.parse(getAny('whoai_log') || '[]'); }catch{ log=[]; }
-
-  /************ 画像パス生成 & フォールバック ************/
-  function charImagePath(color, stage){
-    const safe = ['pink','blue','green','purple'].includes(color) ? color : 'pink';
-    const primary = (stage==='evolved')
-      ? `${ASSETS_ROOT}/evolved/${safe}_open.png`
-      : `${ASSETS_ROOT}/stage1/${safe}_closed.png`;
-    return `${primary}?${V}`;
-  }
-
-  /************ 要素参照 ************/
-  const whoaiName = document.getElementById('whoaiName');
-  const turnNow   = document.getElementById('turnNow');
-  const turnMax   = document.getElementById('turnMax');
-  const charImg   = document.getElementById('charImg');
-  const charLabel = document.getElementById('charLabel');
-  const colorTag  = document.getElementById('colorTag');
-  const chatEl    = document.getElementById('chat');
-  const turnText  = document.getElementById('turnText');
-  const phaseText = document.getElementById('phaseText');
-  const inputEl   = document.getElementById('userInput');
-  const sendBtn   = document.getElementById('sendBtn');
-  const resetBtn  = document.getElementById('resetBtn');
-  const afterLimit= document.getElementById('afterLimit');
-  const ctaBtn    = document.getElementById('ctaBtn');
-  const stayBtn   = document.getElementById('stayBtn');
-  const limitMsg  = document.getElementById('limitMsg');
-
-  /************ 初期描画 ************/
-  whoaiName.textContent = name;
-  turnMax.textContent   = MAX_TURNS;
-  colorTag.textContent  = color;
-  charLabel.textContent = stage;
-  charImg.src = charImagePath(color, stage);
-  charImg.alt = `${stage}-${color}`;
-  // 画像フォールバック
-  charImg.onerror = ()=>{
-    const fallbackList = [
-      `${ASSETS_ROOT}/stage1/${color}_closed.png?${V}`,
-      `${ASSETS_ROOT}/stage1/pink_closed.png?${V}`
-    ];
-    let i=0; charImg.onerror=()=>{ if(i<fallbackList.length) charImg.src=fallbackList[i++]; };
-    charImg.src=fallbackList[i++];
-  };
-
-  const renderBubble=(role,text)=>{
-    const div=document.createElement('div');
-    div.className=`bubble ${role==='user'?'me':'ai'}`;
-    div.textContent=text;
-    chatEl.appendChild(div);
-    chatEl.scrollTop=chatEl.scrollHeight;
-  };
-  log.forEach(m=>renderBubble(m.role,m.content));
-
-  const updateTurnUI=()=>{
-    turnNow.textContent = turn;
-    turnText.textContent = `${turn}/${MAX_TURNS}`;
-    phaseText.textContent = stage==='tane'
-      ? '（最初の10回：終わると “進化” へ）'
-      : '（進化後の10回：終わると “復活の儀式” へ）';
-  };
-  updateTurnUI();
-
-  const lockIfLimitReached=()=>{
-    if(turn>=MAX_TURNS){
-      inputEl.disabled=true; sendBtn.disabled=true; afterLimit.style.display='';
-      ctaBtn.href = (stage==='tane' ? URL_EVOLVE : URL_REBIRTH) + (/\?/.test(location.href)?'&':'?') + V;
-      limitMsg.textContent = stage==='tane'
-        ? '10回の会話が終わりました。マカロンを選んで進化しよう。'
-        : '10回の会話が終わりました。復活の儀式へ進みましょう。';
-      return true;
+    function append(role, text){
+      const b = document.createElement('div');
+      b.style.margin='8px 0';
+      b.innerHTML = `<b>${role}:</b> ${text}`;
+      chat.appendChild(b);
+      chat.scrollTop = chat.scrollHeight;
     }
-    return false;
-  };
-  // 読み込み時にすでに10回超なら即ロック
-  lockIfLimitReached();
 
-  /************ 送信処理 ************/
-  async function send(){
-    const text=(inputEl.value||'').trim();
-    if(!text || turn>=MAX_TURNS) return;
+    // ★ ここで既存のAPI送信を使ってもOK。最低限のダミー応答も入れておく。
+    async function send(){
+      const q = msg.value.trim();
+      if(!q) return;
+      msg.value='';
+      append('You', q);
 
-    renderBubble('user',text);
-    log.push({role:'user',content:text});
+      // ここで既存のAPI呼び出しがあれば差し替え（レス描画後に advance() を呼んでね）
+      // ダミー応答
+      await new Promise(r=>setTimeout(r, 200));
+      append('WhoAI', '…うん、なるほど！');
 
-    let reply='';
-    try{
-      const res=await fetch(TALK_ENDPOINT,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({message:text,name,color,stage,turn})
-      });
-      const data = res.ok ? await res.json() : {};
-      reply = data.reply || data.message || 'うん、続けよう！';
-    }catch{ reply='（接続が不安定みたい）でも大丈夫。続けよう！'; }
+      setTimeout(advance, 30); // 応答描画後に進行判定
+    }
 
-    renderBubble('assistant',reply);
-    log.push({role:'assistant',content:reply});
+    function advance(){
+      s = WhoAI.ensureInit();
 
-    turn += 1;
-    localStorage.setItem('whoai_turn', String(turn));
-    localStorage.setItem('whoai_log', JSON.stringify(log));
-    updateTurnUI();
-    lockIfLimitReached();
+      // === 前半：taneで3回 → macaronへ戻す（戻った印を付ける） ===
+      if(s.phase==='preRebirth' && s.stage==='tane'){
+        s.talkCount = (s.talkCount||0)+1;
+        WhoAI.save(s); renderBadge();
+        if(s.talkCount>=3){
+          s.talkCount=0;
+          s._cameBackAfter3 = true; // 2回目マカロンで進化ボタン表示用
+          WhoAI.save(s);
+          location.href='macaron.html';
+        }
+        return;
+      }
 
-    inputEl.value=''; inputEl.focus();
-  }
-  sendBtn.addEventListener('click',send);
-  inputEl.addEventListener('keydown',e=>{ if(e.key==='Enter') send(); });
+      // === 前半：openclauseで10回 → 儀式へ ===
+      if(s.phase==='preRebirth' && s.stage==='openclause'){
+        s.talkCount = (s.talkCount||0)+1;
+        WhoAI.save(s); renderBadge();
+        if(s.talkCount>=10){
+          WhoAI.save(s);
+          location.href='rebirth.html';
+        }
+        return;
+      }
 
-  /************ その他操作 ************/
-  resetBtn.addEventListener('click',()=>{
-    if(!confirm('このページの会話ログと回数カウントを削除します。')) return;
-    localStorage.removeItem('whoai_turn');
-    localStorage.removeItem('whoai_log');
-    turn=0; log=[]; chatEl.innerHTML='';
-    updateTurnUI();
-    inputEl.disabled=false; sendBtn.disabled=false; afterLimit.style.display='none';
-    inputEl.focus();
-  });
-  stayBtn.addEventListener('click',()=>{ afterLimit.style.display='none'; });
+      // === 後半：容姿キープ（会話リセット）で10回 → アンケート ===
+      if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
+        s.postTalkCount = (s.postTalkCount||0)+1;
+        WhoAI.save(s); renderBadge();
+        if(s.postTalkCount>=10){
+          location.href = SURVEY;
+        }
+        return;
+      }
+    }
 
-  // 念のため互換キーにも書いておく（他画面で参照される場合に備え）
-  localStorage.setItem('selectedColor', color);
-  localStorage.setItem('stage', stage);
+    sendBtn.addEventListener('click', send);
+    msg.addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
+  })();
   </script>
 </body>
 </html>
