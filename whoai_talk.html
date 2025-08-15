@@ -1,133 +1,104 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<title>WhoAI 会話</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  body{font-family:"Noto Sans JP",sans-serif;margin:0;padding:20px;color:#fff;
-       background:url("./assets/stage1/space_background.png") center/cover fixed;}
-  .badge{position:fixed;top:10px;right:10px;background:rgba(0,0,0,.6);padding:6px 12px;border-radius:8px}
-  #characterImg{width:140px;margin:10px 0;display:block}
-  #chat{min-height:300px;background:rgba(255,255,255,.08);border-radius:12px;padding:10px;margin-bottom:10px;overflow-y:auto}
-  #controls{display:flex;gap:6px}
-  input,button{border:none;border-radius:12px;padding:10px}
-  input{flex:1}
-  button{background:#ffd1ec;color:#111;font-weight:700;cursor:pointer}
-</style>
+  <meta charset="UTF-8" />
+  <title>WhoAI - 会話画面</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-color: #000;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+    }
+    #chatArea {
+      max-width: 600px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 16px;
+      border-radius: 12px;
+      height: 300px;
+      overflow-y: auto;
+    }
+    #status {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+    input, button {
+      font-size: 16px;
+      padding: 8px;
+      border-radius: 6px;
+      margin: 10px 4px 0;
+    }
+    button {
+      background: pink;
+      border: none;
+    }
+  </style>
 </head>
 <body>
+  <div id="status"></div>
+  <div id="chatArea"></div>
+  <input id="userInput" placeholder="メッセージを入力…" />
+  <button onclick="sendMessage()">送信</button>
 
-<div class="badge" id="stateBadge">…</div>
-<h2>会話</h2>
-<img id="characterImg" alt="character" />
-<div id="chat"></div>
-<div id="controls">
-  <input id="msg" placeholder="メッセージを入力..." />
-  <button id="sendBtn">送信</button>
-</div>
-<div id="hint"></div>
+  <script>
+    const stage = localStorage.getItem("stage") || "tane";
+    const color = localStorage.getItem("color") || "pink";
+    const evolved = localStorage.getItem("evolved") === "true";
+    const maxTurns = evolved ? 10 : 3;
 
-<script>
-/* 進行状況 */
-const KEY='whoai_progress';
-function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(_){return{}} }
-function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-function ensureInit(){ const s=load(); if(!s.stage) s.stage='tane'; if(typeof s.talkCount!=='number') s.talkCount=0; if(!s.phase) s.phase='preRebirth'; return s; }
-let s=ensureInit();
+    let turnCount = parseInt(localStorage.getItem("turnCount") || "0");
+    const chatArea = document.getElementById("chatArea");
+    const status = document.getElementById("status");
 
-/* 色を確実に決める（URL > session > local > 既存 > pink） */
-(function ensureColor(){
-  const urlC=new URLSearchParams(location.search).get('color');
-  const ssC=sessionStorage.getItem('whoai_color');
-  const lsC=localStorage.getItem('whoai_color');
-  const decided=urlC||ssC||lsC||s.color||'pink';
-  s.color=decided; save(s);
-  sessionStorage.setItem('whoai_color', decided);
-  localStorage.setItem('whoai_color', decided);
-})();
+    updateStatus();
 
-/* 表示 */
-function renderBadge(){
-  const stageLabel=s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
-  const phaseLabel=s.phase==='preRebirth'?'前半':'復活後';
-  const countLabel=(s.phase==='postRebirth'&&s.postMode==='keepAppearance')
-    ? `postTalk ${s.postTalkCount||0}/10`
-    : `talk ${s.talkCount||0}/${s.stage==='tane'?3:10}`;
-  document.getElementById('stateBadge').textContent=
-    `${stageLabel} | ${phaseLabel} | ${countLabel} | color:${s.color||'-'}`;
-  document.getElementById('hint').textContent=
-    (s.phase==='preRebirth'&&s.stage==='tane') ? 'taneで3回会話すると、もう一度マカロンへ' :
-    (s.phase==='preRebirth'&&s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
-    (s.phase==='postRebirth'&&s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' : '';
-}
-function renderCharacter(){
-  const img=document.getElementById('characterImg');
-  const color=s.color||'pink';
-  img.src = (s.stage==='tane')
-    ? `./assets/stage1/tane_${color}.png`
-    : `./assets/stage1/${color}_open.png`;
-}
-renderBadge(); renderCharacter();
-
-function append(role,text){
-  const d=document.createElement('div'); d.innerHTML=`<b>${role}:</b> ${text}`;
-  const chat=document.getElementById('chat'); chat.appendChild(d); chat.scrollTop=chat.scrollHeight;
-}
-
-/* APIエンドポイント（VercelのURLに固定。必要なら置き換えてOK） */
-const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-
-/* 送信 */
-async function send(){
-  const input=document.getElementById('msg');
-  const q=input.value.trim(); if(!q) return;
-  input.value=''; append('You', q);
-
-  try{
-    const r = await fetch(TALK_ENDPOINT, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ message: q })
-    });
-    const text = await r.text();
-    let data=null; try{ data=JSON.parse(text); }catch{}
-    if(r.ok && data && data.reply){ append('WhoAI', data.reply); }
-    else{
-      const msg=(data&&(data.error||data.detail)) ? `${data.error||''} ${data.detail||''}`.trim()
-               : (text ? (text.length>180?text.slice(0,180)+'…':text) : `HTTP ${r.status}`);
-      append('WhoAI', `(APIエラー: ${msg})`);
-      console.warn('API error:', {status:r.status, data, raw:text});
+    function updateStatus() {
+      status.textContent = `stage: ${stage} | talk ${turnCount}/${maxTurns} | color:${color}`;
     }
-  }catch(e){
-    console.error('通信エラー', e);
-    append('WhoAI', '(通信エラー)');
-  }
-  advance();
-}
 
-/* 進行（安全版） */
-function toInt(n){ n=Number(n); return Number.isFinite(n)?Math.floor(n):0; }
-function advance(){
-  if(s.phase==='preRebirth' && s.stage==='tane'){
-    s.talkCount = toInt(s.talkCount)+1; save(s); renderBadge();
-    if(s.talkCount>=3){ s.talkCount=0; s._cameBackAfter3=true; save(s); location.href='macaron.html'; }
-    return;
-  }
-  if(s.phase==='preRebirth' && s.stage==='openclause'){
-    s.talkCount = toInt(s.talkCount)+1; save(s); renderBadge();
-    if(s.talkCount>=10){ save(s); location.href='rebirth.html'; }
-    return;
-  }
-  if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
-    s.postTalkCount = toInt(s.postTalkCount)+1; save(s); renderBadge();
-    if(s.postTalkCount>=10){ location.href='https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header'; }
-  }
-}
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const message = input.value.trim();
+      if (!message) return;
 
-/* イベント */
-document.getElementById('sendBtn').addEventListener('click', send);
-document.getElementById('msg').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
-</script>
+      appendMessage("あなた", message);
+      input.value = "";
+      turnCount++;
+      localStorage.setItem("turnCount", turnCount.toString());
+
+      // 仮のAI返信
+      setTimeout(() => {
+        appendMessage("AI", "なるほど、そうなんですね！");
+        checkEnd();
+      }, 600);
+    }
+
+    function appendMessage(sender, message) {
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>${sender}：</strong> ${message}`;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function checkEnd() {
+      updateStatus();
+      if (turnCount >= maxTurns) {
+        setTimeout(() => {
+          window.location.href = "rebirth.html";
+        }, 1500);
+      }
+    }
+  </script>
 </body>
 </html>
