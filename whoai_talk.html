@@ -14,10 +14,15 @@
     }
     .wrap{width:min(880px,92%);}
     .badge{
-      position:fixed;top:8px;right:8px;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:12px;
-      font-weight:700;backdrop-filter:blur(3px)
+      position:fixed;top:8px;right:8px;background:rgba(0,0,0,.45);
+      padding:8px 12px;border-radius:12px;font-weight:700;backdrop-filter:blur(3px)
     }
-    #chat{min-height:320px;background:rgba(255,255,255,.08);border-radius:14px;padding:12px;margin:10px 0;overflow:auto}
+    #characterImg{
+      width:140px;margin:6px 0 10px;display:block;
+      filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))
+    }
+    #chat{min-height:320px;background:rgba(255,255,255,.08);
+      border-radius:14px;padding:12px;margin:10px 0;overflow:auto}
     #controls{display:flex;gap:8px}
     input,button{border:none;border-radius:12px;padding:10px 12px}
     input{flex:1;background:rgba(255,255,255,.9);color:#111}
@@ -28,6 +33,7 @@
   <div class="badge" id="stateBadge">loading…</div>
   <div class="wrap">
     <h2>会話</h2>
+    <img id="characterImg" alt="character" />
     <div id="chat"></div>
     <div id="controls">
       <input id="msg" placeholder="メッセージを入力…" />
@@ -60,10 +66,13 @@
     const msg = document.getElementById('msg');
     const hint = document.getElementById('hint');
     const badge = document.getElementById('stateBadge');
+    const img = document.getElementById('characterImg');
     const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
+    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // あなたのAPIエンドポイント
 
     let s = WhoAI.ensureInit();
     renderBadge();
+    renderCharacter();
 
     function renderBadge(){
       const stageLabel = s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
@@ -79,6 +88,28 @@
         '';
     }
 
+    function renderCharacter(){
+      const color = s.color || 'pink';
+      const stage = s.stage || 'tane';
+      const ASSETS = {
+        tane:       (c)=> `./public/assets/stage1/${c}_closed.png`,
+        openclause: (c)=> `./public/assets/stage2/${c}_open.png`
+      };
+      const srcPrimary   = (ASSETS[stage]||ASSETS.tane)(color);
+      const srcFallback1 = `./public/assets/stage1/${color}_closed.png`;
+      const srcFallback2 = `./public/assets/stage1/pink_closed.png`;
+
+      function tryLoad(srcs){
+        if(!srcs.length){ img.style.display='none'; return; }
+        const [head, ...rest] = srcs;
+        const test = new Image();
+        test.onload  = ()=>{ img.src=head; img.style.display='block'; };
+        test.onerror = ()=> tryLoad(rest);
+        test.src = head;
+      }
+      tryLoad([srcPrimary, srcFallback1, srcFallback2]);
+    }
+
     function append(role, text){
       const b = document.createElement('div');
       b.style.margin='8px 0';
@@ -87,38 +118,45 @@
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // ★ ここで既存のAPI送信を使ってもOK。最低限のダミー応答も入れておく。
     async function send(){
       const q = msg.value.trim();
       if(!q) return;
       msg.value='';
       append('You', q);
 
-      // ここで既存のAPI呼び出しがあれば差し替え（レス描画後に advance() を呼んでね）
-      // ダミー応答
-      await new Promise(r=>setTimeout(r, 200));
-      append('WhoAI', '…うん、なるほど！');
+      try{
+        const r = await fetch(TALK_ENDPOINT, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ message:q })
+        });
+        if(!r.ok) throw new Error('Bad status '+r.status);
+        const data = await r.json();
+        if(data && data.reply){
+          append('WhoAI', data.reply);
+        }
+      }catch(e){
+        console.error('API error:', e);
+      }
 
-      setTimeout(advance, 30); // 応答描画後に進行判定
+      setTimeout(advance, 30);
     }
 
     function advance(){
       s = WhoAI.ensureInit();
 
-      // === 前半：taneで3回 → macaronへ戻す（戻った印を付ける） ===
       if(s.phase==='preRebirth' && s.stage==='tane'){
         s.talkCount = (s.talkCount||0)+1;
         WhoAI.save(s); renderBadge();
         if(s.talkCount>=3){
           s.talkCount=0;
-          s._cameBackAfter3 = true; // 2回目マカロンで進化ボタン表示用
+          s._cameBackAfter3 = true;
           WhoAI.save(s);
           location.href='macaron.html';
         }
         return;
       }
 
-      // === 前半：openclauseで10回 → 儀式へ ===
       if(s.phase==='preRebirth' && s.stage==='openclause'){
         s.talkCount = (s.talkCount||0)+1;
         WhoAI.save(s); renderBadge();
@@ -129,7 +167,6 @@
         return;
       }
 
-      // === 後半：容姿キープ（会話リセット）で10回 → アンケート ===
       if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
         s.postTalkCount = (s.postTalkCount||0)+1;
         WhoAI.save(s); renderBadge();
