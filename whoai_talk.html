@@ -50,7 +50,7 @@ window.WhoAI = window.WhoAI || (function(){
 
 /* 設定 */
 const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
-const TALK_ENDPOINT = '/api/talk'; // 同じプロジェクト内のAPI
+const TALK_ENDPOINT = '/api/talk'; // 同一プロジェクト内のAPI
 
 let s = WhoAI.ensureInit();
 renderBadge();
@@ -70,7 +70,7 @@ function renderBadge(){
     (s.phase==='postRebirth' && s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' : '';
 }
 
-/* キャラ画像表示（GitHub Pages用パス） */
+/* キャラ画像（GitHub Pages用パス & 命名規則対応） */
 function renderCharacter(){
   const img = document.getElementById('characterImg');
   const color = s.color || 'pink';
@@ -78,8 +78,10 @@ function renderCharacter(){
 
   let src;
   if (stage === 'tane') {
+    // 例: ./macaron/assets/stage1/tane_pink.png
     src = `./macaron/assets/stage1/tane_${color}.png`;
   } else if (stage === 'openclause') {
+    // 例: ./macaron/assets/stage1/pink_open.png
     src = `./macaron/assets/stage1/${color}_open.png`;
   } else {
     src = `./macaron/assets/stage1/tane_pink.png`; // フォールバック
@@ -87,19 +89,21 @@ function renderCharacter(){
   img.src = src;
 }
 
-/* チャット追加 */
+/* チャット表示 */
 function append(role, text){
   const div = document.createElement('div');
   div.innerHTML = `<b>${role}:</b> ${text}`;
-  document.getElementById('chat').appendChild(div);
-  document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+  const chat = document.getElementById('chat');
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
 }
 
-/* メッセージ送信（/api/talk.js 直通） */
+/* 送信（/api/talk.js へ直通） */
 async function send(){
-  const q = document.getElementById('msg').value.trim();
+  const input = document.getElementById('msg');
+  const q = input.value.trim();
   if(!q) return;
-  document.getElementById('msg').value='';
+  input.value='';
   append('You', q);
 
   try{
@@ -124,7 +128,7 @@ async function send(){
   advance();
 }
 
-/* 会話回数と遷移管理 */
+/* 会話回数と遷移 */
 function advance(){
   if(s.phase==='preRebirth' && s.stage==='tane'){
     s.talkCount = (s.talkCount||0)+1;
@@ -153,7 +157,7 @@ function advance(){
   }
 }
 
-/* イベント設定 */
+/* イベント */
 document.getElementById('sendBtn').addEventListener('click', send);
 document.getElementById('msg').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
 </script>
