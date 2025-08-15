@@ -1,185 +1,141 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（tane3→openclause10→儀式→姿保持10）</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      background-image:url("./public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      display:flex;flex-direction:column;align-items:center;padding:16px
-    }
-    .wrap{width:min(880px,92%);}
-    .badge{
-      position:fixed;top:8px;right:8px;background:rgba(0,0,0,.45);
-      padding:8px 12px;border-radius:12px;font-weight:700;backdrop-filter:blur(3px)
-    }
-    #characterImg{
-      width:140px;margin:6px 0 10px;display:block;
-      filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))
-    }
-    #chat{min-height:320px;background:rgba(255,255,255,.08);
-      border-radius:14px;padding:12px;margin:10px 0;overflow:auto}
-    #controls{display:flex;gap:8px}
-    input,button{border:none;border-radius:12px;padding:10px 12px}
-    input{flex:1;background:rgba(255,255,255,.9);color:#111}
-    button{background:#ffd1ec;color:#111;font-weight:700;cursor:pointer}
-  </style>
+<meta charset="UTF-8" />
+<title>WhoAI 会話</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    font-family: "Noto Sans JP", sans-serif;
+    background: url("./assets/stage1/space_background.png") center/cover fixed;
+    margin: 0; padding: 20px; color: white;
+  }
+  .badge { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; }
+  #characterImg { width: 140px; margin-bottom: 10px; display: block; }
+  #chat { min-height: 300px; background: rgba(255,255,255,0.08); border-radius: 12px; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
+  #controls { display: flex; gap: 6px; }
+  input,button { border: none; border-radius: 12px; padding: 10px; }
+  input { flex: 1; }
+  button { background: #ffd1ec; font-weight: bold; cursor: pointer; }
+</style>
 </head>
 <body>
-  <div class="badge" id="stateBadge">loading…</div>
-  <div class="wrap">
-    <h2>会話</h2>
-    <img id="characterImg" alt="character" />
-    <div id="chat"></div>
-    <div id="controls">
-      <input id="msg" placeholder="メッセージを入力…" />
-      <button id="sendBtn">送信</button>
-    </div>
-    <div id="hint" style="opacity:.85;margin-top:6px;font-size:.95em"></div>
-  </div>
 
-  <!-- 共通ストレージ -->
-  <script>
-  window.WhoAI = window.WhoAI || (function(){
-    const KEY='whoai_progress';
-    function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}}}
-    function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-    function ensureInit(){
-      const s = load();
-      if(!s.stage) s.stage='tane';
-      if(!('talkCount' in s)) s.talkCount=0;
-      if(!s.phase) s.phase='preRebirth';
-      return s;
+<div class="badge" id="stateBadge"></div>
+
+<h2>会話</h2>
+<img id="characterImg" alt="character" />
+<div id="chat"></div>
+<div id="controls">
+  <input id="msg" placeholder="メッセージを入力..." />
+  <button id="sendBtn">送信</button>
+</div>
+<div id="hint"></div>
+
+<script>
+window.WhoAI = window.WhoAI || (function(){
+  const KEY='whoai_progress';
+  function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
+  function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+  function ensureInit(){
+    const s = load();
+    if(!s.stage) s.stage='tane';
+    if(!('talkCount' in s)) s.talkCount=0;
+    if(!s.phase) s.phase='preRebirth';
+    return s;
+  }
+  return {KEY,load,save,ensureInit};
+})();
+
+const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
+const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+
+const s = WhoAI.ensureInit();
+renderBadge();
+renderCharacter();
+
+function renderBadge(){
+  const stageLabel = s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
+  const phaseLabel = s.phase==='preRebirth'?'前半':'復活後';
+  const countLabel = (s.phase==='postRebirth' && s.postMode==='keepAppearance')
+    ? `postTalk ${s.postTalkCount||0}/10`
+    : `talk ${s.talkCount||0}/${s.stage==='tane'?3:10}`;
+  document.getElementById('stateBadge').textContent = `${stageLabel} | ${phaseLabel} | ${countLabel} | color:${s.color||'-'}`;
+  document.getElementById('hint').textContent =
+    (s.phase==='preRebirth' && s.stage==='tane') ? 'taneで3回会話すると、もう一度マカロンへ' :
+    (s.phase==='preRebirth' && s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
+    (s.phase==='postRebirth' && s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' : '';
+}
+
+function renderCharacter(){
+  const img = document.getElementById('characterImg');
+  const color = s.color || 'pink';
+  const stage = s.stage || 'tane';
+  const ASSETS = {
+    tane:       (c)=> `./assets/stage1/${c}_closed.png`,
+    openclause: (c)=> `./assets/stage2/${c}_open.png`
+  };
+  img.src = (ASSETS[stage]||ASSETS.tane)(color);
+}
+
+function append(role, text){
+  const div = document.createElement('div');
+  div.innerHTML = `<b>${role}:</b> ${text}`;
+  document.getElementById('chat').appendChild(div);
+}
+
+async function send(){
+  const q = document.getElementById('msg').value.trim();
+  if(!q) return;
+  document.getElementById('msg').value='';
+  append('You', q);
+
+  try{
+    const r = await fetch(TALK_ENDPOINT, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ message:q })
+    });
+    const data = await r.json();
+    if(data && data.reply){
+      append('WhoAI', data.reply);
     }
-    return {KEY,load,save,ensureInit};
-  })();
-  </script>
+  }catch(e){
+    console.error(e);
+  }
+  advance();
+}
 
-  <script>
-  (()=>{
-    const chat = document.getElementById('chat');
-    const sendBtn = document.getElementById('sendBtn');
-    const msg = document.getElementById('msg');
-    const hint = document.getElementById('hint');
-    const badge = document.getElementById('stateBadge');
-    const img = document.getElementById('characterImg');
-    const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // あなたのAPIエンドポイント
-
-    let s = WhoAI.ensureInit();
-    renderBadge();
-    renderCharacter();
-
-    function renderBadge(){
-      const stageLabel = s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
-      const phaseLabel = s.phase==='preRebirth'?'前半':'復活後';
-      const countLabel = (s.phase==='postRebirth' && s.postMode==='keepAppearance')
-        ? `postTalk ${s.postTalkCount||0}/10`
-        : `talk ${s.talkCount||0}/${s.stage==='tane'?3:10}`;
-      badge.textContent = `${stageLabel} | ${phaseLabel} | ${countLabel} | color:${s.color||'-'}`;
-      hint.textContent =
-        (s.phase==='preRebirth' && s.stage==='tane') ? 'taneで3回会話すると、もう一度マカロンへ' :
-        (s.phase==='preRebirth' && s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
-        (s.phase==='postRebirth' && s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' :
-        '';
+function advance(){
+  if(s.phase==='preRebirth' && s.stage==='tane'){
+    s.talkCount = (s.talkCount||0)+1;
+    WhoAI.save(s); renderBadge();
+    if(s.talkCount>=3){
+      s.talkCount=0; s._cameBackAfter3=true; WhoAI.save(s);
+      location.href='macaron.html';
     }
-
-    function renderCharacter(){
-      const color = s.color || 'pink';
-      const stage = s.stage || 'tane';
-      const ASSETS = {
-        tane:       (c)=> `./public/assets/stage1/${c}_closed.png`,
-        openclause: (c)=> `./public/assets/stage2/${c}_open.png`
-      };
-      const srcPrimary   = (ASSETS[stage]||ASSETS.tane)(color);
-      const srcFallback1 = `./public/assets/stage1/${color}_closed.png`;
-      const srcFallback2 = `./public/assets/stage1/pink_closed.png`;
-
-      function tryLoad(srcs){
-        if(!srcs.length){ img.style.display='none'; return; }
-        const [head, ...rest] = srcs;
-        const test = new Image();
-        test.onload  = ()=>{ img.src=head; img.style.display='block'; };
-        test.onerror = ()=> tryLoad(rest);
-        test.src = head;
-      }
-      tryLoad([srcPrimary, srcFallback1, srcFallback2]);
+    return;
+  }
+  if(s.phase==='preRebirth' && s.stage==='openclause'){
+    s.talkCount = (s.talkCount||0)+1;
+    WhoAI.save(s); renderBadge();
+    if(s.talkCount>=10){
+      WhoAI.save(s);
+      location.href='rebirth.html';
     }
-
-    function append(role, text){
-      const b = document.createElement('div');
-      b.style.margin='8px 0';
-      b.innerHTML = `<b>${role}:</b> ${text}`;
-      chat.appendChild(b);
-      chat.scrollTop = chat.scrollHeight;
+    return;
+  }
+  if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
+    s.postTalkCount = (s.postTalkCount||0)+1;
+    WhoAI.save(s); renderBadge();
+    if(s.postTalkCount>=10){
+      location.href = SURVEY;
     }
+  }
+}
 
-    async function send(){
-      const q = msg.value.trim();
-      if(!q) return;
-      msg.value='';
-      append('You', q);
-
-      try{
-        const r = await fetch(TALK_ENDPOINT, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ message:q })
-        });
-        if(!r.ok) throw new Error('Bad status '+r.status);
-        const data = await r.json();
-        if(data && data.reply){
-          append('WhoAI', data.reply);
-        }
-      }catch(e){
-        console.error('API error:', e);
-      }
-
-      setTimeout(advance, 30);
-    }
-
-    function advance(){
-      s = WhoAI.ensureInit();
-
-      if(s.phase==='preRebirth' && s.stage==='tane'){
-        s.talkCount = (s.talkCount||0)+1;
-        WhoAI.save(s); renderBadge();
-        if(s.talkCount>=3){
-          s.talkCount=0;
-          s._cameBackAfter3 = true;
-          WhoAI.save(s);
-          location.href='macaron.html';
-        }
-        return;
-      }
-
-      if(s.phase==='preRebirth' && s.stage==='openclause'){
-        s.talkCount = (s.talkCount||0)+1;
-        WhoAI.save(s); renderBadge();
-        if(s.talkCount>=10){
-          WhoAI.save(s);
-          location.href='rebirth.html';
-        }
-        return;
-      }
-
-      if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
-        s.postTalkCount = (s.postTalkCount||0)+1;
-        WhoAI.save(s); renderBadge();
-        if(s.postTalkCount>=10){
-          location.href = SURVEY;
-        }
-        return;
-      }
-    }
-
-    sendBtn.addEventListener('click', send);
-    msg.addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
-  })();
-  </script>
+document.getElementById('sendBtn').addEventListener('click', send);
+document.getElementById('msg').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
+</script>
 </body>
 </html>
