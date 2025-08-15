@@ -7,8 +7,7 @@
 <style>
   body {
     font-family: "Noto Sans JP", sans-serif;
-    background: url("./public/assets/stage1/space_background.png") center/cover fixed;
-    margin: 0; padding: 20px; color: white;
+    margin: 0; padding: 20px; color: white;    /* 背景はJSで設定 */
   }
   .badge { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; }
   #characterImg { width: 140px; margin-bottom: 10px; display: block; }
@@ -33,7 +32,7 @@
 <div id="hint"></div>
 
 <script>
-/* 進行状況管理 */
+/* ===== 進行状況ストレージ ===== */
 window.WhoAI = window.WhoAI || (function(){
   const KEY='whoai_progress';
   function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
@@ -48,15 +47,38 @@ window.WhoAI = window.WhoAI || (function(){
   return {KEY,load,save,ensureInit};
 })();
 
-/* 設定 */
+/* ===== 設定 ===== */
 const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
-const TALK_ENDPOINT = '/api/talk'; // 同一プロジェクト内のAPI
+const TALK_ENDPOINT = '/api/talk'; // 同一プロジェクト内API
 
 let s = WhoAI.ensureInit();
-renderBadge();
-renderCharacter();
 
-/* バッジ表示 */
+/* ===== 画像/背景のベースパス自動検出（public/ 有無や /macaron/ 配下も吸収） ===== */
+let WHOAI_ASSET_BASE = null;
+(async function resolveAssetBase(){
+  const CANDIDATES = [
+    './public/assets/stage1/',
+    './assets/stage1/',
+    '/public/assets/stage1/',
+    '/assets/stage1/'
+  ];
+  async function probe(u){ try{ const r=await fetch(u,{method:'HEAD',cache:'no-store'}); return r.ok; }catch(_){return false;} }
+  for(const base of CANDIDATES){
+    if(await probe(base+'space_background.png')){ WHOAI_ASSET_BASE=base; break; }
+  }
+  if(!WHOAI_ASSET_BASE) WHOAI_ASSET_BASE = CANDIDATES[0];
+
+  // 背景
+  document.body.style.backgroundImage = `url("${WHOAI_ASSET_BASE}space_background.png")`;
+  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundSize = 'cover';
+  document.body.style.backgroundAttachment = 'fixed';
+
+  // キャラ画像
+  renderCharacter();
+})();
+
+/* ===== UI表示 ===== */
 function renderBadge(){
   const stageLabel = s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
   const phaseLabel = s.phase==='preRebirth'?'前半':'復活後';
@@ -69,25 +91,31 @@ function renderBadge(){
     (s.phase==='preRebirth' && s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
     (s.phase==='postRebirth' && s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' : '';
 }
+renderBadge();
 
-/* キャラ画像（publicパス & 命名規則対応） */
 function renderCharacter(){
+  if(!WHOAI_ASSET_BASE) return; // まだ未解決
   const img = document.getElementById('characterImg');
   const color = s.color || 'pink';
   const stage = s.stage || 'tane';
-
-  let src;
-  if (stage === 'tane') {
-    src = `./public/assets/stage1/tane_${color}.png`;
-  } else if (stage === 'openclause') {
-    src = `./public/assets/stage1/${color}_open.png`;
-  } else {
-    src = `./public/assets/stage1/tane_pink.png`; // フォールバック
-  }
-  img.src = src;
+  const primary = (stage==='tane')
+    ? `${WHOAI_ASSET_BASE}tane_${color}.png`
+    : `${WHOAI_ASSET_BASE}${color}_open.png`;
+  const fallbacks = [
+    `${WHOAI_ASSET_BASE}tane_${color}.png`,
+    `${WHOAI_ASSET_BASE}${color}_open.png`,
+    `${WHOAI_ASSET_BASE}tane_pink.png`
+  ];
+  (function tryLoad(list){
+    if(!list.length){ img.style.display='none'; return; }
+    const [head, ...rest] = list;
+    const t = new Image();
+    t.onload  = ()=>{ img.src=head; img.style.display='block'; };
+    t.onerror = ()=> tryLoad(rest);
+    t.src = head;
+  })([primary, ...fallbacks]);
 }
 
-/* チャット表示 */
 function append(role, text){
   const div = document.createElement('div');
   div.innerHTML = `<b>${role}:</b> ${text}`;
@@ -96,7 +124,7 @@ function append(role, text){
   chat.scrollTop = chat.scrollHeight;
 }
 
-/* 送信（/api/talk.js 直通） */
+/* ===== 送信（/api/talk 直通） ===== */
 async function send(){
   const input = document.getElementById('msg');
   const q = input.value.trim();
@@ -126,7 +154,7 @@ async function send(){
   advance();
 }
 
-/* 会話回数と遷移 */
+/* ===== 会話回数と遷移 ===== */
 function advance(){
   if(s.phase==='preRebirth' && s.stage==='tane'){
     s.talkCount = (s.talkCount||0)+1;
