@@ -1,79 +1,92 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>復活の儀式</title>
-<style>
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",system-ui,Arial,sans-serif;
-    color:#fff;
-    background:#000 url("./public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
-  }
-  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(1.5px);z-index:0}
-  .panel{
-    position:relative;z-index:1;
-    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-    padding:28px 30px;border-radius:20px;box-shadow:0 20px 40px rgba(0,0,0,.35);
-    min-width:min(560px,92vw)
-  }
-  h1{margin:0 0 10px;font-size:32px;text-shadow:0 3px 8px rgba(0,0,0,.4)}
-  p.sub{margin:0 0 18px;opacity:.9}
-  .actions{display:flex;flex-direction:column;gap:14px;align-items:center;margin-top:8px}
-  .btn{
-    display:inline-block;padding:14px 18px;border-radius:14px;border:0;cursor:pointer;font-weight:800;
-    box-shadow:0 8px 18px rgba(0,0,0,.25);text-decoration:none
-  }
-  .keep-appearance{background:#8f6cf6;color:#fff}  /* 容姿を残す */
-  .keep-memory{background:#ff8db0;color:#222}     /* 記録を選ぶ */
-  .meta{margin-top:14px;font-size:.9rem;opacity:.9}
-</style>
+  <meta charset="UTF-8" />
+  <title>macaron - マカロンを選ぶ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      background-image:url("./public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px
+    }
+    h1{margin:6px 0 2px;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+    p{margin:0 0 12px;opacity:.9}
+    .row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+    button{
+      border:none;border-radius:16px;padding:10px 14px;cursor:pointer;
+      background:rgba(255,255,255,.9);color:#111;font-weight:700
+    }
+    .chip{display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15)}
+    .note{opacity:.85;font-size:.95em}
+  </style>
 </head>
 <body>
-  <div class="scrim"></div>
-  <div class="panel">
-    <h1>復活の儀式</h1>
-    <p class="sub">どうする？</p>
-    <div class="actions">
-      <button id="btnKeepAppearance" class="btn keep-appearance">容姿を残す（会話リセット）</button>
-      <button id="btnKeepMemory" class="btn keep-memory">記録を選ぶ（容姿変更）</button>
-    </div>
-    <div class="meta" id="stateView"></div>
+  <h1>マカロンを選ぶ</h1>
+  <p class="note">1回目の選択後は <b>tane</b> で3回会話 → もう一度ここへ戻ります。<br/>2回目の選択後に <b>openclause</b> に進化して会話10回 → 復活の儀式へ。</p>
+
+  <div class="row">
+    <button class="chip" data-color="pink">🍥 ピンク（情熱）</button>
+    <button class="chip" data-color="blue">🫐 ブルー（静寂）</button>
+    <button class="chip" data-color="green">🍏 グリーン（元気）</button>
+    <button class="chip" data-color="purple">🍇 パープル（創造）</button>
   </div>
 
-<script>
-const V = 'v=20250815';
-const BASE_DIR = location.href.replace(/[^/]*$/, '');
-const TALK_URL = new URL('./whoai_talk.html', BASE_DIR).toString() + '?' + V;
-const MACARON_URL = new URL('./macaron.html', BASE_DIR).toString() + '?' + V;
+  <div class="row" id="evolveRow" style="display:none">
+    <button id="evolveBtn">進化して openclause へ</button>
+  </div>
 
-// 状態の可視化（任意）
-const view = document.getElementById('stateView');
-const color = (localStorage.getItem('whoai_color') || 'pink').toLowerCase();
-const stage = (localStorage.getItem('whoai_stage') || 'evolved');
-view.textContent = `現在：色=${color} / ステージ=${stage}`;
+  <!-- 共通ストレージヘルパ -->
+  <script>
+  window.WhoAI = window.WhoAI || (function(){
+    const KEY='whoai_progress';
+    function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}}}
+    function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+    function ensureInit(){
+      const s = load();
+      if(!s.stage) s.stage='tane';
+      if(!('talkCount' in s)) s.talkCount=0;
+      if(!s.phase) s.phase='preRebirth';
+      return s;
+    }
+    return {KEY,load,save,ensureInit};
+  })();
+  </script>
 
-// ① 容姿を残す（色そのまま、会話だけリセット）
-document.getElementById('btnKeepAppearance').addEventListener('click', ()=>{
-  // 外見は保持 → whoai_color は触らない
-  localStorage.setItem('whoai_stage', 'evolved'); // 進化後で続行
-  localStorage.setItem('whoai_turn', '0');        // 回数リセット
-  localStorage.removeItem('whoai_log');           // ログもリセット（=会話まっさら）
+  <script>
+  (()=>{
+    const s = WhoAI.ensureInit();
 
-  // 互換キー（古いページ用）
-  localStorage.setItem('stage', 'evolved');
+    // 2周目（taneで3回消化後に戻ってきた）なら進化ボタンを見せる
+    const evolveRow = document.getElementById('evolveRow');
+    const evolveBtn = document.getElementById('evolveBtn');
+    if (s.phase==='preRebirth' && s.stage==='tane' && s.talkCount===0 && s._cameBackAfter3){
+      evolveRow.style.display='flex';
+      evolveBtn.onclick = ()=>{
+        s.stage='openclause';
+        s.talkCount=0;
+        delete s._cameBackAfter3; // 一度きり
+        WhoAI.save(s);
+        location.href='whoai_talk.html';
+      };
+    }
 
-  location.href = TALK_URL;
-});
-
-// ② 記録を選ぶ（ログ保持で容姿変更＝マカロンへ）
-document.getElementById('btnKeepMemory').addEventListener('click', ()=>{
-  // ログは触らない（保持）
-  // 進化状態で色だけ選び直すため macaron.html へ
-  location.href = MACARON_URL;
-});
-</script>
+    // 色ボタン：最初の選択 or 2回目の色変え
+    document.querySelectorAll('[data-color]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const s2 = WhoAI.ensureInit();
+        s2.color = b.getAttribute('data-color');
+        // 1周目は必ずtaneで3回から
+        if (s2.phase==='preRebirth' && s2.stage==='tane' && (s2.talkCount||0)===0 && !s2._cameBackAfter3){
+          s2.talkCount = 0;
+        }
+        WhoAI.save(s2);
+        location.href='whoai_talk.html';
+      });
+    });
+  })();
+  </script>
 </body>
 </html>
