@@ -6,59 +6,71 @@
 <title>マカロンを選ぶ</title>
 <style>
   body{font-family:"Noto Sans JP",sans-serif;margin:0;min-height:100vh;color:#fff;
-       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}
-  .mac{cursor:pointer;padding:10px 14px;background:rgba(0,0,0,.35);border-radius:12px;margin:6px}
-  #dbg{position:fixed;bottom:8px;left:8px;font-size:12px;opacity:.7}
+       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+       background:url("./assets/stage1/space_background.png") center/cover fixed;}
+  .grid{display:grid;grid-template-columns:repeat(2, min(320px,40vw));gap:22px}
+  .card{background:rgba(0,0,0,.35);border-radius:16px;padding:20px;cursor:pointer;text-align:center}
+  .card img{width:96px;height:96px;display:block;margin:6px auto 10px}
+  #evo{margin-top:18px;padding:10px 16px;border:none;border-radius:12px;font-weight:700}
 </style>
 </head>
 <body>
-<h1>マカロンを選ぶ</h1>
-<p>1回目: <b>tane</b>で3回会話 → 再びここへ。2回目: <b>openclause</b>に進化 → 10回で儀式。</p>
-<div>
-  <button class="mac" data-color="pink">ピンク（情熱）</button>
-  <button class="mac" data-color="blue">ブルー（静寂）</button>
-  <button class="mac" data-color="green">グリーン（元気）</button>
-  <button class="mac" data-color="purple">パープル（創造）</button>
+<h1>好きなマカロンを選んでね</h1>
+<p>クリックで選択 →「決定する」で開始。1回目は <b>tane</b> で3回 → もう一度ここへ。2回目は <b>openclause</b> に進化 → 10回で儀式。</p>
+
+<div class="grid">
+  <div class="card" data-color="pink"><img src="./assets/stage1/macaron_pink.png"><div>ピンク</div></div>
+  <div class="card" data-color="blue"><img src="./assets/stage1/macaron_blue.png"><div>ブルー</div></div>
+  <div class="card" data-color="green"><img src="./assets/stage1/macaron_green.png"><div>グリーン</div></div>
+  <div class="card" data-color="purple"><img src="./assets/stage1/macaron_purple.png"><div>パープル</div></div>
 </div>
-<button id="evo" style="display:none;margin-top:16px;padding:10px 16px;border:none;border-radius:12px;font-weight:700">
-  進化して openclause へ
-</button>
-<pre id="dbg"></pre>
+
+<div style="margin-top:14px;display:flex;gap:10px">
+  <button id="clear">クリア</button>
+  <button id="decide" style="background:#ffd1ec;border:none;border-radius:12px;padding:8px 14px;font-weight:700">決定する</button>
+</div>
+
+<button id="evo" style="display:none;background:#fff;color:#111">進化して openclause へ</button>
+
 <script>
 const KEY='whoai_progress';
 function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(_){return{}} }
 function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-function init(){
-  const s=load();
-  if(!s.stage) s.stage='tane';
-  if(typeof s.talkCount!=='number') s.talkCount=0;
-  if(!s.phase) s.phase='preRebirth';
-  return s;
-}
+function init(){ const s=load(); if(!s.stage) s.stage='tane'; if(typeof s.talkCount!=='number') s.talkCount=0; if(!s.phase) s.phase='preRebirth'; return s; }
 let s=init();
 
+let selected=null;
+document.querySelectorAll('.card').forEach(el=>{
+  el.onclick=()=>{ selected=el.getAttribute('data-color'); document.querySelectorAll('.card').forEach(c=>c.style.outline=''); el.style.outline='3px solid #ffd1ec'; };
+});
+document.getElementById('clear').onclick=()=>{ selected=null; document.querySelectorAll('.card').forEach(c=>c.style.outline=''); };
+
+document.getElementById('decide').onclick=()=>{
+  if(!selected) return alert('色を選んでね');
+  s.color=selected;
+  if(!s._cameBackAfter3){ s.stage='tane'; s.talkCount=0; }
+  save(s);
+  // URL/Session/Localにも積む（保険）
+  sessionStorage.setItem('whoai_color', selected);
+  localStorage.setItem('whoai_color', selected);
+  location.href='whoai_talk.html?color='+encodeURIComponent(selected);
+};
+
+// 2周目（taneで3回→戻ってきた）なら進化ボタン表示
 const evo=document.getElementById('evo');
-if(s._cameBackAfter3){ // 2周目
+if(s._cameBackAfter3){
   evo.style.display='inline-block';
   evo.onclick=()=>{
-    s.stage='openclause'; s.talkCount=0; delete s._cameBackAfter3; save(s);
-    location.href='whoai_talk.html';
-  };
-}
-
-document.querySelectorAll('.mac').forEach(b=>{
-  b.onclick=()=>{
-    const c=b.dataset.color;
-    // 色・ステージ・カウントを確実に保存
-    s.color=c;
-    if(!s._cameBackAfter3){ s.stage='tane'; s.talkCount=0; }
+    s.stage='openclause';
+    s.phase='preRebirth';
+    s.talkCount=0;            // ★ここが肝
+    delete s._cameBackAfter3;
+    delete s.postMode;
+    delete s.postTalkCount;
     save(s);
     location.href='whoai_talk.html';
   };
-});
-
-// デバッグ表示（今の保存状態が見える）
-document.getElementById('dbg').textContent='localStorage: '+JSON.stringify(load());
+}
 </script>
 </body>
 </html>
