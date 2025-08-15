@@ -7,7 +7,7 @@
 <style>
   body {
     font-family: "Noto Sans JP", sans-serif;
-    background: url("./assets/stage1/space_background.png") center/cover fixed;
+    background: url("./macaron/assets/stage1/space_background.png") center/cover fixed;
     margin: 0; padding: 20px; color: white;
   }
   .badge { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; }
@@ -70,7 +70,7 @@ function renderBadge(){
     (s.phase==='postRebirth' && s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' : '';
 }
 
-/* キャラ画像表示（命名規則対応） */
+/* キャラ画像表示（GitHub Pages用パス） */
 function renderCharacter(){
   const img = document.getElementById('characterImg');
   const color = s.color || 'pink';
@@ -78,11 +78,11 @@ function renderCharacter(){
 
   let src;
   if (stage === 'tane') {
-    src = `./assets/stage1/tane_${color}.png`;
+    src = `./macaron/assets/stage1/tane_${color}.png`;
   } else if (stage === 'openclause') {
-    src = `./assets/stage1/${color}_open.png`;
+    src = `./macaron/assets/stage1/${color}_open.png`;
   } else {
-    src = `./assets/stage1/tane_pink.png`; // フォールバック
+    src = `./macaron/assets/stage1/tane_pink.png`; // フォールバック
   }
   img.src = src;
 }
