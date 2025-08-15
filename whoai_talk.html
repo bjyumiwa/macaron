@@ -5,85 +5,82 @@
 <title>WhoAI 会話</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  body {
-    font-family: "Noto Sans JP", sans-serif;
-    margin: 0; padding: 20px; color: white;
-  }
-  .badge { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; }
-  #characterImg { width: 140px; margin-bottom: 10px; display: block; }
-  #chat { min-height: 300px; background: rgba(255,255,255,0.08); border-radius: 12px; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
-  #controls { display: flex; gap: 6px; }
-  input,button { border: none; border-radius: 12px; padding: 10px; }
-  input { flex: 1; }
-  button { background: #ffd1ec; font-weight: bold; cursor: pointer; }
+  body { font-family:"Noto Sans JP",sans-serif; margin:0; padding:20px; color:#fff; }
+  .badge { position:fixed; top:10px; right:10px; background:rgba(0,0,0,.6); padding:6px 12px; border-radius:8px; }
+  #characterImg { width:140px; margin-bottom:10px; display:block; }
+  #chat { min-height:300px; background:rgba(255,255,255,.08); border-radius:12px; padding:10px; margin-bottom:10px; overflow-y:auto }
+  #controls { display:flex; gap:6px }
+  input,button { border:none; border-radius:12px; padding:10px }
+  input { flex:1 }
+  button { background:#ffd1ec; color:#111; font-weight:700; cursor:pointer }
+  .tools { position:fixed; bottom:10px; right:10px; display:flex; gap:8px }
+  .tools button { background:#333; color:#fff }
 </style>
 </head>
 <body>
 
-<div class="badge" id="stateBadge"></div>
+<div class="badge" id="stateBadge">…</div>
 
 <h2>会話</h2>
 <img id="characterImg" alt="character" />
 <div id="chat"></div>
 <div id="controls">
-  <input id="msg" placeholder="メッセージを入力..." />
+  <input id="msg" placeholder="メッセージを入力…" />
   <button id="sendBtn">送信</button>
 </div>
 <div id="hint"></div>
 
+<div class="tools">
+  <button id="resetBtn" title="一旦すべて初期化">進行リセット</button>
+</div>
+
 <script>
-/* ===== 進行状況ストレージ ===== */
-window.WhoAI = window.WhoAI || (function(){
-  const KEY='whoai_progress';
-  function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
-  function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-  function ensureInit(){
-    const s = load();
-    if(!s.stage) s.stage='tane';
-    if(!('talkCount' in s)) s.talkCount=0;
-    if(!s.phase) s.phase='preRebirth';
-    return s;
-  }
-  return {KEY,load,save,ensureInit};
-})();
+/* ===== 進行保存 ===== */
+const KEY='whoai_progress';
+function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
+function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+function ensureInit(){
+  const s = load();
+  if(!s.stage) s.stage='tane';
+  if(typeof s.talkCount!=='number') s.talkCount=0;
+  if(!s.phase) s.phase='preRebirth';
+  return s;
+}
 
 /* ===== 設定 ===== */
 const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
-const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // ← VercelのAPIに変更
+const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // VercelのAPIに直通
 
-let s = WhoAI.ensureInit();
+let s = ensureInit();
 
-/* ===== 画像/背景のベースパス自動検出 ===== */
-let WHOAI_ASSET_BASE = null;
+/* ===== アセット自動検出 ===== */
+let ASSET_BASE = null;
 (async function resolveAssetBase(){
   const CANDIDATES = [
-    './public/assets/stage1/',
-    './assets/stage1/',
-    '/public/assets/stage1/',
-    '/assets/stage1/'
+    './public/assets/stage1/','./assets/stage1/','/public/assets/stage1/','/assets/stage1/'
   ];
-  async function probe(u){ try{ const r=await fetch(u,{method:'HEAD',cache:'no-store'}); return r.ok; }catch(_){return false;} }
-  for(const base of CANDIDATES){
-    if(await probe(base+'space_background.png')){ WHOAI_ASSET_BASE=base; break; }
-  }
-  if(!WHOAI_ASSET_BASE) WHOAI_ASSET_BASE = CANDIDATES[0];
+  async function head(u){ try{const r=await fetch(u,{method:'HEAD',cache:'no-store'}); return r.ok;}catch(_){return false;} }
+  for(const b of CANDIDATES){ if(await head(b+'space_background.png')){ ASSET_BASE=b; break; } }
+  ASSET_BASE ||= CANDIDATES[0];
 
-  document.body.style.backgroundImage = `url("${WHOAI_ASSET_BASE}space_background.png")`;
-  document.body.style.backgroundPosition = 'center';
-  document.body.style.backgroundSize = 'cover';
-  document.body.style.backgroundAttachment = 'fixed';
+  // 背景
+  Object.assign(document.body.style,{
+    backgroundImage:`url("${ASSET_BASE}space_background.png")`,
+    backgroundPosition:'center', backgroundSize:'cover', backgroundAttachment:'fixed'
+  });
 
   renderCharacter();
 })();
 
-/* ===== UI表示 ===== */
+/* ===== 表示 ===== */
 function renderBadge(){
   const stageLabel = s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
   const phaseLabel = s.phase==='preRebirth'?'前半':'復活後';
   const countLabel = (s.phase==='postRebirth' && s.postMode==='keepAppearance')
     ? `postTalk ${s.postTalkCount||0}/10`
     : `talk ${s.talkCount||0}/${s.stage==='tane'?3:10}`;
-  document.getElementById('stateBadge').textContent = `${stageLabel} | ${phaseLabel} | ${countLabel} | color:${s.color||'-'}`;
+  document.getElementById('stateBadge').textContent =
+    `${stageLabel} | ${phaseLabel} | ${countLabel} | color:${s.color||'-'}`;
   document.getElementById('hint').textContent =
     (s.phase==='preRebirth' && s.stage==='tane') ? 'taneで3回会話すると、もう一度マカロンへ' :
     (s.phase==='preRebirth' && s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
@@ -92,26 +89,13 @@ function renderBadge(){
 renderBadge();
 
 function renderCharacter(){
-  if(!WHOAI_ASSET_BASE) return;
+  if(!ASSET_BASE) return;
   const img = document.getElementById('characterImg');
   const color = s.color || 'pink';
   const stage = s.stage || 'tane';
-  const primary = (stage==='tane')
-    ? `${WHOAI_ASSET_BASE}tane_${color}.png`
-    : `${WHOAI_ASSET_BASE}${color}_open.png`;
-  const fallbacks = [
-    `${WHOAI_ASSET_BASE}tane_${color}.png`,
-    `${WHOAI_ASSET_BASE}${color}_open.png`,
-    `${WHOAI_ASSET_BASE}tane_pink.png`
-  ];
-  (function tryLoad(list){
-    if(!list.length){ img.style.display='none'; return; }
-    const [head, ...rest] = list;
-    const t = new Image();
-    t.onload  = ()=>{ img.src=head; img.style.display='block'; };
-    t.onerror = ()=> tryLoad(rest);
-    t.src = head;
-  })([primary, ...fallbacks]);
+  const src = stage==='tane' ? `${ASSET_BASE}tane_${color}.png`
+                             : `${ASSET_BASE}${color}_open.png`;
+  img.src = src;
 }
 
 function append(role, text){
@@ -122,7 +106,7 @@ function append(role, text){
   chat.scrollTop = chat.scrollHeight;
 }
 
-/* ===== 送信 ===== */
+/* ===== 送信（送信後のみカウント進行） ===== */
 async function send(){
   const input = document.getElementById('msg');
   const q = input.value.trim();
@@ -134,12 +118,12 @@ async function send(){
     const r = await fetch(TALK_ENDPOINT, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ message: q })
+      body: JSON.stringify({ message: q }) // /api/talk.js の単発形式
     });
     const data = await r.json();
     if(r.ok && data.reply){
       append('WhoAI', data.reply);
-    } else {
+    }else{
       append('WhoAI', `(APIエラー: ${data.error || r.status})`);
       console.warn('API error detail:', data);
     }
@@ -147,39 +131,53 @@ async function send(){
     console.error('通信エラー', e);
     append('WhoAI', '(通信エラー)');
   }
+
+  // ★ ここでだけ進行判定（ページ読み込み時には進めない）
   advance();
 }
 
-/* ===== 会話回数と遷移 ===== */
+/* ===== 進行判定 ===== */
 function advance(){
   if(s.phase==='preRebirth' && s.stage==='tane'){
-    s.talkCount = (s.talkCount||0)+1;
-    WhoAI.save(s); renderBadge();
-    if(s.talkCount>=3){
-      s.talkCount=0; s._cameBackAfter3=true; WhoAI.save(s);
-      location.href='macaron.html';
+    s.talkCount = (s.talkCount||0) + 1;
+    save(s); renderBadge();
+    if(s.talkCount >= 3){
+      s.talkCount = 0;
+      s._cameBackAfter3 = true;
+      save(s);
+      location.href = 'macaron.html';
     }
     return;
   }
   if(s.phase==='preRebirth' && s.stage==='openclause'){
-    s.talkCount = (s.talkCount||0)+1;
-    WhoAI.save(s); renderBadge();
-    if(s.talkCount>=10){
-      WhoAI.save(s);
-      location.href='rebirth.html';
+    s.talkCount = (s.talkCount||0) + 1;
+    save(s); renderBadge();
+    if(s.talkCount >= 10){
+      save(s);
+      location.href = 'rebirth.html';
     }
     return;
   }
   if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
-    s.postTalkCount = (s.postTalkCount||0)+1;
-    WhoAI.save(s); renderBadge();
-    if(s.postTalkCount>=10){
+    s.postTalkCount = (s.postTalkCount||0) + 1;
+    save(s); renderBadge();
+    if(s.postTalkCount >= 10){
       location.href = SURVEY;
     }
   }
 }
 
-/* イベント */
+/* ===== リセット（おかしな状態の時に押す） ===== */
+document.getElementById('resetBtn').onclick = ()=>{
+  localStorage.removeItem(KEY);
+  s = ensureInit();
+  renderBadge();
+  renderCharacter();
+  document.getElementById('chat').innerHTML='';
+  alert('進行を初期化しました');
+};
+
+/* ===== イベント ===== */
 document.getElementById('sendBtn').addEventListener('click', send);
 document.getElementById('msg').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
 </script>
