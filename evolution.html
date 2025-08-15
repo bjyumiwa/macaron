@@ -1,50 +1,72 @@
+<!-- FILE: macaron_select.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>evolution - 進化中…</title>
+  <title>マカロン再選択 - 進化のきっかけ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
-      display:flex;flex-direction:column;align-items:center;justify-content:center
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background-color: #000;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
+      text-align: center;
+      padding: 40px 20px;
     }
-    .box{text-align:center}
-    img{width:180px}
-    .hint{opacity:.8;margin-top:10px}
+    h1 {
+      font-size: 2em;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+    .macaron {
+      display: inline-block;
+      margin: 16px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    .macaron:hover {
+      transform: scale(1.15);
+    }
+    img {
+      width: 100px;
+      height: 100px;
+    }
+    p {
+      margin-top: 8px;
+      font-size: 0.95em;
+    }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h2>進化中…</h2>
-    <img id="img" alt="evolving">
-    <div class="hint">少し待ってね → 会話に戻ります</div>
+  <h1>ふたたびマカロンを選んでください</h1>
+  <p>どの力を取り入れて、進化しますか？</p>
+
+  <div class="macaron" onclick="selectMacaron('pink')">
+    <img src="public/assets/stage1/macaron_pink.png" alt="ピンクのマカロン" />
+    <p>情熱（ピンク）</p>
+  </div>
+  <div class="macaron" onclick="selectMacaron('blue')">
+    <img src="public/assets/stage1/macaron_blue.png" alt="青のマカロン" />
+    <p>静寂（ブルー）</p>
+  </div>
+  <div class="macaron" onclick="selectMacaron('green')">
+    <img src="public/assets/stage1/macaron_green.png" alt="緑のマカロン" />
+    <p>元気（グリーン）</p>
+  </div>
+  <div class="macaron" onclick="selectMacaron('purple')">
+    <img src="public/assets/stage1/macaron_purple.png" alt="紫のマカロン" />
+    <p>創造（パープル）</p>
   </div>
 
-<script>
-const ROOT = (location.pathname.startsWith('/macaron/')) ? '/macaron' : '';
-const asset = (p)=> `${ROOT}${p}`;
-const color = localStorage.getItem('whoai_color') || 'blue';
-
-const OPEN = {
-  pink  : asset('/public/assets/stage2/pink_open.png'),
-  blue  : asset('/public/assets/stage2/blue_open.png'),
-  green : asset('/public/assets/stage2/green_open.png'),
-  purple: asset('/public/assets/stage2/purple_open.png'),
-};
-const CLOSE = {
-  pink  : asset('/public/assets/stage2/pink_closed.png'),
-  blue  : asset('/public/assets/stage2/blue_closed.png'),
-  green : asset('/public/assets/stage2/green_closed.png'),
-  purple: asset('/public/assets/stage2/purple_closed.png'),
-};
-
-const img = document.getElementById('img');
-img.src = OPEN[color] || OPEN.blue;
-
-setTimeout(()=>{ img.src = (CLOSE[color]||CLOSE.blue); }, 500);
-setTimeout(()=>{ location.href = asset('/whoai_talk.html'); }, 1100);
-</script>
+  <script>
+    function selectMacaron(color) {
+      localStorage.setItem('evolvedColor', color); // 進化後の色を保存
+      window.location.href = "evolution.html";     // 次の画面へ遷移
+    }
+  </script>
 </body>
 </html>
