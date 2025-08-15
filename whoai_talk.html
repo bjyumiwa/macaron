@@ -1,184 +1,115 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <!-- FILE: /macaron/whoai_talk.html  -->
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（10回で次のフェーズへ）</title>
+  <title>whoai_talk - 会話（10回で次へ）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* ====== Base ====== */
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",system-ui,Arial,sans-serif;
       color:#fff;background:#000;
+      /* GitHub Pages配下でも効くよう先頭に ./ を明示 */
       background-image:url("./public/assets/stage1/space_background.png");
       background-size:cover;background-position:center;background-attachment:fixed;
       display:flex;flex-direction:column;align-items:center;justify-content:flex-start
     }
-    /* 背景の暗めグラデで可読性UP */
-    .scrim{
-      position:fixed;inset:0;
-      background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.65) 30%,rgba(0,0,0,.75));
-      pointer-events:none;z-index:0;
-    }
-
-    /* ====== Header badge ====== */
-    .whoai-name-badge{
-      position:fixed;top:10px;right:10px;z-index:3;
-      background:rgba(0,0,0,.45);backdrop-filter:blur(3px);
-      padding:8px 12px;border-radius:12px;font-weight:700;letter-spacing:.02em
-    }
+    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(1.5px);z-index:0}
+    .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:3;background:rgba(0,0,0,.45);padding:8px 12px;border-radius:12px;font-weight:700}
     .meta{font-size:.8rem;opacity:.85}
-
-    /* ====== Layout ====== */
-    .wrap{
-      position:relative;z-index:1;margin-top:70px;
-      width:min(860px,92vw);
-      display:grid;grid-template-columns:140px 1fr;gap:16px;
-      align-items:start
-    }
-    @media (max-width:700px){
-      .wrap{grid-template-columns:1fr}
-      .side{order:0;justify-self:center}
-    }
-
-    /* ====== Character panel ====== */
-    .char-card{
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-      border-radius:20px;padding:14px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)
-    }
+    .wrap{position:relative;z-index:1;margin-top:70px;width:min(860px,92vw);display:grid;grid-template-columns:140px 1fr;gap:16px}
+    @media (max-width:700px){.wrap{grid-template-columns:1fr}}
+    .char-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:14px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)}
     .char-img{width:120px;height:120px;object-fit:contain;display:block;margin:6px auto 2px}
-    .color-tag{font-size:.8rem;opacity:.9}
-
-    /* ====== Chat area ====== */
-    .chat{
-      background:rgba(17,17,22,.55);backdrop-filter:blur(3px);
-      border:1px solid rgba(255,255,255,.12);border-radius:20px;
-      padding:16px;min-height:440px;max-height:60vh;overflow:auto
-    }
-    .bubble{
-      max-width:86%;margin:8px 0;padding:10px 12px;border-radius:14px;line-height:1.6
-    }
+    .chat{background:rgba(17,17,22,.55);backdrop-filter:blur(3px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:16px;min-height:440px;max-height:60vh;overflow:auto}
+    .bubble{max-width:86%;margin:8px 0;padding:10px 12px;border-radius:14px;line-height:1.6;text-shadow:0 1px 2px rgba(0,0,0,.55)}
     .me{background:rgba(255,255,255,.12);margin-left:auto;border-top-right-radius:6px}
     .ai{background:rgba(255,255,255,.08);margin-right:auto;border-top-left-radius:6px}
-    .count{
-      margin-top:8px;font-size:.9rem;opacity:.9;display:flex;gap:8px;align-items:center
-    }
-
-    /* ====== Input row ====== */
-    .input-row{
-      margin-top:12px;display:flex;gap:8px;align-items:center
-    }
-    .input-row input{
-      flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.45);color:#fff;outline:none
-    }
-    .btn{
-      padding:12px 16px;border-radius:12px;border:0;cursor:pointer;font-weight:700
-    }
+    .count{margin-top:8px;font-size:.9rem;opacity:.9;display:flex;gap:8px;align-items:center}
+    .input-row{margin-top:12px;display:flex;gap:8px;align-items:center}
+    .input-row input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.45);color:#fff;outline:none}
+    .btn{padding:12px 16px;border-radius:12px;border:0;cursor:pointer;font-weight:700}
     .btn-primary{background:#ffd1ec;color:#171717}
     .btn-ghost{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25)}
     .btn:disabled{opacity:.6;cursor:not-allowed}
-
-    /* ====== CTA after 10 turns ====== */
-    .cta{
-      margin-top:12px;display:flex;gap:8px;flex-wrap:wrap
-    }
-    .notice{
-      margin-top:8px;padding:10px 12px;border-radius:10px;
-      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:.95rem
-    }
+    .cta{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap}
+    .notice{margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);font-size:.95rem}
   </style>
 </head>
 <body>
   <div class="scrim"></div>
 
-  <!-- 右上の名前バッジ -->
-  <div class="whoai-name-badge" id="nameBadge">
+  <div class="whoai-name-badge">
     WhoAI: <span id="whoaiName">あなた</span>
     <div class="meta">会話 <span id="turnNow">0</span>/<span id="turnMax">10</span></div>
   </div>
 
   <div class="wrap">
-    <!-- left: character -->
     <aside class="side">
       <div class="char-card">
         <img id="charImg" class="char-img" src="" alt="character" />
         <div id="charLabel">tane</div>
-        <div class="color-tag">color: <span id="colorTag">pink</span></div>
+        <div class="meta">color: <span id="colorTag">pink</span></div>
       </div>
     </aside>
 
-    <!-- right: chat -->
     <main>
       <div id="chat" class="chat" aria-live="polite"></div>
-
       <div class="count">
         <div>会話回数：<strong id="turnText">0/10</strong></div>
         <div id="phaseText" class="meta"></div>
       </div>
-
       <div class="input-row">
         <input id="userInput" type="text" placeholder="メッセージを入力…" />
         <button id="sendBtn" class="btn btn-primary">送信</button>
-        <button id="resetBtn" class="btn btn-ghost" title="このページのローカル記録を消去">記録リセット</button>
+        <button id="resetBtn" class="btn btn-ghost" title="このページの記録を消去">記録リセット</button>
       </div>
 
       <div id="afterLimit" style="display:none">
         <div class="notice" id="limitMsg"></div>
         <div class="cta">
           <a id="ctaBtn" class="btn btn-primary">次へ進む</a>
-          <button id="stayBtn" class="btn btn-ghost">このまま会話ログを見る</button>
+          <button id="stayBtn" class="btn btn-ghost">このまま見る</button>
         </div>
       </div>
     </main>
   </div>
 
   <script>
-  /**********************
-   * 設定（必要なら変更）
-   **********************/
-  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // サーバレスAPI
+  // ===== 設定 =====
+  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
   const MAX_TURNS = 10;
-
-  // 進行フェーズ遷移先:
-  //   stage === 'tane'  → マカロン選択へ（進化）
-  //   stage === 'evolved' → 復活の儀式へ
   const URL_EVOLVE  = './macaron/macaron.html';
   const URL_REBIRTH = './macaron/rebirth.html';
+  const V = 'v=20250815'; // キャッシュバスター
 
-  /**********************
-   * ユーザーデータの読込
-   **********************/
-  const name = localStorage.getItem('whoai_name')  || 'あなた';
-  const color = (localStorage.getItem('whoai_color') || 'pink').toLowerCase(); // pink/blue/green/purple
-  const stage = (localStorage.getItem('whoai_stage') || 'tane').toLowerCase(); // 'tane' or 'evolved'
-
-  // 既存ログ
-  let turn = Number(localStorage.getItem('whoai_turn') || 0);
-  let log = [];
-  try { log = JSON.parse(localStorage.getItem('whoai_log') || '[]'); } catch(e){ log=[]; }
-
-  /**********************
-   * 画像パス（色→画像）
-   * ※手元のアセットに合わせてここだけ直せばOK
-   **********************/
-  function charImagePath(color, stage){
-    // 既存アセット例：public/assets/stage1/blue_closed.png を既定に
-    const safeColor = ['pink','blue','green','purple'].includes(color) ? color : 'pink';
-    if(stage === 'evolved'){
-      // 進化後の画像（なければstage1をフォールバック）
-      const evolvedPath = `./public/assets/evolved/${safeColor}_open.png`;
-      return evolvedPath; // フォールバックは onerror で対応
-    }else{
-      return `./public/assets/stage1/${safeColor}_closed.png`;
+  // ===== 互換キーを吸収 =====
+  const getAny = (...keys)=> {
+    for(const k of keys){
+      const v = localStorage.getItem(k);
+      if(v && v !== 'undefined' && v !== 'null') return v;
     }
+    return null;
+  };
+
+  const name  = getAny('whoai_name','player_name') || 'あなた';
+  const color = (getAny('whoai_color','selectedColor','macaron_color') || 'pink').toLowerCase();
+  const stage = (getAny('whoai_stage','stage','whoai_phase') || 'tane').toLowerCase();
+
+  let turn = Number(getAny('whoai_turn')) || 0;
+  let log = [];
+  try { log = JSON.parse(getAny('whoai_log') || '[]'); } catch(e){ log=[]; }
+
+  // ===== 画像パス生成（確実に ./ 始まり & キャッシュバスター）=====
+  function charImagePath(color, stage){
+    const safe = ['pink','blue','green','purple'].includes(color) ? color : 'pink';
+    const p = (stage === 'evolved')
+      ? `./public/assets/evolved/${safe}_open.png`
+      : `./public/assets/stage1/${safe}_closed.png`;
+    return `${p}?${V}`;
   }
 
-  /**********************
-   * UI 初期化
-   **********************/
-  const nameBadge = document.getElementById('nameBadge');
+  // ===== UI 要素 =====
   const whoaiName = document.getElementById('whoaiName');
   const turnNow = document.getElementById('turnNow');
   const turnMax = document.getElementById('turnMax');
@@ -196,105 +127,89 @@
   const stayBtn = document.getElementById('stayBtn');
   const limitMsg = document.getElementById('limitMsg');
 
+  // 初期描画
   whoaiName.textContent = name;
   turnMax.textContent = MAX_TURNS;
   colorTag.textContent = color;
   charLabel.textContent = stage;
   charImg.src = charImagePath(color, stage);
-  charImg.alt = `${stage} - ${color}`;
-  // フォールバック
-  charImg.onerror = () => { charImg.src = `./public/assets/stage1/${color}_closed.png`; };
+  charImg.alt = `${stage}-${color}`;
+  charImg.onerror = ()=>{ charImg.src = `./public/assets/stage1/${color}_closed.png?${V}`; };
 
-  function renderBubble(role, text){
+  const renderBubble = (role,text)=>{
     const div = document.createElement('div');
-    div.className = `bubble ${role === 'user' ? 'me' : 'ai'}`;
+    div.className = `bubble ${role==='user'?'me':'ai'}`;
     div.textContent = text;
     chatEl.appendChild(div);
     chatEl.scrollTop = chatEl.scrollHeight;
-  }
+  };
 
-  // 既存ログを描画
-  for(const m of log){ renderBubble(m.role, m.content); }
+  log.forEach(m=>renderBubble(m.role,m.content));
 
-  function updateTurnUI(){
+  const updateTurnUI = ()=>{
     turnNow.textContent = turn;
     turnText.textContent = `${turn}/${MAX_TURNS}`;
-    phaseText.textContent = stage === 'tane'
+    phaseText.textContent = stage==='tane'
       ? '（最初の10回：終わると “進化” へ）'
       : '（進化後の10回：終わると “復活の儀式” へ）';
-  }
+  };
   updateTurnUI();
 
-  function lockIfLimitReached(){
+  const lockIfLimitReached = ()=>{
     if(turn >= MAX_TURNS){
-      inputEl.disabled = true;
-      sendBtn.disabled = true;
+      inputEl.disabled = true; sendBtn.disabled = true;
       afterLimit.style.display = '';
-      const nextUrl = (stage === 'tane') ? URL_EVOLVE : URL_REBIRTH;
-      ctaBtn.setAttribute('href', nextUrl);
-      limitMsg.textContent = (stage === 'tane')
+      const nextUrl = (stage==='tane') ? URL_EVOLVE : URL_REBIRTH;
+      ctaBtn.setAttribute('href', nextUrl + (nextUrl.includes('?')?'&':'?') + V);
+      limitMsg.textContent = (stage==='tane')
         ? '10回の会話が終わりました。マカロンを選んで進化しよう。'
         : '10回の会話が終わりました。復活の儀式へ進みましょう。';
       return true;
     }
     return false;
-  }
+  };
+
+  // ★ロード時点で10回超なら即ロック
   lockIfLimitReached();
 
-  /**********************
-   * 送信処理
-   **********************/
   async function send(){
-    const text = (inputEl.value || '').trim();
-    if(!text) return;
-    if(turn >= MAX_TURNS) return;
+    const text = (inputEl.value||'').trim();
+    if(!text || turn >= MAX_TURNS) return;
 
-    // 1) 自分の発話を反映
     renderBubble('user', text);
-    log.push({role:'user', content:text});
+    log.push({role:'user',content:text});
 
-    // 2) APIへ
     let reply = '';
     try{
       const res = await fetch(TALK_ENDPOINT, {
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          message:text,
-          name, color, stage,
-          turn,
-        })
+        body:JSON.stringify({message:text,name,color,stage,turn})
       });
-      if(!res.ok) throw new Error('API error');
-      const data = await res.json();
-      reply = (data.reply || data.message || 'うん、続けよう！');
-    }catch(e){
-      // フォールバック（API不通でも止めない）
-      reply = '（接続が不安定みたい）でも大丈夫。続けよう！';
-    }
+      const data = res.ok ? await res.json() : {};
+      reply = data.reply || data.message || 'うん、続けよう！';
+    }catch{ reply = '（接続が不安定みたい）でも大丈夫。続けよう！'; }
 
     renderBubble('assistant', reply);
-    log.push({role:'assistant', content:reply});
+    log.push({role:'assistant',content:reply});
 
-    // 3) カウント更新＆保存
     turn += 1;
     localStorage.setItem('whoai_turn', String(turn));
     localStorage.setItem('whoai_log', JSON.stringify(log));
+    // 互換キーにも書いておく
+    localStorage.setItem('selectedColor', color);
+    localStorage.setItem('stage', stage);
+
     updateTurnUI();
-
-    // 4) 上限チェック
     lockIfLimitReached();
-
-    inputEl.value = '';
-    inputEl.focus();
+    inputEl.value = ''; inputEl.focus();
   }
 
-  sendBtn.addEventListener('click', send);
-  inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter') send(); });
+  document.getElementById('sendBtn').addEventListener('click', send);
+  document.getElementById('userInput').addEventListener('keydown', e => { if(e.key==='Enter') send(); });
 
-  // 記録リセット（このページの会話だけ）
-  resetBtn.addEventListener('click', ()=>{
-    if(!confirm('このページの会話ログと回数カウントを消去します。よろしいですか？')) return;
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(!confirm('このページの会話ログと回数カウントを削除します。')) return;
     localStorage.removeItem('whoai_turn');
     localStorage.removeItem('whoai_log');
     turn = 0; log = [];
@@ -305,10 +220,9 @@
     inputEl.focus();
   });
 
-  // 「このまま見る」：何もしない
-  stayBtn.addEventListener('click', ()=>{ afterLimit.style.display='none'; });
+  document.getElementById('stayBtn').addEventListener('click', ()=>{ afterLimit.style.display='none'; });
 
-  // 初回保存（欠けていたら整える）
+  // 最後に標準キーへ保存（無い場合の初期化）
   localStorage.setItem('whoai_name', name);
   localStorage.setItem('whoai_color', color);
   localStorage.setItem('whoai_stage', stage);
