@@ -1,6 +1,5 @@
-// /api/talk.js  (Vercel / Node ランタイム)
+// /api/talk.js  （Vercel Serverless Function / Node ランタイム想定）
 export default async function handler(req, res) {
-  // ---- CORS を必ず最後まで適用するためのヘルパ ----
   const setCORS = () => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -9,7 +8,6 @@ export default async function handler(req, res) {
   setCORS();
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  // 生存確認
   if (req.method === 'GET') {
     setCORS();
     return res.status(200).json({ ok: true, endpoint: '/api/talk', expect: 'POST' });
@@ -25,16 +23,15 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'OPENAI_API_KEY is not set' });
     }
 
-    // body 取得(文字列でもOK)
-    let body = req.body;
+    // body（文字列でもOK）
+    let body = req.body ?? {};
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { body = {}; } }
-    body = body || {};
 
     const model = body.model || 'gpt-4o-mini';
     const temperature = typeof body.temperature === 'number' ? body.temperature : 0.7;
     const max_tokens = typeof body.max_tokens === 'number' ? body.max_tokens : 220;
 
-    // 入力の互換
+    // messages 組み立て（互換）
     let messages = null;
     if (body.userMessage) {
       const systemPrompt = body.systemPrompt || 'You are WHOAI.';
@@ -48,7 +45,7 @@ export default async function handler(req, res) {
         { role: 'user', content: String(body.userMessage ?? '') }
       ];
     }
-    if (!messages && Array.isArray(body.messages) && body.messages.length > 0) {
+    if (!messages && Array.isArray(body.messages) && body.messages.length) {
       messages = body.messages.map(m => ({
         role: (m.role === 'assistant' || m.role === 'system') ? m.role : 'user',
         content: String(m.content ?? '')
@@ -65,7 +62,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'No input', received: body });
     }
 
-    // OpenAI 呼び出し
+    // OpenAI
     const r = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
