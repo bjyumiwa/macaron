@@ -1,74 +1,126 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>マカロン選択</title>
-<style>
-  :root{ --glass: rgba(255,255,255,.10); --accent:#ffd1ec; }
-  html,body{height:100%;margin:0}
-  body{
-    font-family:"Noto Sans JP",sans-serif;color:#fff;
-    background:url("./public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-    display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px
-  }
-  h1{margin:14px 0 0;text-shadow:0 0 8px rgba(0,0,0,.5)}
-  p{margin:0 0 8px;opacity:.9}
-  .grid{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(140px,1fr));width:min(560px,92vw)}
-  .card{background:var(--glass);border-radius:16px;padding:14px;text-align:center;border:2px solid transparent;cursor:pointer;transition:.12s}
-  .card:hover{transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,0,0,.25)}
-  .card.selected{border-color:var(--accent);box-shadow:0 0 0 4px rgba(255,209,236,.25) inset}
-  .card img{width:94px;height:94px;object-fit:contain;display:block;margin:6px auto 10px}
-  .label{font-weight:700}
-  .actions{display:flex;gap:12px;margin-top:10px}
-  button{padding:10px 16px;border-radius:12px;border:none;font-weight:700;cursor:pointer}
-  .next{background:var(--accent);color:#222}.next:disabled{opacity:.6}
-  .clear{background:#444;color:#fff}
-</style>
+  <meta charset="UTF-8" />
+  <title>whoai_talk.html - 会話（記録モード）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background: #000 url("/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px;
+    }
+    #characterImg {
+      width: 160px;
+      margin-bottom: 12px;
+      animation: float 2.5s ease-in-out infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+      100% { transform: translateY(0); }
+    }
+    #chatArea {
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 16px;
+      max-width: 600px;
+      width: 100%;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 12px;
+    }
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      margin-top: 8px;
+      font-size: 1em;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      border-radius: 8px;
+      border: none;
+      background: #f0c2ff;
+      margin-top: 8px;
+      cursor: pointer;
+    }
+    .whoai-name-badge {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
-  <h1>好きなマカロンを選んでね</h1>
-  <p>クリックで選択 → 「決定する」で開始。</p>
-  <div id="grid" class="grid"></div>
-  <div class="actions">
-    <button id="clearBtn" class="clear">クリア</button>
-    <button id="goBtn" class="next" disabled>決定する</button>
-  </div>
+  <div class="whoai-name-badge" id="whoaiNameBadge">...</div>
+  <img id="characterImg" src="" alt="キャラクター">
+  <div id="chatArea"></div>
+  <input type="text" id="userInput" placeholder="あなたの言葉を入力...">
+  <button onclick="sendMessage()">送信</button>
 
-<script>
-const OPTIONS=[
-  {key:"pink",   label:"ピンク",  img:"./public/assets/stage1/macaron_pink.png"},
-  {key:"blue",   label:"ブルー",  img:"./public/assets/stage1/macaron_blue.png"},
-  {key:"green",  label:"グリーン",img:"./public/assets/stage1/macaron_green.png"},
-  {key:"purple", label:"パープル",img:"./public/assets/stage1/macaron_purple.png"}
-];
-const grid=document.getElementById('grid');
-const goBtn=document.getElementById('goBtn');
-const clearBtn=document.getElementById('clearBtn');
-let selected=null;
+  <script>
+    const name = localStorage.getItem("whoai_name") || "あなた";
+    document.getElementById("whoaiNameBadge").textContent = name + " AI";
 
-OPTIONS.forEach(opt=>{
-  const c=document.createElement('div'); c.className='card'; c.dataset.key=opt.key;
-  c.innerHTML=`<img src="${opt.img}" alt="${opt.label}"><div class="label">${opt.label}</div>`;
-  c.onclick=()=>{
-    document.querySelectorAll('.card').forEach(el=>el.classList.remove('selected'));
-    c.classList.add('selected'); selected=opt; goBtn.disabled=false;
-  };
-  grid.appendChild(c);
-});
-clearBtn.onclick=()=>{document.querySelectorAll('.card').forEach(el=>el.classList.remove('selected'));selected=null;goBtn.disabled=true;};
+    const color = localStorage.getItem("macaronColor") || "green";
+    const evolved = localStorage.getItem("evolved") === "true";
+    const imagePath = evolved ? `/public/assets/stage1/evolved_${color}.png` : `/public/assets/stage1/${color}_closed.png`;
+    document.getElementById("characterImg").src = imagePath;
 
-goBtn.onclick=()=>{
-  if(!selected) return;
-  localStorage.setItem('selectedMacaron', selected.key);
-  localStorage.setItem('whoai_selectedMacaron', selected.key);
-  localStorage.setItem('whoai_stage','stage1');
-  localStorage.setItem('whoai_appearance','tane');
-  localStorage.setItem('whoai_turns','0');
-  localStorage.removeItem('whoai_chat');
-  localStorage.removeItem('whoai_xp');
-  location.href='whoai_talk.html';
-};
-</script>
+    const chatArea = document.getElementById("chatArea");
+    const userInput = document.getElementById("userInput");
+    let turnCount = parseInt(localStorage.getItem("turnCount") || "0");
+    const MAX_TURNS = 10;
+    const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
+
+    const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
+    chatLog.forEach(msg => addMessage(msg.sender, msg.text));
+
+    function addMessage(sender, text) {
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      chatArea.appendChild(p);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(name, text);
+      chatLog.push({ sender: name, text });
+      userInput.value = "";
+
+      fetch(TALK_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const reply = data.reply || "...";
+        addMessage("AI", reply);
+        chatLog.push({ sender: "AI", text: reply });
+        localStorage.setItem("chatLog", JSON.stringify(chatLog));
+        turnCount++;
+        localStorage.setItem("turnCount", turnCount);
+        if (turnCount >= MAX_TURNS) {
+          window.location.href = "identity_check.html";
+        }
+      });
+    }
+  </script>
 </body>
 </html>
