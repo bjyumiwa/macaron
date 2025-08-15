@@ -7,28 +7,47 @@
 <style>
   body {
     font-family: "Noto Sans JP", sans-serif;
-    background: url("./assets/stage1/space_background.png") center/cover fixed;
-    margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100vh; color: white;
+    margin: 0; min-height: 100vh; color: white;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
   }
-  h1 { margin-bottom: 8px; }
-  .macaron { cursor: pointer; padding: 10px; background: rgba(0,0,0,0.3); margin: 5px; border-radius: 12px; }
-  #evolveBtn { margin-top: 20px; padding: 8px 14px; border-radius: 12px; border: none; cursor: pointer; font-weight: bold; }
+  h1 { margin: 0 0 8px; }
+  .macaron { cursor: pointer; padding: 10px 14px; background: rgba(0,0,0,0.35); border-radius: 12px; margin: 5px; }
+  #evolveBtn { margin-top: 18px; padding: 10px 16px; border: none; cursor: pointer; border-radius: 12px; font-weight: 700; }
 </style>
 </head>
 <body>
 
 <h1>マカロンを選ぶ</h1>
+<p>1回目は <b>tane</b> で3回会話 → もう一度ここへ。2回目は <b>openclause</b> に進化 → 10回会話で儀式へ。</p>
+
 <div>
-  <div class="macaron" data-color="pink">ピンク（情熱）</div>
-  <div class="macaron" data-color="blue">ブルー（静寂）</div>
-  <div class="macaron" data-color="green">グリーン（元気）</div>
-  <div class="macaron" data-color="purple">パープル（創造）</div>
+  <button class="macaron" data-color="pink">ピンク（情熱）</button>
+  <button class="macaron" data-color="blue">ブルー（静寂）</button>
+  <button class="macaron" data-color="green">グリーン（元気）</button>
+  <button class="macaron" data-color="purple">パープル（創造）</button>
 </div>
 
-<button id="evolveBtn" style="display:none;">進化して openclause へ</button>
+<button id="evolveBtn" style="display:none;background:#fff;color:#111;">進化して openclause へ</button>
 
 <script>
+/* 背景用ベースパス検出（whoai_talk.html と同じ） */
+let WHOAI_ASSET_BASE = null;
+(async function resolveAssetBase(){
+  const CANDIDATES = [
+    './public/assets/stage1/', './assets/stage1/', '/public/assets/stage1/', '/assets/stage1/'
+  ];
+  async function probe(u){ try{ const r=await fetch(u,{method:'HEAD',cache:'no-store'}); return r.ok; }catch(_){return false;} }
+  for(const base of CANDIDATES){
+    if(await probe(base+'space_background.png')){ WHOAI_ASSET_BASE=base; break; }
+  }
+  if(!WHOAI_ASSET_BASE) WHOAI_ASSET_BASE = CANDIDATES[0];
+  document.body.style.backgroundImage = `url("${WHOAI_ASSET_BASE}space_background.png")`;
+  document.body.style.backgroundPosition = 'center';
+  document.body.style.backgroundSize = 'cover';
+  document.body.style.backgroundAttachment = 'fixed';
+})();
+
+/* 進行ストレージ */
 window.WhoAI = window.WhoAI || (function(){
   const KEY='whoai_progress';
   function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
@@ -42,30 +61,24 @@ window.WhoAI = window.WhoAI || (function(){
   }
   return {KEY,load,save,ensureInit};
 })();
-
 const s = WhoAI.ensureInit();
 
-// 2回目のマカロン表示なら進化ボタンを出す
+/* 2回目なら進化ボタン表示 */
+const evo = document.getElementById('evolveBtn');
 if (s._cameBackAfter3) {
-  document.getElementById('evolveBtn').style.display='inline-block';
-  document.getElementById('evolveBtn').onclick = ()=>{
-    s.stage='openclause';
-    s.talkCount=0;
-    delete s._cameBackAfter3;
-    WhoAI.save(s);
-    location.href='whoai_talk.html';
+  evo.style.display='inline-block';
+  evo.onclick = ()=>{
+    s.stage='openclause'; s.talkCount=0; delete s._cameBackAfter3;
+    WhoAI.save(s); location.href='whoai_talk.html';
   };
 }
 
+/* 色選択 */
 document.querySelectorAll('.macaron').forEach(btn=>{
   btn.onclick = ()=>{
     s.color = btn.getAttribute('data-color');
-    if(!s._cameBackAfter3) { // 1周目
-      s.stage='tane';
-      s.talkCount=0;
-    }
-    WhoAI.save(s);
-    location.href='whoai_talk.html';
+    if(!s._cameBackAfter3){ s.stage='tane'; s.talkCount=0; }
+    WhoAI.save(s); location.href='whoai_talk.html';
   };
 });
 </script>
