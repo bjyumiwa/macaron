@@ -5,61 +5,46 @@
 <title>復活の儀式</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  body {
-    font-family: "Noto Sans JP", sans-serif;
-    margin: 0; min-height: 100vh; color: white;
-    display:flex; align-items:center; justify-content:center; text-align:center; padding: 20px;
-  }
-  .card{background: rgba(0,0,0,.45); padding: 20px; border-radius: 16px; width:min(760px,92%); border:1px solid rgba(255,255,255,.15)}
-  button{border:none; padding:12px 16px; border-radius:14px; font-weight:700; cursor:pointer}
-  #keepAppearanceBtn{background:#ffd1ec; color:#111}
+  body { font-family:"Noto Sans JP",sans-serif; margin:0; min-height:100vh; color:#fff;
+         display:flex; align-items:center; justify-content:center; text-align:center; padding:20px }
+  .card{ background:rgba(0,0,0,.45); padding:20px; border-radius:16px; width:min(760px,92%); border:1px solid rgba(255,255,255,.15) }
+  button{ border:none; padding:12px 16px; border-radius:14px; font-weight:700; cursor:pointer }
+  #keepAppearanceBtn{ background:#ffd1ec; color:#111 }
 </style>
 </head>
 <body>
 
 <div class="card">
   <h2>復活の儀式</h2>
-  <p>今回は <b>「容姿を残す（会話リセット）」</b> ルートを実装。</p>
-  <p>姿はそのまま、会話カウントを0にして再開。10回話すとアンケートへ。</p>
+  <p><b>容姿を残す（会話リセット）</b>を実行します。姿はそのまま、会話0から再開し10回でアンケートへ。</p>
   <button id="keepAppearanceBtn">容姿を残して続ける（ドリンク）</button>
 </div>
 
 <script>
-/* 背景自動検出 */
-let WHOAI_ASSET_BASE = null;
-(async function resolveAssetBase(){
-  const CANDIDATES = [
-    './public/assets/stage1/', './assets/stage1/', '/public/assets/stage1/', '/assets/stage1/'
-  ];
-  async function probe(u){ try{ const r=await fetch(u,{method:'HEAD',cache:'no-store'}); return r.ok; }catch(_){return false;} }
-  for(const base of CANDIDATES){
-    if(await probe(base+'space_background.png')){ WHOAI_ASSET_BASE=base; break; }
-  }
-  if(!WHOAI_ASSET_BASE) WHOAI_ASSET_BASE = CANDIDATES[0];
-  document.body.style.backgroundImage = `url("${WHOAI_ASSET_BASE}space_background.png")`;
-  document.body.style.backgroundPosition = 'center';
-  document.body.style.backgroundSize = 'cover';
-  document.body.style.backgroundAttachment = 'fixed';
+/* 背景 */
+(async()=>{
+  const C=['./public/assets/stage1/','./assets/stage1/','/public/assets/stage1/','/assets/stage1/'];
+  async function head(u){try{const r=await fetch(u,{method:'HEAD',cache:'no-store'});return r.ok;}catch(_){return false;}}
+  let B=null; for(const b of C){ if(await head(b+'space_background.png')){B=b;break;} } B ||= C[0];
+  Object.assign(document.body.style,{ backgroundImage:`url("${B}space_background.png")`,
+    backgroundPosition:'center', backgroundSize:'cover', backgroundAttachment:'fixed' });
 })();
 
-/* ストレージ */
-window.WhoAI = window.WhoAI || (function(){
-  const KEY='whoai_progress';
-  function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
-  function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
-  function ensureInit(){ const s = load(); if(!s.stage) s.stage='tane'; if(!('talkCount' in s)) s.talkCount=0; if(!s.phase) s.phase='preRebirth'; return s; }
-  return {KEY,load,save,ensureInit};
-})();
-const btn = document.getElementById('keepAppearanceBtn');
-btn.onclick = ()=>{
-  const s = WhoAI.ensureInit();
+/* 進行 */
+const KEY='whoai_progress';
+function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
+function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+function ensureInit(){ const s=load(); if(!s.stage) s.stage='tane'; if(typeof s.talkCount!=='number') s.talkCount=0; if(!s.phase) s.phase='preRebirth'; return s; }
+
+document.getElementById('keepAppearanceBtn').onclick=()=>{
+  const s = ensureInit();
   s.phase='postRebirth';
   s.postMode='keepAppearance';
   s.postTalkCount=0;
   s.talkCount=0;
   delete s._cameBackAfter3;
-  WhoAI.save(s);
-  setTimeout(()=>location.href='whoai_talk.html', 500);
+  save(s);
+  setTimeout(()=>location.href='whoai_talk.html', 450);
 };
 </script>
 </body>
