@@ -15,6 +15,7 @@
   button { background:#ffd1ec; color:#111; font-weight:700; cursor:pointer }
   .tools { position:fixed; bottom:10px; right:10px; display:flex; gap:8px }
   .tools button { background:#333; color:#fff }
+  #ping { position:fixed; bottom:10px; left:10px; border:none; padding:8px 10px; border-radius:10px; background:#444; color:#fff; opacity:.85 }
 </style>
 </head>
 <body>
@@ -33,6 +34,7 @@
 <div class="tools">
   <button id="resetBtn" title="一旦すべて初期化">進行リセット</button>
 </div>
+<button id="ping">API Ping</button>
 
 <script>
 /* ===== 進行保存 ===== */
@@ -106,7 +108,7 @@ function append(role, text){
   chat.scrollTop = chat.scrollHeight;
 }
 
-/* ===== 送信（送信後のみカウント進行） ===== */
+/* ===== 送信 ===== */
 async function send(){
   const input = document.getElementById('msg');
   const q = input.value.trim();
@@ -114,25 +116,31 @@ async function send(){
   input.value='';
   append('You', q);
 
-  try{
+  let data = null, text = '';
+  try {
     const r = await fetch(TALK_ENDPOINT, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ message: q }) // /api/talk.js の単発形式
+      body: JSON.stringify({ message: q })
     });
-    const data = await r.json();
-    if(r.ok && data.reply){
+    text = await r.text();
+    try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+
+    if (r.ok && data && data.reply) {
       append('WhoAI', data.reply);
-    }else{
-      append('WhoAI', `(APIエラー: ${data.error || r.status})`);
-      console.warn('API error detail:', data);
+    } else {
+      const msg =
+        (data && (data.error || data.detail)) ? `${data.error || ''} ${data.detail || ''}`.trim() :
+        text ? text.slice(0, 180) + (text.length > 180 ? '…' : '') :
+        `HTTP ${r.status}`;
+      append('WhoAI', `(APIエラー: ${msg})`);
+      console.warn('API error detail:', { status: r.status, data, raw: text });
     }
-  }catch(e){
-    console.error('通信エラー', e);
+  } catch (e) {
     append('WhoAI', '(通信エラー)');
+    console.error('Network/parse error', e, { raw: text, parsed: data });
   }
 
-  // ★ ここでだけ進行判定（ページ読み込み時には進めない）
   advance();
 }
 
@@ -167,7 +175,7 @@ function advance(){
   }
 }
 
-/* ===== リセット（おかしな状態の時に押す） ===== */
+/* ===== リセット ===== */
 document.getElementById('resetBtn').onclick = ()=>{
   localStorage.removeItem(KEY);
   s = ensureInit();
@@ -175,6 +183,15 @@ document.getElementById('resetBtn').onclick = ()=>{
   renderCharacter();
   document.getElementById('chat').innerHTML='';
   alert('進行を初期化しました');
+};
+
+/* ===== API Ping ===== */
+document.getElementById('ping').onclick = async () => {
+  try{
+    const r = await fetch(TALK_ENDPOINT);
+    const t = await r.text();
+    alert(`GET /api/talk -> ${r.status}\n${t.slice(0,200)}`);
+  }catch(e){ alert('ネットワークエラー: '+e); }
 };
 
 /* ===== イベント ===== */
