@@ -1,104 +1,161 @@
-// /api/talk.js
-export default async function handler(req, res) {
-  // --- CORS ---
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') return res.status(204).end();
-
-  // 生存確認
-  if (req.method === 'GET') {
-    return res.status(200).json({ ok: true, endpoint: '/api/talk', expect: 'POST' });
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>WhoAI 会話</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    font-family: "Noto Sans JP", sans-serif;
+    background: url("./assets/stage1/space_background.png") center/cover fixed;
+    margin: 0; padding: 20px; color: white;
   }
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  .badge { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; }
+  #characterImg { width: 140px; margin-bottom: 10px; display: block; }
+  #chat { min-height: 300px; background: rgba(255,255,255,0.08); border-radius: 12px; padding: 10px; margin-bottom: 10px; overflow-y: auto; }
+  #controls { display: flex; gap: 6px; }
+  input,button { border: none; border-radius: 12px; padding: 10px; }
+  input { flex: 1; }
+  button { background: #ffd1ec; font-weight: bold; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="badge" id="stateBadge"></div>
+
+<h2>会話</h2>
+<img id="characterImg" alt="character" />
+<div id="chat"></div>
+<div id="controls">
+  <input id="msg" placeholder="メッセージを入力..." />
+  <button id="sendBtn">送信</button>
+</div>
+<div id="hint"></div>
+
+<script>
+/* 進行状況管理 */
+window.WhoAI = window.WhoAI || (function(){
+  const KEY='whoai_progress';
+  function load(){ try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e){return{}} }
+  function save(s){ localStorage.setItem(KEY, JSON.stringify(s)); }
+  function ensureInit(){
+    const s = load();
+    if(!s.stage) s.stage='tane';
+    if(!('talkCount' in s)) s.talkCount=0;
+    if(!s.phase) s.phase='preRebirth';
+    return s;
   }
+  return {KEY,load,save,ensureInit};
+})();
 
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      return res.status(500).json({ error: 'OPENAI_API_KEY is not set' });
-    }
+/* 設定 */
+const SURVEY = 'https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header';
+const TALK_ENDPOINT = '/api/talk'; // 同じプロジェクト内のAPI
 
-    // ---- body を安全に取得（文字列でもOKに）----
-    let body = req.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch { body = {}; }
-    }
-    body = body || {};
+let s = WhoAI.ensureInit();
+renderBadge();
+renderCharacter();
 
-    // パラメータ
-    const model = body.model || 'gpt-4o-mini';
-    const temperature = typeof body.temperature === 'number' ? body.temperature : 0.7;
-    const max_tokens = typeof body.max_tokens === 'number' ? body.max_tokens : 220;
+/* バッジ表示 */
+function renderBadge(){
+  const stageLabel = s.stage==='tane'?'stage1 (tane)':'stage2 (openclause)';
+  const phaseLabel = s.phase==='preRebirth'?'前半':'復活後';
+  const countLabel = (s.phase==='postRebirth' && s.postMode==='keepAppearance')
+    ? `postTalk ${s.postTalkCount||0}/10`
+    : `talk ${s.talkCount||0}/${s.stage==='tane'?3:10}`;
+  document.getElementById('stateBadge').textContent = `${stageLabel} | ${phaseLabel} | ${countLabel} | color:${s.color||'-'}`;
+  document.getElementById('hint').textContent =
+    (s.phase==='preRebirth' && s.stage==='tane') ? 'taneで3回会話すると、もう一度マカロンへ' :
+    (s.phase==='preRebirth' && s.stage==='openclause') ? 'openclauseで10回会話すると、復活の儀式へ' :
+    (s.phase==='postRebirth' && s.postMode==='keepAppearance') ? '復活後：姿はそのまま。会話を10回でアンケートへ' : '';
+}
 
-    // ---- messages の互換入力を構築 ----
-    let messages = null;
+/* キャラ画像表示（命名規則対応） */
+function renderCharacter(){
+  const img = document.getElementById('characterImg');
+  const color = s.color || 'pink';
+  const stage = s.stage || 'tane';
 
-    // 互換: {userMessage, history[], systemPrompt}
-    if (body.userMessage) {
-      const systemPrompt = body.systemPrompt || 'You are WHOAI.';
-      const hist = Array.isArray(body.history) ? body.history : [];
-      messages = [
-        { role: 'system', content: String(systemPrompt) },
-        ...hist.map(h => ({
-          role: (h.role === 'assistant' || h.role === 'system') ? h.role : 'user',
-          content: String(h.content ?? '')
-        })),
-        { role: 'user', content: String(body.userMessage ?? '') }
-      ];
-    }
+  let src;
+  if (stage === 'tane') {
+    src = `./assets/stage1/tane_${color}.png`;
+  } else if (stage === 'openclause') {
+    src = `./assets/stage1/${color}_open.png`;
+  } else {
+    src = `./assets/stage1/tane_pink.png`; // フォールバック
+  }
+  img.src = src;
+}
 
-    // 旧: {messages:[...]}
-    if (!messages && Array.isArray(body.messages) && body.messages.length > 0) {
-      messages = body.messages.map(m => ({
-        role: (m.role === 'assistant' || m.role === 'system') ? m.role : 'user',
-        content: String(m.content ?? '')
-      }));
-    }
+/* チャット追加 */
+function append(role, text){
+  const div = document.createElement('div');
+  div.innerHTML = `<b>${role}:</b> ${text}`;
+  document.getElementById('chat').appendChild(div);
+  document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;
+}
 
-    // 単発: {message:"..."}
-    if (!messages && body.message) {
-      messages = [
-        { role: 'system', content: 'あなたはやさしい相棒AI。短く優しく答えて。' },
-        { role: 'user', content: String(body.message) }
-      ];
-    }
+/* メッセージ送信（/api/talk.js 直通） */
+async function send(){
+  const q = document.getElementById('msg').value.trim();
+  if(!q) return;
+  document.getElementById('msg').value='';
+  append('You', q);
 
-    if (!messages) {
-      return res.status(400).json({ error: 'No input', received: body });
-    }
-
-    // ---- OpenAI 呼び出し ----
-    const r = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({ model, messages, temperature, max_tokens })
+  try{
+    const r = await fetch(TALK_ENDPOINT, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ message: q })
     });
-
-    const text = await r.text(); // まず生のテキスト
-    if (!r.ok) {
-      // OpenAI のエラーをそのまま返してデバッグしやすく
-      return res.status(502).json({
-        error: 'OpenAI error',
-        status: r.status,
-        detail: text
-      });
+    const data = await r.json();
+    if(r.ok && data.reply){
+      append('WhoAI', data.reply);
+    } else if(!r.ok){
+      append('WhoAI', `(APIエラー: ${data.error || r.status})`);
+      console.warn('API error', data);
+    } else {
+      append('WhoAI', '(応答なし)');
     }
+  }catch(e){
+    console.error('通信エラー', e);
+    append('WhoAI', '(通信エラー)');
+  }
+  advance();
+}
 
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      return res.status(502).json({ error: 'Bad JSON from OpenAI', raw: text });
+/* 会話回数と遷移管理 */
+function advance(){
+  if(s.phase==='preRebirth' && s.stage==='tane'){
+    s.talkCount = (s.talkCount||0)+1;
+    WhoAI.save(s); renderBadge();
+    if(s.talkCount>=3){
+      s.talkCount=0; s._cameBackAfter3=true; WhoAI.save(s);
+      location.href='macaron.html';
     }
-
-    const reply = data?.choices?.[0]?.message?.content?.trim() ?? '';
-    return res.status(200).json({ reply, model });
-  } catch (e) {
-    console.error('[talk.js]', e);
-    return res.status(500).json({ error: 'Server error', detail: String(e) });
+    return;
+  }
+  if(s.phase==='preRebirth' && s.stage==='openclause'){
+    s.talkCount = (s.talkCount||0)+1;
+    WhoAI.save(s); renderBadge();
+    if(s.talkCount>=10){
+      WhoAI.save(s);
+      location.href='rebirth.html';
+    }
+    return;
+  }
+  if(s.phase==='postRebirth' && s.postMode==='keepAppearance'){
+    s.postTalkCount = (s.postTalkCount||0)+1;
+    WhoAI.save(s); renderBadge();
+    if(s.postTalkCount>=10){
+      location.href = SURVEY;
+    }
   }
 }
+
+/* イベント設定 */
+document.getElementById('sendBtn').addEventListener('click', send);
+document.getElementById('msg').addEventListener('keydown', e=>{ if(e.key==='Enter') send(); });
+</script>
+</body>
+</html>
