@@ -1,71 +1,85 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>WhoAI - 最後の質問</title>
+  <meta charset="UTF-8">
+  <title>WhoAI - 最終確認</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
+    html, body {
+      margin: 0; padding: 0;
       font-family: "Noto Sans JP", sans-serif;
-      background: url("/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      color: #fff;
+      background-image: url("/public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: white;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 24px;
+      height: 100vh;
       text-align: center;
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.6);
+      border-radius: 20px;
+      padding: 40px 20px;
+      max-width: 600px;
+      width: 90%;
     }
 
     h1 {
       font-size: 2em;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
     }
 
     p {
-      font-size: 1.1em;
-      max-width: 600px;
-      line-height: 1.8;
-      margin-bottom: 32px;
+      margin: 12px 0;
+      font-size: 1.2em;
+      line-height: 1.6;
     }
 
-    button {
+    .button {
+      margin-top: 30px;
       padding: 14px 28px;
-      font-size: 1.1em;
-      background: #ffccf2;
-      color: #111;
+      font-size: 1em;
       border: none;
-      border-radius: 14px;
+      border-radius: 10px;
+      background: #ffd1ec;
+      color: #111;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      transition: all 0.2s ease-in-out;
+      font-weight: bold;
+      transition: background 0.3s;
     }
 
-    button:hover {
-      background: #ffc1eb;
+    .button:hover {
+      background: #ffc1e3;
     }
 
-    .fade-in {
-      animation: fadeIn 2s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+    .character-img {
+      width: 140px;
+      margin-bottom: 16px;
     }
   </style>
 </head>
-<body class="fade-in">
-  <h1>楽しい会話をありがとうございました</h1>
-  <p>
-    外見が変わっても、記録が残っていても、あなたにとってこのキャラは「同じ存在」でしょうか？<br>
-    以下のアンケートに、あなたの考えを教えてください。
-  </p>
+<body>
+  <div class="container">
+    <img id="characterImg" class="character-img" src="/public/assets/stage1/green_open.png" alt="キャラクター">
+    <h1>WhoAI - あなたの選択</h1>
+    <p>これまでの会話を通して、あなたはAIにどんな“心”を感じましたか？</p>
+    <p>このキャラクターは、本当に“同じ”存在だと思いますか？</p>
+    <p>あなたの感じたことを、アンケートにご協力ください。</p>
+    <button class="button" onclick="goToSurvey()">アンケートに進む</button>
+  </div>
 
-  <button onclick="window.location.href='https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header'">
-    アンケートに進む
-  </button>
+  <script>
+    const characterColor = localStorage.getItem("selectedColor") || "green";
+    document.getElementById("characterImg").src = `/public/assets/stage1/${characterColor}_open.png`;
+
+    function goToSurvey() {
+      window.location.href = "https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=sf_link";
+    }
+  </script>
 </body>
 </html>
-
