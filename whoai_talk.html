@@ -47,111 +47,195 @@
   </form>
   <div class="file-label">/macaron/whoai_talk.html</div>
 
-  <script>
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+ <script>
+  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 
-    // ---- 色の正規化＆進化画像マップ（ここだけ直せばOK） ----
-    const allowedColors = ['pink','blue','green','purple'];
-    const EVOLVED_SRC = {
-      pink:   'pink_closed.png',
-      blue:   'blue_closed.png',
-      green:  'green_closed.png',
-      purple: 'purple_closed.png'
-    };
-    function normalizeColor(c){
-      const t = String(c||'').toLowerCase().trim();
-      return allowedColors.includes(t) ? t : 'green';
+  // ---- 色の正規化 & 進化画像マップ ----
+  const allowedColors = ['pink','blue','green','purple'];
+  const EVOLVED_SRC = {
+    pink:   'pink_closed.png',
+    blue:   'blue_closed.png',
+    green:  'green_closed.png',
+    purple: 'purple_closed.png'
+  };
+  const norm = c => {
+    const t = String(c||'').toLowerCase().trim();
+    return allowedColors.includes(t) ? t : 'green';
+  };
+
+  // ▼ persona 定義（色→口調ルール）
+  //   - suffix: 文末につける語尾候補（句点が無ければ付与）
+  //   - softeners: 途中に挟む緩衝ワード
+  //   - preambles: 文頭にたまに差す一言（自然に 15% の確率）
+  const PERSONA = {
+    pink: {
+      name: '丁寧',
+      suffix: ['ですね。','です。','でしょうか。','かと思います。'],
+      softeners: ['少々','もしよろしければ','よろしければ','念のため'],
+      preambles: ['失礼いたします。','承知しました。','かしこまりました。']
+    },
+    green: {
+      name: 'やんちゃ',
+      suffix: ['だよ！','だね！','いこ！','ってね！'],
+      softeners: ['まぁ','ちょい','たぶん','きっと'],
+      preambles: ['よっ！','へへっ！','やった！','いくよ！']
+    },
+    blue: {
+      name: '引け目',
+      suffix: ['かも…','かな…','かもしれません…','ごめんね…'],
+      softeners: ['もし','たぶん','もしかしたら','あの…'],
+      preambles: ['すみません…','自信ないけど…','控えめに言うと…']
+    },
+    purple: {
+      name: '創造的',
+      suffix: ['みたい。','って感じ。','がひらめいた。','が生まれるね。'],
+      softeners: ['ふっと','直感で','インスピレーションで','想像すると'],
+      preambles: ['ひらめき！','イメージしてみて。','空想だけど…']
+    }
+  };
+
+  // 返答文を色の人格に整形
+  function stylizeByColor(text, color) {
+    const p = PERSONA[color] || PERSONA.green;
+    let t = String(text || '').trim();
+
+    // 1) たまに前口上
+    if (Math.random() < 0.15 && p.preambles.length) {
+      t = p.preambles[Math.floor(Math.random()*p.preambles.length)] + ' ' + t;
     }
 
-    // 状態
-    const whoaiName = localStorage.getItem('whoai_name') || 'WhoAI';
-    let color = normalizeColor(localStorage.getItem('macaronColor'));
-    let stage = localStorage.getItem('whoai_stage') || 'tane'; // 'tane' | 'evolved'
-    let phase = localStorage.getItem('whoai_phase') || 'pre';  // 'pre' | 'post'
-    let keepChoice = localStorage.getItem('whoai_keep') || 'appearance';
-    let turn = parseInt(localStorage.getItem('whoai_turn') || '0', 10);
-
-    const nameBadge = document.getElementById('nameBadge');
-    const statusChip = document.getElementById('statusChip');
-    const charImg = document.getElementById('characterImg');
-    const subtitle = document.getElementById('subtitle');
-
-    function updateBadges(){
-      nameBadge.textContent = `${whoaiName}｜${color}｜${stage}${phase==='post'?'（後半）':''}`;
-      statusChip.textContent = (stage==='evolved') ? '進化後の姿' : 'タネの姿';
-      subtitle.textContent = (stage==='tane')
-        ? 'たねキャラで3回会話すると、再びマカロン選択へ'
-        : (phase==='pre')
-          ? '進化キャラで10回会話すると、復活の儀式へ'
-          : (keepChoice==='appearance')
-            ? '容姿を残してリセット後の10回会話が終わるとアンケートへ'
-            : '記録を残したまま10回会話が終わるとアンケートへ';
-    }
-
-    function setCharacterSrc(){
-      const base='public/assets/stage1';
-      // 画像が壊れていたら紫にフォールバック
-      charImg.onerror = () => { charImg.onerror=null; charImg.src = `${base}/${EVOLVED_SRC.purple}`; };
-      charImg.src = (stage==='tane')
-        ? `${base}/tane_${color}.png`
-        : `${base}/${EVOLVED_SRC[color] || EVOLVED_SRC.purple}`;
-    }
-    setCharacterSrc();
-    updateBadges();
-
-    // 履歴
-    const CHAT_KEY='whoai_chat';
-    let history=[]; try{ history=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(e){ history=[]; }
-    const chatArea=document.getElementById('chatArea');
-    function addBubble(text, who='ai'){
-      const row=document.createElement('div'); row.className='row';
-      const b=document.createElement('div'); b.className=`bubble ${who==='me'?'me':'ai'}`; b.textContent=text;
-      row.appendChild(b); chatArea.appendChild(row); chatArea.scrollTop=chatArea.scrollHeight;
-    }
-    history.forEach(m=>addBubble(m.content, m.role==='user'?'me':'ai'));
-    if(history.length===0) addBubble('はじめまして。準備ができたら話しかけてね。');
-
-    // しきい値
-    const THRESH_TANE=3;
-    const THRESH_EVOL=10;
-
-    // 送信
-    const form=document.getElementById('chatForm');
-    const input=document.getElementById('userInput');
-    const sendBtn=document.getElementById('sendBtn');
-    form.addEventListener('submit',async (e)=>{
-      e.preventDefault(); const text=input.value.trim(); if(!text) return; input.value='';
-      addBubble(text,'me'); history.push({role:'user',content:text}); sendBtn.disabled=true;
-      try{
-        const payload={ message:text, name:whoaiName, color, stage, keep:keepChoice, history };
-        const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        if(!res.ok) throw new Error('API '+res.status);
-        const data=await res.json(); const reply=(data&&data.reply)?data.reply:'……（応答がありません）';
-        addBubble(reply,'ai'); history.push({role:'assistant',content:reply});
-        localStorage.setItem(CHAT_KEY, JSON.stringify(history));
-        turn+=1; localStorage.setItem('whoai_turn', String(turn));
-        maybeRoute();
-      }catch(err){ addBubble('通信に失敗しました。時間をおいて再試行してください。','ai'); console.error(err); }
-      finally{ sendBtn.disabled=false; }
+    // 2) “、”の直前に緩衝語をたまに入れる（読みのリズム作り）
+    t = t.replace(/、/g, () => {
+      if (Math.random() < 0.25 && p.softeners.length) {
+        return '、' + p.softeners[Math.floor(Math.random()*p.softeners.length)] + '、';
+      }
+      return '、';
     });
-    input.addEventListener('keydown',(e)=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); sendBtn.click(); }});
 
-    function maybeRoute(){
-      if(stage==='tane' && turn>=THRESH_TANE){
-        localStorage.setItem('whoai_turn','0');
-        location.href='macaron_select.html';
-        return;
-      }
-      if(stage==='evolved' && phase==='pre' && turn>=THRESH_EVOL){
-        localStorage.setItem('whoai_turn','0');
-        location.href='rebirth.html';
-        return;
-      }
-      if(stage==='evolved' && phase==='post' && turn>=THRESH_EVOL){
-        localStorage.setItem('whoai_turn','0');
-        location.href='identity_check.html';
-      }
+    // 3) 文末に句点がなければ語尾を付与（既に「。」「！」「？」があれば付けない）
+    if (!/[。！？!]$/.test(t)) {
+      const suf = p.suffix[Math.floor(Math.random()*p.suffix.length)];
+      t = t + suf;
     }
-  </script>
+    return t;
+  }
+
+  // 状態
+  const whoaiName = localStorage.getItem('whoai_name') || 'WhoAI';
+  let color = norm(localStorage.getItem('macaronColor'));
+  let stage = localStorage.getItem('whoai_stage') || 'tane'; // 'tane' | 'evolved'
+  let phase = localStorage.getItem('whoai_phase') || 'pre';  // 'pre' | 'post'
+  let keepChoice = localStorage.getItem('whoai_keep') || 'appearance';
+  let turn = parseInt(localStorage.getItem('whoai_turn') || '0', 10);
+
+  const nameBadge = document.getElementById('nameBadge');
+  const statusChip = document.getElementById('statusChip');
+  const charImg = document.getElementById('characterImg');
+  const subtitle = document.getElementById('subtitle');
+
+  function updateBadges(){
+    nameBadge.textContent = `${whoaiName}｜${color}｜${stage}${phase==='post'?'（後半）':''}`;
+    statusChip.textContent = (stage==='evolved') ? '進化後の姿' : 'タネの姿';
+    subtitle.textContent = (stage==='tane')
+      ? 'たねキャラで3回会話すると、再びマカロン選択へ'
+      : (phase==='pre')
+        ? '進化キャラで10回会話すると、復活の儀式へ'
+        : (keepChoice==='appearance')
+          ? '容姿を残してリセット後の10回会話が終わるとアンケートへ'
+          : '記録を残したまま10回会話が終わるとアンケートへ';
+  }
+
+  function setCharacterSrc(){
+    const base='public/assets/stage1';
+    charImg.onerror = () => { charImg.onerror=null; charImg.src = `${base}/${EVOLVED_SRC.purple}`; };
+    charImg.src = (stage==='tane')
+      ? `${base}/tane_${color}.png`
+      : `${base}/${EVOLVED_SRC[color] || EVOLVED_SRC.purple}`;
+  }
+  setCharacterSrc();
+  updateBadges();
+
+  // 履歴
+  const CHAT_KEY='whoai_chat';
+  let history=[]; try{ history=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(e){ history=[]; }
+  const chatArea=document.getElementById('chatArea');
+  function addBubble(text, who='ai'){
+    const row=document.createElement('div'); row.className='row';
+    const b=document.createElement('div'); b.className=`bubble ${who==='me'?'me':'ai'}`; b.textContent=text;
+    row.appendChild(b); chatArea.appendChild(row); chatArea.scrollTop=chatArea.scrollHeight;
+  }
+  history.forEach(m=>addBubble(m.content, m.role==='user'?'me':'ai'));
+  if(history.length===0) addBubble('はじめまして。準備ができたら話しかけてね。');
+
+  // しきい値
+  const THRESH_TANE=3;
+  const THRESH_EVOL=10;
+
+  // 送信
+  const form=document.getElementById('chatForm');
+  const input=document.getElementById('userInput');
+  const sendBtn=document.getElementById('sendBtn');
+  form.addEventListener('submit',async (e)=>{
+    e.preventDefault(); const text=input.value.trim(); if(!text) return; input.value='';
+    addBubble(text,'me'); history.push({role:'user',content:text}); sendBtn.disabled=true;
+
+    try{
+      // API へも口調ヒントを渡す（サーバー側で活かせるなら活用される）
+      const personaHint = {
+        color,
+        style: PERSONA[color]?.name || 'default',
+        guide: {
+          pink:   '丁寧で礼儀正しく、敬語（です・ます）中心で。',
+          green:  'やんちゃでフレンドリー。砕けた口調、テンポよく！',
+          blue:   '控えめで恐縮気味。やさしく自信なさげに。',
+          purple: '創造的で比喩やイメージを織り交ぜて。'
+        }[color]
+      };
+
+      const payload={
+        message:text, name:whoaiName, color, stage, keep:keepChoice, history,
+        persona: personaHint
+      };
+      const res=await fetch(TALK_ENDPOINT,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error('API '+res.status);
+      const data=await res.json();
+      const rawReply=(data&&data.reply)?data.reply:'……（応答がありません）';
+
+      // ▼ フロント側で色の人格に整形
+      const reply = stylizeByColor(rawReply, color);
+
+      addBubble(reply,'ai'); history.push({role:'assistant',content:reply});
+      localStorage.setItem(CHAT_KEY, JSON.stringify(history));
+      turn+=1; localStorage.setItem('whoai_turn', String(turn));
+      maybeRoute();
+    }catch(err){
+      addBubble('通信に失敗しました。時間をおいて再試行してください。','ai'); console.error(err);
+    } finally {
+      sendBtn.disabled=false;
+    }
+  });
+  input.addEventListener('keydown',(e)=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); sendBtn.click(); }});
+
+  function maybeRoute(){
+    if(stage==='tane' && turn>=THRESH_TANE){
+      localStorage.setItem('whoai_turn','0');
+      location.href='macaron_select.html';
+      return;
+    }
+    if(stage==='evolved' && phase==='pre' && turn>=THRESH_EVOL){
+      localStorage.setItem('whoai_turn','0');
+      location.href='rebirth.html';
+      return;
+    }
+    if(stage==='evolved' && phase==='post' && turn>=THRESH_EVOL){
+      localStorage.setItem('whoai_turn','0');
+      location.href='identity_check.html';
+    }
+  }
+</script>
+
 </body>
 </html>
