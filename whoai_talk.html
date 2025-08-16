@@ -1,214 +1,143 @@
-<!-- FILE: /macaron/whoai_talk.html  →  背景が白くなる問題の修正版（APIそのまま） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 会話（記録を選んだ後）</title>
+  <title>WhoAI - 会話</title>
   <style>
     html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;
-      color:#fff;
-      /* ▼ 背景が白くなる対策：常に宇宙画像を読み込む（GitHub Pages では `public/` から始める） */
-      background:#000; /* 画像が読めない時のフォールバック */
+    body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
       background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover; background-position:center; background-attachment:fixed;
-      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-      text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased;
-    }
-    
-    /* 右上：ユーザー名 & 状態バッジ */
-    .whoai-name-badge{
-      position:fixed; top:10px; right:10px; z-index:1000;
-      background:rgba(0,0,0,.45); backdrop-filter:blur(3px);
-      padding:8px 12px; border-radius:12px; font-weight:700; font-size:14px;
-      box-shadow:0 2px 10px rgba(0,0,0,.25);
-    }
-
-    /* 画面ヘッダー */
-    header{margin-top:22px; text-align:center}
-    header h1{margin:6px 0 4px; font-size:22px; text-shadow:0 2px 10px rgba(0,0,0,.45)}
-    header p{margin:0; opacity:.9; font-size:13px}
-
-    /* キャラクター */
-    .character{ margin:14px 0 8px; display:flex; flex-direction:column; align-items:center }
-    .character img{ width:160px; max-width:45vw; aspect-ratio:1/1; object-fit:contain; filter:drop-shadow(0 8px 30px rgba(0,0,0,.45)); }
-    .status-chip{ margin-top:6px; font-size:12px; padding:4px 10px; border-radius:999px; background:rgba(255,255,255,.1) }
-
-    /* チャット */
-    #chatArea{ width:min(680px,92vw); max-height:52vh; overflow-y:auto; padding:14px; border-radius:14px;
-               background:rgba(0,0,0,.35); box-shadow:inset 0 0 0 1px rgba(255,255,255,.06); }
-    .bubble{ display:inline-block; padding:10px 12px; border-radius:12px; margin:8px 0; max-width:88%; line-height:1.5 }
-    .me{ background:rgba(255,255,255,.15); align-self:flex-end }
-    .ai{ background:rgba(255,255,255,.08) }
-    .row{ display:flex; gap:8px }
-
-    /* 入力欄 */
-    form{ width:min(680px,92vw); display:flex; gap:8px; margin:14px 0 18px }
-    input[type="text"]{ flex:1; padding:12px 14px; border-radius:12px; border:none; outline:none; background:rgba(255,255,255,.12); color:#fff }
-    button{ padding:12px 16px; border-radius:12px; border:none; cursor:pointer; font-weight:700 }
-    #sendBtn{ background:#ffd1ec; color:#141217 }
-    #sendBtn:disabled{ opacity:.7; cursor:not-allowed }
-
-    /* 画面下：ファイル名ラベル（どのHTMLか分かるように） */
-    .file-label{ position:fixed; left:10px; bottom:10px; font-size:12px; opacity:.75 }
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+    .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+    header{margin-top:22px;text-align:center}
+    header h1{margin:6px 0 4px;font-size:22px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
+    header p{margin:0;opacity:.9;font-size:13px}
+    .character{margin:14px 0 8px;display:flex;flex-direction:column;align-items:center}
+    .character img{width:160px;max-width:45vw;aspect-ratio:1/1;object-fit:contain;filter:drop-shadow(0 8px 30px rgba(0,0,0,.45));}
+    .status-chip{margin-top:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.1)}
+    #chatArea{width:min(680px,92vw);max-height:52vh;overflow-y:auto;padding:14px;border-radius:14px;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+    .bubble{display:inline-block;padding:10px 12px;border-radius:12px;margin:8px 0;max-width:88%;line-height:1.5}
+    .me{background:rgba(255,255,255,.15);align-self:flex-end}
+    .ai{background:rgba(255,255,255,.08)}
+    .row{display:flex;gap:8px}
+    form{width:min(680px,92vw);display:flex;gap:8px;margin:14px 0 18px}
+    input[type="text"]{flex:1;padding:12px 14px;border-radius:12px;border:none;outline:none;background:rgba(255,255,255,.12);color:#fff}
+    button{padding:12px 16px;border-radius:12px;border:none;cursor:pointer;font-weight:700}
+    #sendBtn{background:#ffd1ec;color:#141217}
+    #sendBtn:disabled{opacity:.7;cursor:not-allowed}
+    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.75}
   </style>
 </head>
 <body>
-  <!-- 右上バッジ：名前と状態を表示 -->
   <div class="whoai-name-badge" id="nameBadge">WhoAI</div>
-
   <header>
-    <h1>会話（記録を選んだ後）</h1>
-    <p id="subtitle">前回の会話を引き継いでいます</p>
+    <h1>会話</h1>
+    <p id="subtitle">進行に応じて自動で次の画面へ進みます</p>
   </header>
-
   <section class="character">
-    <img id="characterImg" alt="whoai character" src="" onerror="this.src='public/assets/stage1/pink_closed.png'">
+    <img id="characterImg" alt="whoai character" src="">
     <div class="status-chip" id="statusChip"></div>
   </section>
-
   <main id="chatArea" aria-live="polite" aria-label="chat log"></main>
-
   <form id="chatForm">
     <input id="userInput" type="text" placeholder="メッセージを入力" autocomplete="off" />
     <button id="sendBtn" type="submit">送信</button>
   </form>
-
   <div class="file-label">/macaron/whoai_talk.html</div>
 
   <script>
-    /* ==========================
-       固定：APIエンドポイント
-       ========================== */
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // ← 変更しない
+    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 
-    /* ==========================
-       ローカル状態の読み込み
-       ========================== */
-    const color = (localStorage.getItem('macaronColor') || 'pink').toLowerCase();
-    const stage = (localStorage.getItem('whoai_stage') || 'evolved'); // 記録を選んだ後は通常 evolved 継続
-    const keepChoice = localStorage.getItem('whoai_keep') || 'memory'; // 'memory' or 'appearance'
+    // 状態
     const whoaiName = localStorage.getItem('whoai_name') || 'WhoAI';
+    let color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
+    let stage = localStorage.getItem('whoai_stage') || 'tane'; // 'tane' | 'evolved'
+    let phase = localStorage.getItem('whoai_phase') || 'pre';  // 'pre' | 'post'
+    let keepChoice = localStorage.getItem('whoai_keep') || 'appearance';
+    let turn = parseInt(localStorage.getItem('whoai_turn') || '0', 10);
 
-    // バッジ・サブタイトル
     const nameBadge = document.getElementById('nameBadge');
-    nameBadge.textContent = `${whoaiName}｜${color}｜${stage}`;
-    document.getElementById('subtitle').textContent = (keepChoice === 'memory')
-      ? '前回までの会話を引き継いでいます（記録を残す）'
-      : '外見のみを残し、会話はリセットされています（容姿を残す）';
-
-    // キャラクター画像の決定
+    const statusChip = document.getElementById('statusChip');
     const charImg = document.getElementById('characterImg');
+    const subtitle = document.getElementById('subtitle');
+
+    function updateBadges(){
+      nameBadge.textContent = `${whoaiName}｜${color}｜${stage}${phase==='post'?'（後半）':''}`;
+      statusChip.textContent = (stage==='evolved') ? '進化後の姿' : 'タネの姿';
+      subtitle.textContent = (stage==='tane')
+        ? 'たねキャラで3回会話すると、再びマカロン選択へ'
+        : (phase==='pre')
+          ? '進化キャラで10回会話すると、復活の儀式へ'
+          : (keepChoice==='appearance')
+            ? '容姿を残してリセット後の10回会話が終わるとアンケートへ'
+            : '記録を残したまま10回会話が終わるとアンケートへ';
+    }
     function pickCharacterSrc(){
-      // 画像は `public/assets/stage1/` 以下に配置する運用
-      // 安全のため closed の静止画を使用
-      const base = 'public/assets/stage1';
+      const base='public/assets/stage1';
+      if(stage==='tane') return `${base}/tane_${color}.png`;
       return `${base}/${color}_closed.png`;
     }
     charImg.src = pickCharacterSrc();
+    updateBadges();
 
-    // ステータスチップ
-    const statusChip = document.getElementById('statusChip');
-    statusChip.textContent = (stage === 'evolved') ? '進化後の姿' : 'タネの姿';
-
-    /* ==========================
-       チャット履歴（記録を残す／容姿を残す）
-       ========================== */
-    const CHAT_KEY = 'whoai_chat';
-    let history = [];
-    if (keepChoice === 'memory') {
-      try { history = JSON.parse(localStorage.getItem(CHAT_KEY) || '[]'); } catch(e){ history = []; }
-    } else {
-      // 容姿を残す：履歴はリセット
-      localStorage.removeItem(CHAT_KEY);
-      history = [];
-    }
-
-    const chatArea = document.getElementById('chatArea');
+    // 履歴
+    const CHAT_KEY='whoai_chat';
+    let history=[]; try{ history=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(e){ history=[]; }
+    const chatArea=document.getElementById('chatArea');
     function addBubble(text, who='ai'){
-      const row = document.createElement('div');
-      row.className = 'row';
-      const b = document.createElement('div');
-      b.className = `bubble ${who === 'me' ? 'me' : 'ai'}`;
-      b.textContent = text;
-      row.appendChild(b);
-      chatArea.appendChild(row);
-      chatArea.scrollTop = chatArea.scrollHeight;
+      const row=document.createElement('div'); row.className='row';
+      const b=document.createElement('div'); b.className=`bubble ${who==='me'?'me':'ai'}`; b.textContent=text;
+      row.appendChild(b); chatArea.appendChild(row); chatArea.scrollTop=chatArea.scrollHeight;
     }
+    history.forEach(m=>addBubble(m.content, m.role==='user'?'me':'ai'));
+    if(history.length===0) addBubble('はじめまして。準備ができたら話しかけてね。');
 
-    // 既存履歴を描画
-    history.forEach(m => addBubble(m.role === 'user' ? m.content : m.content, m.role === 'user' ? 'me' : 'ai'));
+    // しきい値
+    const THRESH_TANE=3;   // 3回で再マカロン選択
+    const THRESH_EVOL=10;  // 10回で次フェーズ
 
-    // 初回の挨拶（履歴が空のとき）
-    if (history.length === 0) {
-      addBubble('ただいま。前回の続き、または新しい話題から始めよう。');
+    // 送信
+    const form=document.getElementById('chatForm');
+    const input=document.getElementById('userInput');
+    const sendBtn=document.getElementById('sendBtn');
+    form.addEventListener('submit',async (e)=>{
+      e.preventDefault(); const text=input.value.trim(); if(!text) return; input.value='';
+      addBubble(text,'me'); history.push({role:'user',content:text}); sendBtn.disabled=true;
+      try{
+        const payload={ message:text, name:whoaiName, color, stage, keep:keepChoice, history };
+        const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        if(!res.ok) throw new Error('API '+res.status);
+        const data=await res.json(); const reply=(data&&data.reply)?data.reply:'……（応答がありません）';
+        addBubble(reply,'ai'); history.push({role:'assistant',content:reply});
+        // 保存
+        localStorage.setItem(CHAT_KEY, JSON.stringify(history));
+        // カウント（AI応答で+1とする）
+        turn+=1; localStorage.setItem('whoai_turn', String(turn));
+        // 遷移チェック
+        maybeRoute();
+      }catch(err){ addBubble('通信に失敗しました。時間をおいて再試行してください。','ai'); console.error(err); }
+      finally{ sendBtn.disabled=false; }
+    });
+    input.addEventListener('keydown',(e)=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); sendBtn.click(); }});
+
+    function maybeRoute(){
+      if(stage==='tane' && turn>=THRESH_TANE){
+        localStorage.setItem('whoai_turn','0');
+        location.href='macaron_select.html';
+        return;
+      }
+      if(stage==='evolved' && phase==='pre' && turn>=THRESH_EVOL){
+        localStorage.setItem('whoai_turn','0');
+        location.href='rebirth.html';
+        return;
+      }
+      if(stage==='evolved' && phase==='post' && turn>=THRESH_EVOL){
+        localStorage.setItem('whoai_turn','0');
+        location.href='identity_check.html';
+      }
     }
-
-    /* ==========================
-       送信処理
-       ========================== */
-    const form = document.getElementById('chatForm');
-    const input = document.getElementById('userInput');
-    const sendBtn = document.getElementById('sendBtn');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-
-      addBubble(text, 'me');
-
-      // 履歴へ push（ユーザー）
-      history.push({ role: 'user', content: text });
-
-      // 送信中のローディング抑止
-      sendBtn.disabled = true;
-
-      try {
-        const payload = {
-          message: text,
-          name: whoaiName,
-          color,
-          stage,
-          keep: keepChoice,
-          history
-        };
-        const res = await fetch(TALK_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) throw new Error('API Error: ' + res.status);
-        const data = await res.json();
-        const reply = (data && data.reply) ? data.reply : '……（応答がありませんでした）';
-        addBubble(reply, 'ai');
-
-        // 履歴へ push（AI）
-        history.push({ role: 'assistant', content: reply });
-
-        // 記録を残す場合のみ保存
-        if (keepChoice === 'memory') {
-          localStorage.setItem(CHAT_KEY, JSON.stringify(history));
-        }
-      } catch(err){
-        addBubble('通信に失敗しました。時間をおいて再試行してください。', 'ai');
-        console.error(err);
-      } finally {
-        sendBtn.disabled = false;
-      }
-    });
-
-    // Enter で送信（IME 確定時は送信しない）
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.isComposing) {
-        e.preventDefault();
-        sendBtn.click();
-      }
-    });
   </script>
 </body>
 </html>
