@@ -6,18 +6,15 @@
   <title>好きなマカロンを選んでね</title>
   <style>
     html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;
-      display:flex;align-items:center;justify-content:center}
+    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;display:flex;align-items:center;justify-content:center}
     .wrap{width:min(980px,96vw);padding:24px}
-    h1{font-size:26px;margin:0 0 22px;text-align:center}
+    h1{font-size:28px;margin:0 0 22px;text-align:center}
     .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);
-      padding:18px;text-align:center;cursor:pointer;
-      transition:transform .12s ease, box-shadow .12s ease}
+    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);padding:18px;text-align:center;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
     .card:hover{transform:translateY(-2px);box-shadow:0 14px 46px rgba(0,0,0,.10)}
-    .card img{width:120px;aspect-ratio:1/1;object-fit:contain;
-      display:block;margin:8px auto 10px}
+    .card img{width:120px;aspect-ratio:1/1;object-fit:contain;display:block;margin:8px auto 10px}
     .name{font-weight:800;margin-top:6px}
+    .desc{font-size:12px;opacity:.7}
     .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
@@ -25,50 +22,55 @@
   <div class="wrap">
     <h1>好きなマカロンを選んでね</h1>
     <div class="grid">
-      <div class="card" data-color="pink"><img src="public/assets/stage1/macaron_pink.png" alt="pink"></div>
-      <div class="card" data-color="blue"><img src="public/assets/stage1/macaron_blue.png" alt="blue"></div>
-      <div class="card" data-color="green"><img src="public/assets/stage1/macaron_green.png" alt="green"></div>
-      <div class="card" data-color="purple"><img src="public/assets/stage1/macaron_purple.png" alt="purple"></div>
+      <div class="card" data-color="pink"  role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_pink.png"  alt="Pink Macaron"  onerror="this.src='public/assets/stage1/tane_pink.png'">
+        <div class="name">Pink</div><div class="desc">Macaron</div>
+      </div>
+      <div class="card" data-color="blue"  role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_blue.png"  alt="Blue Macaron"  onerror="this.src='public/assets/stage1/tane_blue.png'">
+        <div class="name">Blue</div><div class="desc">Macaron</div>
+      </div>
+      <div class="card" data-color="green" role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_green.png" alt="Green Macaron" onerror="this.src='public/assets/stage1/tane_green.png'">
+        <div class="name">Green</div><div class="desc">Macaron</div>
+      </div>
+      <div class="card" data-color="purple" role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_purple.png" alt="Purple Macaron" onerror="this.src='public/assets/stage1/tane_purple.png'">
+        <div class="name">Purple</div><div class="desc">Macaron</div>
+      </div>
     </div>
   </div>
   <div class="file-label">/macaron/macaron.html</div>
 
   <script>
-    // ▼ 保険の自動リセット（identity_check で仕込んだフラグを検知）
+    // 保険の自動リセット（既存の仕様を維持）
     (function autoResetIfNeeded(){
       if (localStorage.getItem('whoai_auto_reset') === '1') {
         Object.keys(localStorage).forEach(k=>{
           if (/^(whoai_|macaron)/.test(k)) localStorage.removeItem(k);
         });
-        ['whoai_chat','whoai_name','whoai_stage','whoai_keep',
-         'macaronColor','whoai_turn','whoai_phase'].forEach(
+        ['whoai_chat','whoai_name','whoai_stage','whoai_keep','macaronColor','whoai_turn','whoai_phase'].forEach(
           k=>localStorage.removeItem(k)
         );
         localStorage.removeItem('whoai_auto_reset');
-        // キャッシュ避けでリロード
         location.replace('macaron.html?v=clean');
-        return; // 以降の処理はリロード後
+        return;
       }
     })();
 
-    // ▼ 元の処理
-    const NEXT = 'naming.html';
     const allowed = ['pink','blue','green','purple'];
-    function pick(e){
-      const card = e.currentTarget;
-      const color = card.getAttribute('data-color');
-      if(!allowed.includes(color)) return;
+    function saveColorAndGo(c){
+      const chosen = (c||'').toLowerCase().trim();
+      const color  = allowed.includes(chosen) ? chosen : 'green';
       localStorage.setItem('macaronColor', color);
       localStorage.setItem('whoai_stage', 'tane');
       localStorage.setItem('whoai_turn', '0');
       localStorage.removeItem('whoai_phase');
-      location.href = NEXT;
+      location.href = 'naming.html';
     }
     document.querySelectorAll('.card').forEach(card=>{
-      card.addEventListener('click',pick);
-      card.addEventListener('keydown',e=>{
-        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pick(e);}
-      });
+      card.addEventListener('click',()=> saveColorAndGo(card.getAttribute('data-color')));
+      card.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); saveColorAndGo(card.getAttribute('data-color')); } });
     });
   </script>
 </body>
