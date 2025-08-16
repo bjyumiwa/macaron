@@ -64,29 +64,26 @@
   };
 
   // ▼ persona 定義（色→口調ルール）
-  //   - suffix: 文末につける語尾候補（句点が無ければ付与）
-  //   - softeners: 途中に挟む緩衝ワード
-  //   - preambles: 文頭にたまに差す一言（自然に 15% の確率）
   const PERSONA = {
-    pink: {
+    pink: { // 丁寧
       name: '丁寧',
       suffix: ['ですね。','です。','でしょうか。','かと思います。'],
       softeners: ['少々','もしよろしければ','よろしければ','念のため'],
       preambles: ['失礼いたします。','承知しました。','かしこまりました。']
     },
-    green: {
+    green: { // やんちゃ
       name: 'やんちゃ',
       suffix: ['だよ！','だね！','いこ！','ってね！'],
       softeners: ['まぁ','ちょい','たぶん','きっと'],
       preambles: ['よっ！','へへっ！','やった！','いくよ！']
     },
-    blue: {
+    blue: { // 引け目
       name: '引け目',
       suffix: ['かも…','かな…','かもしれません…','ごめんね…'],
       softeners: ['もし','たぶん','もしかしたら','あの…'],
       preambles: ['すみません…','自信ないけど…','控えめに言うと…']
     },
-    purple: {
+    purple: { // 創造的
       name: '創造的',
       suffix: ['みたい。','って感じ。','がひらめいた。','が生まれるね。'],
       softeners: ['ふっと','直感で','インスピレーションで','想像すると'],
@@ -104,7 +101,7 @@
       t = p.preambles[Math.floor(Math.random()*p.preambles.length)] + ' ' + t;
     }
 
-    // 2) “、”の直前に緩衝語をたまに入れる（読みのリズム作り）
+    // 2) たまに緩衝語（読点の直後に差す）
     t = t.replace(/、/g, () => {
       if (Math.random() < 0.25 && p.softeners.length) {
         return '、' + p.softeners[Math.floor(Math.random()*p.softeners.length)] + '、';
@@ -112,7 +109,7 @@
       return '、';
     });
 
-    // 3) 文末に句点がなければ語尾を付与（既に「。」「！」「？」があれば付けない）
+    // 3) 文末に句点がなければ語尾を付与
     if (!/[。！？!]$/.test(t)) {
       const suf = p.suffix[Math.floor(Math.random()*p.suffix.length)];
       t = t + suf;
@@ -120,7 +117,7 @@
     return t;
   }
 
-  // 状態
+  // ====== 状態 ======
   const whoaiName = localStorage.getItem('whoai_name') || 'WhoAI';
   let color = norm(localStorage.getItem('macaronColor'));
   let stage = localStorage.getItem('whoai_stage') || 'tane'; // 'tane' | 'evolved'
@@ -155,7 +152,7 @@
   setCharacterSrc();
   updateBadges();
 
-  // 履歴
+  // ====== 履歴 ======
   const CHAT_KEY='whoai_chat';
   let history=[]; try{ history=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(e){ history=[]; }
   const chatArea=document.getElementById('chatArea');
@@ -167,11 +164,11 @@
   history.forEach(m=>addBubble(m.content, m.role==='user'?'me':'ai'));
   if(history.length===0) addBubble('はじめまして。準備ができたら話しかけてね。');
 
-  // しきい値
+  // ====== しきい値 ======
   const THRESH_TANE=3;
   const THRESH_EVOL=10;
 
-  // 送信
+  // ====== 送信 ======
   const form=document.getElementById('chatForm');
   const input=document.getElementById('userInput');
   const sendBtn=document.getElementById('sendBtn');
@@ -180,10 +177,10 @@
     addBubble(text,'me'); history.push({role:'user',content:text}); sendBtn.disabled=true;
 
     try{
-      // API へも口調ヒントを渡す（サーバー側で活かせるなら活用される）
+      // API へ口調ヒントも渡す（サーバーで使えれば採用される）
       const personaHint = {
         color,
-        style: PERSONA[color]?.name || 'default',
+        style: (PERSONA[color]?.name || 'default'),
         guide: {
           pink:   '丁寧で礼儀正しく、敬語（です・ます）中心で。',
           green:  'やんちゃでフレンドリー。砕けた口調、テンポよく！',
@@ -192,14 +189,8 @@
         }[color]
       };
 
-      const payload={
-        message:text, name:whoaiName, color, stage, keep:keepChoice, history,
-        persona: personaHint
-      };
-      const res=await fetch(TALK_ENDPOINT,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(payload)
-      });
+      const payload={ message:text, name:whoaiName, color, stage, keep:keepChoice, history, persona: personaHint };
+      const res=await fetch(TALK_ENDPOINT,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
       if(!res.ok) throw new Error('API '+res.status);
       const data=await res.json();
       const rawReply=(data&&data.reply)?data.reply:'……（応答がありません）';
@@ -236,6 +227,7 @@
     }
   }
 </script>
+
 
 </body>
 </html>
