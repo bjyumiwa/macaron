@@ -1,124 +1,97 @@
+<!-- FILE: whoai_talk.html（進化後キャラ10回会話） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - タネキャラ（3回会話）</title>
+  <title>whoai_talk - 進化後キャラ会話（10回）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: "Noto Sans JP", sans-serif;
-      background: black;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      color: white;
+    html,body{height:100%;margin:0;padding:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      background-image:url("/public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+      padding:20px
     }
-    .container {
-      max-width: 600px;
-      margin: 80px auto 20px;
-      padding: 20px;
-      background: rgba(0,0,0,0.5);
-      border-radius: 12px;
+    #characterImg{width:200px;height:auto;margin:20px auto;animation:float 3s ease-in-out infinite}
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+      100% { transform: translateY(0); }
     }
-    #characterImg {
-      width: 160px;
-      margin: 16px auto;
-      display: block;
+    #chatArea{
+      background:rgba(255,255,255,0.1);padding:20px;border-radius:12px;
+      max-width:600px;width:90%;min-height:200px;overflow-y:auto;margin-bottom:12px
     }
-    .chat {
-      margin-bottom: 16px;
-      padding: 12px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
-    }
-    #userInput {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-top: 8px;
-    }
-    #sendBtn {
-      margin-top: 12px;
-      padding: 10px 20px;
-      background: #ffd1ec;
-      color: #000;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    #userInput{padding:10px;border:none;border-radius:6px;width:70%}
+    #sendBtn{padding:10px 20px;border:none;border-radius:6px;background:#ffd1ec;color:#000;font-weight:bold;margin-left:8px;cursor:pointer}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>話しかけてみてね（あと <span id="remainCount">3</span> 回）</h2>
-    <img id="characterImg" src="" alt="AIキャラ" />
-    <div id="chatArea"></div>
-    <input type="text" id="userInput" placeholder="あなたのメッセージを入力" />
+  <div class="whoai-name-badge">あなたのAI：<span id="whoaiName"></span></div>
+  <img id="characterImg" src="" alt="進化キャラ">
+  <div id="chatArea"></div>
+  <div>
+    <input type="text" id="userInput" placeholder="話しかけてみよう...">
     <button id="sendBtn">送信</button>
   </div>
 
   <script>
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-    const color = localStorage.getItem("whoai_color") || "pink";
-    const stage = localStorage.getItem("whoai_stage") || "tane";
-    let turnCount = parseInt(localStorage.getItem("whoai_turnCount") || "0");
-
+    const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
+    const whoaiName = localStorage.getItem("whoai_name") || "WhoAI";
+    const color = localStorage.getItem("evolve_macaron_color") || "pink"; // default pink
     const characterImg = document.getElementById("characterImg");
+    const nameBadge = document.getElementById("whoaiName");
     const chatArea = document.getElementById("chatArea");
-    const remainSpan = document.getElementById("remainCount");
-    const userInput = document.getElementById("userInput");
+    const input = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
+    let turnCount = parseInt(localStorage.getItem("turnCount")) || 0;
 
-    characterImg.src = `public/assets/stage1/${color}_closed.png`;
-    remainSpan.textContent = 3 - turnCount;
+    nameBadge.textContent = whoaiName;
+
+    const evolvedImageMap = {
+      pink: "/public/assets/stage1/evolved_pink.gif",
+      blue: "/public/assets/stage1/evolved_blue.gif",
+      green: "/public/assets/stage1/evolved_green.gif",
+      purple: "/public/assets/stage1/evolved_purple.gif"
+    };
+    characterImg.src = evolvedImageMap[color];
 
     function appendMessage(sender, text) {
       const div = document.createElement("div");
-      div.className = "chat";
-      div.textContent = `${sender}: ${text}`;
+      div.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      div.style.marginBottom = "8px";
       chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
     }
 
-    async function sendMessage() {
-      const message = userInput.value.trim();
-      if (!message) return;
-
-      appendMessage("あなた", message);
-      userInput.value = "";
-      turnCount++;
-      localStorage.setItem("whoai_turnCount", turnCount);
-
+    sendBtn.addEventListener("click", async () => {
+      const userText = input.value.trim();
+      if (!userText) return;
+      appendMessage("あなた", userText);
+      input.value = "";
       try {
-        const response = await fetch(TALK_ENDPOINT, {
+        const res = await fetch(TALK_ENDPOINT, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: message,
-            color: color,
-            stage: stage,
-            turn: turnCount
-          })
+          body: JSON.stringify({ message: userText })
         });
-        const data = await response.json();
-        appendMessage("AI", data.reply || "…");
+        const data = await res.json();
+        appendMessage(whoaiName, data.response);
 
-        if (turnCount >= 3) {
+        turnCount++;
+        localStorage.setItem("turnCount", turnCount);
+
+        if (turnCount >= 10) {
           setTimeout(() => {
-            location.href = "macaron_select.html";
-          }, 2000);
-        } else {
-          remainSpan.textContent = 3 - turnCount;
+            window.location.href = "/macaron/rebirth.html";
+          }, 1500);
         }
-      } catch (err) {
-        appendMessage("エラー", "通信に失敗しました");
+      } catch (e) {
+        appendMessage(whoaiName, "エラーが発生しました...");
+        console.error(e);
       }
-    }
-
-    sendBtn.onclick = sendMessage;
-    userInput.addEventListener("keypress", e => {
-      if (e.key === "Enter") sendMessage();
     });
   </script>
 </body>
