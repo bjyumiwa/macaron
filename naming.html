@@ -5,35 +5,109 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>名前をつけよう</title>
   <style>
-    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;
-         display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);
-          padding:24px 20px;text-align:center;width:min(500px,92vw)}
-    input{padding:12px 14px;border-radius:12px;border:1px solid #ccc;width:80%;margin-top:12px}
-    button{padding:12px 16px;border-radius:12px;margin-top:14px;background:#6f4cff;color:#fff;font-weight:700;cursor:pointer}
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;
+      display:flex;align-items:center;justify-content:center;padding:20px;
+    }
+    .wrap{
+      width:min(920px,96vw);display:grid;gap:20px;
+      grid-template-columns: 1fr 1fr; align-items:center;
+    }
+    .card{
+      background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);
+      padding:22px 20px;
+    }
+    .hero{
+      text-align:center;background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);
+      padding:22px 20px;
+    }
+    .hero img{
+      width:220px;max-width:60%;aspect-ratio:1/1;object-fit:contain;
+      filter:drop-shadow(0 8px 26px rgba(0,0,0,.15));
+    }
+    h2{margin:0 0 8px}
+    p.sub{margin:0 0 14px;opacity:.8}
+    input{
+      width:100%;padding:12px 14px;border-radius:12px;border:1px solid #ccc;font-size:16px;
+    }
+    button{
+      margin-top:12px;padding:12px 16px;border-radius:12px;border:0;cursor:pointer;
+      background:#6f4cff;color:#fff;font-weight:800;width:100%;
+    }
+    .hint{font-size:12px;opacity:.7;margin-top:8px}
+    @media (max-width: 760px){
+      .wrap{grid-template-columns:1fr}
+      .hero img{width:180px}
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>キャラクターに名前をつけてね</h2>
-    <form id="nameForm">
-      <input id="nameInput" type="text" placeholder="名前を入力" required>
-      <br>
-      <button type="submit">決定</button>
-    </form>
+  <div class="wrap">
+    <!-- キャラプレビュー -->
+    <section class="hero" aria-live="polite">
+      <h2>いまの姿</h2>
+      <p class="sub">占いで決まった色の「たねキャラ」です</p>
+      <img id="charImg" alt="キャラプレビュー" src="">
+      <div id="colorNote" class="hint"></div>
+    </section>
+
+    <!-- 命名フォーム -->
+    <section class="card">
+      <h2>キャラクターに名前をつけてね</h2>
+      <p class="sub">後から変更できます</p>
+      <form id="nameForm">
+        <input id="nameInput" type="text" placeholder="名前を入力" autocomplete="off" required>
+        <button type="submit">決定して会話へ</button>
+        <div class="hint">※ まだ色を決めていない場合は、占いからやり直します</div>
+      </form>
+    </section>
   </div>
 
   <script>
-    const form=document.getElementById('nameForm');
-    const input=document.getElementById('nameInput');
-    form.addEventListener('submit',e=>{
+    // ---- 参照 & 定数 ----
+    const img = document.getElementById('charImg');
+    const note = document.getElementById('colorNote');
+    const form = document.getElementById('nameForm');
+    const input = document.getElementById('nameInput');
+    const allowed = ['pink','blue','green','purple'];
+
+    // ---- 色の取得（なければ占いへ戻す） ----
+    let color = (localStorage.getItem('macaronColor') || '').toLowerCase().trim();
+    if (!allowed.includes(color)) {
+      // 占いが未実行/クリア済みなら戻す
+      location.replace('fortune.html');
+    }
+
+    // ---- ステージ初期化（保険） ----
+    if (!localStorage.getItem('whoai_stage')) localStorage.setItem('whoai_stage','tane');
+    localStorage.setItem('whoai_turn','0');      // 会話回数リセット（命名直後から）
+    localStorage.removeItem('whoai_phase');      // 前後半フラグをクリア
+
+    // ---- 画像パスを決定して表示 ----
+    // たね：public/assets/stage1/tane_<color>.png
+    function setPreview(c){
+      const base = 'public/assets/stage1';
+      img.onerror = () => { img.onerror = null; img.src = `${base}/tane_green.png`; };
+      img.src = `${base}/tane_${c}.png`;
+      note.textContent = `色：${c}`;
+    }
+    setPreview(color);
+
+    // ---- 命名 → whoai_talk.html へ ----
+    form.addEventListener('submit', (e)=>{
       e.preventDefault();
-      const name=input.value.trim();
-      if(!name){alert('名前を入力してください');return;}
-      localStorage.setItem('whoai_name', name);
-      localStorage.setItem('whoai_turn','0');
-      // 🔽 会話ページへ
-      location.href='whoai_talk.html';
+      const name = (input.value || '').trim();
+      if (!name) { alert('名前を入力してください'); return; }
+
+      // 軽いサニタイズ（全角スペース削除など）
+      const clean = name.replace(/\s+/g, ' ').replace(/^[\s　]+|[\s　]+$/g, '');
+      localStorage.setItem('whoai_name', clean);
+
+      // たね状態で会話へ
+      // 履歴は新規スタートなので残す/消すは仕様に応じて：
+      // localStorage.removeItem('whoai_chat'); // ←完全新規にしたいなら有効化
+      location.href = 'whoai_talk.html';
     });
   </script>
 </body>
