@@ -1,50 +1,49 @@
-<!-- FILE: macaron/naming.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>名前をつけてね</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>この子に名前をつけてね</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-color: #fff;
-      background-image: url("/public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
       margin: 0;
-      padding: 0;
+      font-family: "Noto Sans JP", sans-serif;
       text-align: center;
-      color: #333;
+      color: #222;
+      background: #000 url("/assets/stage1/space_background.png") no-repeat center center fixed;
+      background-size: cover;
     }
 
     h1 {
-      margin-top: 60px;
+      margin-top: 50px;
       font-size: 24px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      color: white;
+      text-shadow: 0 0 10px rgba(0,0,0,0.6);
     }
 
     #character {
-      margin: 20px auto;
+      margin: 30px auto 10px;
       width: 150px;
       height: auto;
     }
 
     input {
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
       width: 60%;
       max-width: 300px;
-      margin: 16px 0;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: none;
     }
 
     button {
-      background-color: #c8ffd4;
+      background-color: #c6ffd4;
       border: none;
       padding: 12px 24px;
       border-radius: 8px;
       font-weight: bold;
+      font-size: 16px;
       cursor: pointer;
     }
 
@@ -57,21 +56,25 @@
   <h1>この子に名前をつけてね</h1>
   <img id="character" src="" alt="たねキャラ" />
   <div>
-    <label for="nameInput">名前を入力</label><br />
+    <p style="color: white;">名前を入力</p>
     <input type="text" id="nameInput" placeholder="WhoAIの名前を入力" />
+    <br />
+    <button onclick="saveName()">決定！</button>
   </div>
-  <button onclick="saveName()">決定！</button>
 
   <script>
-    const color = localStorage.getItem("macaronColor") || "pink"; // ← マカロン色からキャラ決定
+    // 修正：キーを whoai_color に統一
+    const color = localStorage.getItem("whoai_color") || "pink";
+
     const imageMap = {
-      pink: "/public/assets/stage1/tane_pink.png",
-      blue: "/public/assets/stage1/tane_blue.png",
-      green: "/public/assets/stage1/tane_green.png",
-      purple: "/public/assets/stage1/tane_purple.png"
+      pink: "/assets/stage1/tane_pink.png",
+      blue: "/assets/stage1/tane_blue.png",
+      green: "/assets/stage1/tane_green.png",
+      purple: "/assets/stage1/tane_purple.png"
     };
 
-    document.getElementById("character").src = imageMap[color];
+    const img = document.getElementById("character");
+    img.src = imageMap[color];
 
     function saveName() {
       const name = document.getElementById("nameInput").value.trim();
@@ -80,7 +83,7 @@
         return;
       }
       localStorage.setItem("whoai_name", name);
-      window.location.href = "/macaron/whoai_talk.html";
+      location.href = "/macaron/whoai_talk.html";
     }
   </script>
 </body>
