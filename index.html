@@ -1,3 +1,4 @@
+<!-- /index.html ー 表紙（みわっち＋説明＋控えめなリンク） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,19 +6,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WhoAI スタート</title>
   <style>
-    /* 既存スタイル省略 */
-    footer {
-      margin-top: 20px;
-      font-size: 13px;
-      opacity: .75;
+    /* ざっくり最低限の見た目（必要なら調整してね） */
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;text-align:center;
+      background:#000;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;align-items:center;justify-content:center;
     }
-    footer a {
-      color: #fff;
-      text-decoration: underline;
-    }
-    footer a:hover {
-      opacity: 1;
-    }
+    .card{background:rgba(0,0,0,.55);border-radius:18px;padding:28px 24px;
+      box-shadow:0 8px 40px rgba(0,0,0,.5);width:min(680px,92vw)}
+    h1{font-size:32px;margin:0 0 12px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
+    p{margin:0 0 18px;font-size:16px;line-height:1.7;opacity:.95}
+    .miwacchi{width:200px;max-width:55vw;margin:0 auto 16px;display:block;
+      filter:drop-shadow(0 8px 20px rgba(0,0,0,.5))}
+    .btn{display:inline-block;padding:14px 28px;border-radius:14px;border:none;cursor:pointer;
+      background:#ffd1ec;color:#141217;font-size:16px;font-weight:700;
+      box-shadow:0 4px 18px rgba(0,0,0,.25);transition:.2s}
+    .btn:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.35)}
+    footer{margin-top:20px;font-size:13px;opacity:.75}
+    footer a{color:#fff;text-decoration:underline}
+    footer a:hover{opacity:1}
   </style>
 </head>
 <body>
@@ -30,9 +40,10 @@
       たくさんの会話をお楽しみください。
     </p>
 
+    <!-- 次のページ：色選択へ -->
     <a href="macaron.html" class="btn">はじめる</a>
 
-    <!-- ▼ 控えめな研究説明リンク -->
+    <!-- 控えめな研究説明リンク -->
     <footer>
       <a href="about.html">この研究について</a>
     </footer>
