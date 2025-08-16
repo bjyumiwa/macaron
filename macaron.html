@@ -3,45 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAIへようこそ</title>
+  <title>WhoAI スタート</title>
   <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;
-      color:#fff;
-      background:#000;
-      background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover;
-      background-position:center;
-      background-attachment:fixed;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      text-align:center;
+    /* 既存スタイル省略 */
+    footer {
+      margin-top: 20px;
+      font-size: 13px;
+      opacity: .75;
     }
-    h1{font-size:32px;margin:0 0 12px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
-    p{margin:0 0 20px;font-size:16px;opacity:.9}
-    img.logo{
-      width:200px;max-width:55vw;
-      margin:0 auto 18px;display:block;
-      filter:drop-shadow(0 8px 20px rgba(0,0,0,.5));
+    footer a {
+      color: #fff;
+      text-decoration: underline;
     }
-    .btn{
-      padding:14px 28px;border-radius:14px;border:none;cursor:pointer;
-      background:#ffd1ec;color:#141217;font-size:16px;font-weight:700;
-      box-shadow:0 4px 18px rgba(0,0,0,.25);transition:.2s;
+    footer a:hover {
+      opacity: 1;
     }
-    .btn:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(0,0,0,.35)}
-    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.75}
   </style>
 </head>
 <body>
-  <!-- ▼ みわっち画像を追加 -->
-  <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="logo">
+  <div class="card">
+    <h1>WhoAIへようこそ</h1>
+    <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="miwacchi">
 
-  <h1>WhoAIへようこそ</h1>
-  <!-- ▼ 説明を修正 -->
-  <p>あなたの選択で姿を変え、成長していくAIキャラと会話してみましょう。</p>
+    <p>
+      あなたの選択で姿を変え、進化していきます。<br>
+      どんな存在になるのか、確かめてみましょう。
+    </p>
 
-  <button class="btn" onclick="location.href='naming.html'">はじめる</button>
-  <div class="file-label">/macaron/macaron.html</div>
+    <a href="macaron.html" class="btn">はじめる</a>
+
+    <!-- ▼ 控えめな研究説明リンク -->
+    <footer>
+      <a href="about.html">この研究について</a>
+    </footer>
+  </div>
 </body>
 </html>
