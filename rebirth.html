@@ -2,6 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>復活の儀式</title>
   <style>
@@ -32,13 +35,13 @@
     .btn:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.3); }
     .btn-appearance{background:#f5a9d6; color:#000;}
     .btn-keep{background:#444; color:#fff;}
-    .file-label{position:fixed; left:10px; bottom:10px; font-size:12px; opacity:.7}
+    .note{opacity:.8; font-size:13px; margin-top:8px}
   </style>
 </head>
 <body>
-  <div class="card">
+  <div class="card" aria-live="polite">
     <h2>復活の儀式</h2>
-    <p>次のどちらかを選んでください。</p>
+    <p>次のどちらかを選んでください（<strong>選択後は戻れません</strong>）。</p>
 
     <!-- アイテム画像 -->
     <img src="public/assets/stage1/drink_item.png" alt="復活アイテム">
@@ -47,56 +50,85 @@
       <strong>容姿を選ぶ:</strong> 外見はそのまま、会話はリセット（0から）<br>
       <strong>記録を選ぶ:</strong> 会話記録を保持したまま、<u>容姿は別の色に変化</u>して、さらに10回会話
     </p>
+
     <div>
       <button class="btn btn-appearance" id="chooseAppearance">容姿を選ぶ</button>
       <button class="btn btn-keep" id="chooseKeep">記録を選ぶ</button>
     </div>
+    <div class="note" id="guardMsg" style="display:none">選択は確定しました。戻る操作はできません。</div>
   </div>
-  <div class="file-label">/macaron/rebirth.html</div>
 
   <script>
-    // 共通
-    const CHAT_KEY='whoai_chat';
+    // ===== 戻る無効（このページ滞在中）=====
+    // 履歴にダミーを積み続け、戻るを無効化
+    history.pushState(null, "", location.href);
+    window.onpopstate = () => { history.go(1); };
+
+    // ===== 直接アクセス/再入場ガード =====
+    const CHAT_KEY = 'whoai_chat';
+    const LOCK_KEY = 'whoai_rebirth_lock'; // 選択後ロック
     const allowed = ['pink','blue','green','purple'];
 
-    // 現在色を取得＆正規化
     function normColor(c){
       const t = String(c||'').toLowerCase().trim();
       return allowed.includes(t) ? t : 'green';
     }
-    const current = normColor(localStorage.getItem('macaronColor'));
+    const currentColor = normColor(localStorage.getItem('macaronColor') || 'green');
 
-    // 現在と違う色をランダムに1つ選ぶ
+    // 進入条件（進化・前半からの遷移）を満たさない/ロック済みなら追い返す
+    (function entryGuard(){
+      if (localStorage.getItem(LOCK_KEY) === '1') {
+        // すでに選択済み → 誤って戻ってきても talk へ
+        location.replace('whoai_talk.html');
+        return;
+      }
+      // 任意の追加ガード：進化前半フェーズ以外は入れない
+      const stage = localStorage.getItem('whoai_stage');
+      const phase = localStorage.getItem('whoai_phase');
+      if (!(stage==='evolved' && phase==='pre')) {
+        location.replace('whoai_talk.html');
+      }
+    })();
+
     function pickDifferentColor(now){
       const pool = allowed.filter(c=>c!==now);
       return pool[Math.floor(Math.random()*pool.length)];
     }
 
-    // 容姿を選ぶ：外見=そのまま / 会話リセット
-    document.getElementById('chooseAppearance').onclick=()=>{
-      localStorage.setItem('whoai_keep','appearance'); // 表示案内用
+    // 二重クリック防止
+    let decided = false;
+    function lockAndGo(){
+      decided = true;
+      document.getElementById('guardMsg').style.display='block';
+      // ロック書き込み（以後 rebirth.html は再入場不可）
+      localStorage.setItem(LOCK_KEY, '1');
+      // 後半フェーズとして再開
       localStorage.setItem('whoai_phase','post');
       localStorage.setItem('whoai_turn','0');
-      localStorage.setItem('whoai_stage','evolved');   // 進化状態を維持
-      localStorage.removeItem(CHAT_KEY);               // ここで履歴リセット
-      // 色は変えない（currentのまま）
-      location.href='whoai_talk.html';
-    };
+      localStorage.setItem('whoai_stage','evolved');
+      // 履歴を残さずに会話へ
+      location.replace('whoai_talk.html');
+    }
 
-    // 記録を選ぶ：会話記録=保持 / 容姿=別色に変更
-    document.getElementById('chooseKeep').onclick=()=>{
-      localStorage.setItem('whoai_keep','memory'); // 表示案内用
-      localStorage.setItem('whoai_phase','post');
-      localStorage.setItem('whoai_turn','0');
-      localStorage.setItem('whoai_stage','evolved'); // 進化状態を維持
-      // 履歴は消さない（保持）
-      // 色だけ“今とは違う色”に更新
-      const newColor = pickDifferentColor(current);
+    // 容姿を選ぶ：色そのまま / 会話リセット
+    document.getElementById('chooseAppearance').addEventListener('click', ()=>{
+      if (decided) return;
+      // 表示用フラグ
+      localStorage.setItem('whoai_keep','appearance');
+      // 会話ログをリセット
+      localStorage.removeItem(CHAT_KEY);
+      lockAndGo();
+    }, { once:true });
+
+    // 記録を選ぶ：会話保持 / 色だけ変更
+    document.getElementById('chooseKeep').addEventListener('click', ()=>{
+      if (decided) return;
+      localStorage.setItem('whoai_keep','memory');
+      const newColor = pickDifferentColor(currentColor);
       localStorage.setItem('macaronColor', newColor);
-      // デバッグ用に前色を記録しておくと確認しやすい（任意）
-      localStorage.setItem('whoai_prevColor', current);
-      location.href='whoai_talk.html';
-    };
+      // 会話ログは保持（消さない）
+      lockAndGo();
+    }, { once:true });
   </script>
 </body>
 </html>
