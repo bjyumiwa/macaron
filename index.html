@@ -2,26 +2,40 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>WhoAI - はじめに</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhoAI スタート</title>
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; font-family: "Noto Sans JP", sans-serif; background: #000; color: white; text-align: center; }
-    body { display: flex; flex-direction: column; justify-content: center; align-items: center; background-image: url("public/assets/stage1/space_background.png"); background-size: cover; background-position: center; }
-    h1 { font-size: 2rem; margin-bottom: 20px; }
-    button {
-      padding: 12px 24px;
-      background: #ffcdf2;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.2rem;
-      cursor: pointer;
+    /* 既存スタイル省略 */
+    footer {
+      margin-top: 20px;
+      font-size: 13px;
+      opacity: .75;
     }
-    button:hover { background: #ffa4e0; }
+    footer a {
+      color: #fff;
+      text-decoration: underline;
+    }
+    footer a:hover {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
-  <h1>WhoAIへようこそ</h1>
-  <p>あなたの分身がどんな存在になるか、探ってみよう。</p>
-  <button onclick="location.href='fortune.html'">はじめる</button>
+  <div class="card">
+    <h1>WhoAIへようこそ</h1>
+    <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="miwacchi">
+
+    <p>
+      あなたの選択で姿を変え、進化していきます。<br>
+      たくさんの会話をお楽しみください。
+    </p>
+
+    <a href="macaron.html" class="btn">はじめる</a>
+
+    <!-- ▼ 控えめな研究説明リンク -->
+    <footer>
+      <a href="about.html">この研究について</a>
+    </footer>
+  </div>
 </body>
 </html>
