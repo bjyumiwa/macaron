@@ -50,9 +50,22 @@
   <script>
     const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
 
+    // ---- 色の正規化＆進化画像マップ（ここだけ直せばOK） ----
+    const allowedColors = ['pink','blue','green','purple'];
+    const EVOLVED_SRC = {
+      pink:   'pink_closed.png',
+      blue:   'blue_closed.png',
+      green:  'green_closed.png',
+      purple: 'purple_closed.png'
+    };
+    function normalizeColor(c){
+      const t = String(c||'').toLowerCase().trim();
+      return allowedColors.includes(t) ? t : 'green';
+    }
+
     // 状態
     const whoaiName = localStorage.getItem('whoai_name') || 'WhoAI';
-    let color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
+    let color = normalizeColor(localStorage.getItem('macaronColor'));
     let stage = localStorage.getItem('whoai_stage') || 'tane'; // 'tane' | 'evolved'
     let phase = localStorage.getItem('whoai_phase') || 'pre';  // 'pre' | 'post'
     let keepChoice = localStorage.getItem('whoai_keep') || 'appearance';
@@ -74,12 +87,16 @@
             ? '容姿を残してリセット後の10回会話が終わるとアンケートへ'
             : '記録を残したまま10回会話が終わるとアンケートへ';
     }
-    function pickCharacterSrc(){
+
+    function setCharacterSrc(){
       const base='public/assets/stage1';
-      if(stage==='tane') return `${base}/tane_${color}.png`;
-      return `${base}/${color}_closed.png`;
+      // 画像が壊れていたら紫にフォールバック
+      charImg.onerror = () => { charImg.onerror=null; charImg.src = `${base}/${EVOLVED_SRC.purple}`; };
+      charImg.src = (stage==='tane')
+        ? `${base}/tane_${color}.png`
+        : `${base}/${EVOLVED_SRC[color] || EVOLVED_SRC.purple}`;
     }
-    charImg.src = pickCharacterSrc();
+    setCharacterSrc();
     updateBadges();
 
     // 履歴
@@ -95,8 +112,8 @@
     if(history.length===0) addBubble('はじめまして。準備ができたら話しかけてね。');
 
     // しきい値
-    const THRESH_TANE=3;   // 3回で再マカロン選択
-    const THRESH_EVOL=10;  // 10回で次フェーズ
+    const THRESH_TANE=3;
+    const THRESH_EVOL=10;
 
     // 送信
     const form=document.getElementById('chatForm');
@@ -111,11 +128,8 @@
         if(!res.ok) throw new Error('API '+res.status);
         const data=await res.json(); const reply=(data&&data.reply)?data.reply:'……（応答がありません）';
         addBubble(reply,'ai'); history.push({role:'assistant',content:reply});
-        // 保存
         localStorage.setItem(CHAT_KEY, JSON.stringify(history));
-        // カウント（AI応答で+1とする）
         turn+=1; localStorage.setItem('whoai_turn', String(turn));
-        // 遷移チェック
         maybeRoute();
       }catch(err){ addBubble('通信に失敗しました。時間をおいて再試行してください。','ai'); console.error(err); }
       finally{ sendBtn.disabled=false; }
