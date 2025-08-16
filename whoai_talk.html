@@ -1,46 +1,40 @@
+<!-- FILE: STEP10 - whoai_talk.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk.html - 会話（進化後・復活後両対応）</title>
+  <title>WhoAI - 復活後の会話（10回）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html, body { height: 100%; margin: 0; }
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      color: #fff;
-      background: #000;
-      background-image: url("/public/assets/stage1/space_background.png");
+    html, body {
+      height: 100%; margin: 0; font-family: "Noto Sans JP", sans-serif;
+      background: black;
+      background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 16px;
+      color: white; text-align: center;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px;
     }
     #characterImg {
-      width: 120px;
-      margin: 12px 0;
+      width: 140px;
+      margin-bottom: 16px;
     }
     #chatArea {
-      width: 90%;
-      max-width: 500px;
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255,255,255,0.08);
       padding: 16px;
       border-radius: 12px;
-      margin-bottom: 12px;
+      width: 90%; max-width: 600px;
       height: 300px;
       overflow-y: auto;
+      margin-bottom: 20px;
     }
-    #userInput {
-      width: 90%;
-      max-width: 500px;
+    input[type="text"] {
+      width: 80%;
       padding: 10px;
       border: none;
       border-radius: 8px;
-      margin-bottom: 8px;
     }
     button {
       padding: 10px 20px;
@@ -48,88 +42,87 @@
       border-radius: 8px;
       background: #ffd1ec;
       color: #111;
-      font-weight: bold;
+      margin-left: 10px;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h2>WhoAIとお話ししよう</h2>
-  <div id="characterContainer">
-    <img id="characterImg" src="" alt="キャラクター" />
+  <img id="characterImg" src="" alt="AIキャラ" />
+  <div class="whoai-name-badge" style="position: fixed; top: 10px; right: 10px;">
+    <strong id="charName">WhoAI</strong>
   </div>
+
   <div id="chatArea"></div>
-  <input type="text" id="userInput" placeholder="話しかけてみよう...">
-  <button onclick="sendMessage()">送信</button>
+
+  <form id="chatForm">
+    <input type="text" id="userInput" placeholder="話しかけてみよう" autocomplete="off" required />
+    <button type="submit">送信</button>
+  </form>
 
   <script>
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-    const macaronColor = localStorage.getItem("macaronColor") || "pink";
-    const rebirthOption = localStorage.getItem("rebirthOption");
-    const evolved = true; // この時点では必ず進化済
-
-    let talkCount = Number(localStorage.getItem("talkCount")) || 0;
-    const log = JSON.parse(localStorage.getItem("whoai_chat") || "[]");
-    const xp = Number(localStorage.getItem("xp") || 0);
-
-    const characterImg = document.getElementById("characterImg");
+    const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
+    const userName = localStorage.getItem("username") || "あなた";
+    const charName = document.getElementById("charName");
+    const img = document.getElementById("characterImg");
     const chatArea = document.getElementById("chatArea");
-    const userInput = document.getElementById("userInput");
+    const form = document.getElementById("chatForm");
+    const input = document.getElementById("userInput");
+    let turnCount = 0;
+    const MAX_TURNS = 10;
 
-    function updateCharacterImage() {
-      let color = macaronColor;
-      let stage = evolved ? "evolved" : "tane";
-      characterImg.src = `/public/assets/stage1/${stage}_${color}.gif`;
+    // キャラ画像の読み込み（記録 or 容姿 によって分岐）
+    const color = localStorage.getItem("selectedColor");
+    const isMemoryKept = localStorage.getItem("keepMemory") === "true";
+
+    if (isMemoryKept) {
+      img.src = `public/assets/stage1/evolved_${color}.gif`;
+    } else {
+      img.src = `public/assets/stage1/tane_${color}.png`;
+      localStorage.removeItem("whoai_chat"); // 容姿選択時はログ初期化
     }
 
-    function displayMessage(sender, text) {
+    const name = localStorage.getItem("username") || "WhoAI";
+    charName.textContent = name;
+
+    const log = JSON.parse(localStorage.getItem("whoai_chat") || "[]");
+
+    const appendMessage = (speaker, text) => {
       const msg = document.createElement("div");
-      msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+      msg.innerHTML = `<strong>${speaker}:</strong> ${text}`;
       chatArea.appendChild(msg);
       chatArea.scrollTop = chatArea.scrollHeight;
-    }
+    };
 
-    async function sendMessage() {
-      const message = userInput.value.trim();
-      if (!message) return;
+    // 過去ログ表示
+    log.forEach(({ role, content }) => {
+      appendMessage(role === "user" ? userName : name, content);
+    });
 
-      displayMessage("あなた", message);
-      userInput.value = "";
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const userText = input.value.trim();
+      if (!userText) return;
+      input.value = "";
+      appendMessage(userName, userText);
+      log.push({ role: "user", content: userText });
 
-      try {
-        const res = await fetch(TALK_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message })
-        });
-        const data = await res.json();
-        const reply = data.reply || "うーん、よくわからないな。";
+      const res = await fetch(TALK_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: log })
+      });
+      const data = await res.json();
+      const aiText = data.result;
+      appendMessage(name, aiText);
+      log.push({ role: "assistant", content: aiText });
 
-        displayMessage("WhoAI", reply);
-        log.push({ user: message, ai: reply });
-        localStorage.setItem("whoai_chat", JSON.stringify(log));
+      localStorage.setItem("whoai_chat", JSON.stringify(log));
 
-        talkCount++;
-        localStorage.setItem("talkCount", talkCount);
-        localStorage.setItem("xp", xp + 1);
-
-        if (talkCount >= 10) {
-          if (!rebirthOption) {
-            location.href = "rebirth.html";
-          } else {
-            location.href = "identity_check.html";
-          }
-        }
-      } catch (err) {
-        displayMessage("WhoAI", "通信に失敗しました。もう一度試してね。")
+      turnCount++;
+      if (turnCount >= MAX_TURNS) {
+        window.location.href = "identity_check.html"; // STEP11へ
       }
-    }
-
-    updateCharacterImage();
-    // 過去ログを表示
-    log.forEach(entry => {
-      displayMessage("あなた", entry.user);
-      displayMessage("WhoAI", entry.ai);
     });
   </script>
 </body>
