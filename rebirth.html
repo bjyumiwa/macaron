@@ -2,50 +2,45 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>復活の儀式 - Rebirth</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>復活の儀式</title>
   <style>
     html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;background:#000;color:#fff;
-      background-image:url("../public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      display:flex;flex-direction:column;align-items:center;justify-content:center;
-      text-align:center;padding:20px
-    }
-    h1{font-size:32px;margin-bottom:10px}
-    p{margin-bottom:20px;font-size:18px;line-height:1.6}
-    button{
-      font-size:18px;padding:12px 24px;margin:10px;
-      border:none;border-radius:8px;cursor:pointer;
-      background:#ffccf2;color:#000;font-weight:bold;
-      transition:background .3s
-    }
-    button:hover{background:#ffe6f7}
+    body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;text-align:center;display:flex;align-items:center;justify-content:center}
+    .panel{width:min(680px,94vw);background:rgba(0,0,0,.45);backdrop-filter:blur(4px);padding:24px;border-radius:18px}
+    button{padding:12px 16px;border:0;border-radius:12px;font-weight:800;cursor:pointer;margin:8px}
+    .a{background:#ffd1ec;color:#141217}
+    .m{background:rgba(255,255,255,.16);color:#fff}
+    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.75}
   </style>
 </head>
 <body>
-  <h1>復活の儀式</h1>
-  <p>あなたの選択で、これからの姿が決まります。<br>
-    「容姿を残す」→ 見た目はそのまま、会話はリセットされます。<br>
-    「記録を残す」→ 見た目は変わりますが、会話の記録は保持されます。
-  </p>
-
-  <button onclick="choose('appearance')">容姿を残す</button>
-  <button onclick="choose('memory')">記録を残す</button>
-
+  <div class="panel">
+    <h2>復活の儀式</h2>
+    <p>次のどちらかを選んでください。</p>
+    <p><strong>容姿を選ぶ</strong>：外見はそのまま、会話はリセット（0から）</p>
+    <p><strong>記録を選ぶ</strong>：会話記録を保持したまま、さらに10回会話</p>
+    <div>
+      <button class="a" id="keepApp">容姿を選ぶ</button>
+      <button class="m" id="keepMem">記録を選ぶ</button>
+    </div>
+  </div>
+  <div class="file-label">/macaron/rebirth.html</div>
   <script>
-    function choose(option){
-      if(option === 'appearance'){
-        localStorage.setItem('rebirthOption', 'appearance');
-        localStorage.setItem('talkCount', '0'); // 会話リセット
-        window.location.href = "whoai_talk.html";
-      } else if(option === 'memory'){
-        localStorage.setItem('rebirthOption', 'memory');
-        // 会話カウントは維持し、外見は変化予定
-        window.location.href = "whoai_talk.html";
-      }
-    }
+    const CHAT_KEY='whoai_chat';
+    document.getElementById('keepApp').onclick=()=>{
+      localStorage.setItem('whoai_keep','appearance');
+      localStorage.setItem('whoai_phase','post');
+      localStorage.setItem('whoai_turn','0');
+      localStorage.removeItem(CHAT_KEY); // ログリセット
+      location.href='whoai_talk.html';
+    };
+    document.getElementById('keepMem').onclick=()=>{
+      localStorage.setItem('whoai_keep','memory');
+      localStorage.setItem('whoai_phase','post');
+      localStorage.setItem('whoai_turn','0');
+      location.href='whoai_talk.html';
+    };
   </script>
 </body>
 </html>
