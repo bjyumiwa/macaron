@@ -1,4 +1,4 @@
-<!-- FILE: /macaron/naming.html  →  背景が暗くなる問題を解消した “完全版” -->
+<!-- FILE: /macaron/naming.html  → 背景をライトに、画像パスを public/ から始める完全版 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -7,23 +7,25 @@
   <title>WhoAI - 名前をつける</title>
   <style>
     html,body{height:100%;margin:0}
-    /* ▼ 明るい背景に変更（ダーク背景を使わない） */
     body{
       font-family:"Noto Sans JP",sans-serif;
-      background:#faf7fb; /* light */
+      background:#faf7fb; /* ライト背景固定 */
       color:#222; display:flex; align-items:center; justify-content:center;
-      text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased;
     }
 
     .wrap{ width:min(720px,96vw); padding:28px; }
 
     .card{
       background:#fff; border-radius:18px; padding:26px 22px; box-shadow:0 12px 40px rgba(0,0,0,.07);
+      text-align:center;
     }
     h1{ margin:0 0 10px; font-size:22px; color:#222 }
     p{ margin:0 0 18px; opacity:.85; font-size:14px }
 
-    .row{ display:flex; gap:10px; align-items:center }
+    .character{ margin:16px 0 }
+    .character img{ width:160px; max-width:50vw; display:block; margin:auto }
+
+    .row{ display:flex; gap:10px; align-items:center; justify-content:center; }
     .grow{ flex:1 }
 
     input[type="text"]{
@@ -37,29 +39,24 @@
     .ghost{ background:#f2efff; color:#332a5a }
     .btn:disabled{ opacity:.6; cursor:not-allowed }
 
-    .lang{ display:flex; gap:8px; margin-bottom:16px }
-    .tag{ font-size:12px; padding:5px 10px; border-radius:999px; background:#f2efff; color:#4c3f75; }
-
     .mini-note{ font-size:12px; opacity:.7; margin-top:10px }
 
-    /* どのHTMLか分かるように左下に表示 */
     .file-label{ position:fixed; left:10px; bottom:10px; font-size:12px; opacity:.7 }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <div class="lang">
-        <span class="tag" id="langTag">日本語</span>
-        <button id="switchLang" class="btn ghost" type="button">English</button>
+      <h1 id="title">この子に名前をつけてね</h1>
+      <p id="desc">あとで変更できます。入力したら「決定！」を押してね。</p>
+
+      <div class="character">
+        <img id="taneImg" src="public/assets/stage1/green_closed.png" alt="たねキャラ">
       </div>
 
-      <h1 id="title">キャラクターに名前をつけよう</h1>
-      <p id="desc">あとで変更できます。入力したら「つぎへ」を押してね。</p>
-
       <div class="row">
-        <div class="grow"><input id="nameInput" type="text" placeholder="みわっち など" maxlength="24" autofocus></div>
-        <button id="goBtn" class="btn primary" type="button">つぎへ</button>
+        <div class="grow"><input id="nameInput" type="text" placeholder="WhoAIの名前を入力" maxlength="24" autofocus></div>
+        <button id="goBtn" class="btn primary" type="button">決定！</button>
       </div>
       <div class="mini-note" id="note">※ 入力が空のときは「WhoAI」になります</div>
     </div>
@@ -68,56 +65,11 @@
   <div class="file-label">/macaron/naming.html</div>
 
   <script>
-    // ===== 言語切替（localStorageに保存） =====
-    const i18n = {
-      ja: {
-        langTag: '日本語', switch: 'English',
-        title: 'キャラクターに名前をつけよう',
-        desc: 'あとで変更できます。入力したら「つぎへ」を押してね。',
-        placeholder: 'みわっち など',
-        next: 'つぎへ',
-        note: '※ 入力が空のときは「WhoAI」になります'
-      },
-      en: {
-        langTag: 'English', switch: '日本語',
-        title: "Name your character",
-        desc: "You can change it later. Type a name and press 'Next'.",
-        placeholder: 'e.g., Miwacchi',
-        next: 'Next',
-        note: '※ If empty, the name will be "WhoAI"'
-      }
-    };
-
-    const LANG_KEY = 'whoai_lang';
-    let lang = (localStorage.getItem(LANG_KEY) || 'ja');
-
-    const $ = (id)=>document.getElementById(id);
-    function applyTexts(){
-      const t = i18n[lang];
-      $('langTag').textContent = t.langTag;
-      $('switchLang').textContent = t.switch;
-      $('title').textContent = t.title;
-      $('desc').textContent = t.desc;
-      $('nameInput').placeholder = t.placeholder;
-      $('goBtn').textContent = t.next;
-      $('note').textContent = t.note;
-      // ページのlang属性も更新
-      document.documentElement.lang = (lang === 'ja' ? 'ja' : 'en');
-    }
-    applyTexts();
-
-    $('switchLang').addEventListener('click', ()=>{
-      lang = (lang === 'ja' ? 'en' : 'ja');
-      localStorage.setItem(LANG_KEY, lang);
-      applyTexts();
-    });
-
-    // ===== 名前の保存 → macaron.html へ =====
     const NAME_KEY = 'whoai_name';
     const DEFAULT_NAME = 'WhoAI';
 
-    $('goBtn').addEventListener('click', saveAndGo);
-    $('nameInput').addEventListener('keydown', (e)=>{
+    document.getElementById('goBtn').addEventListener('click', saveAndGo);
+    document.getElementById('nameInput').addEventListener('keydown', (e)=>{
       if(e.key === 'Enter' && !e.isComposing){
         e.preventDefault();
         saveAndGo();
@@ -125,20 +77,15 @@
     });
 
     function saveAndGo(){
-      const v = ($('nameInput').value || '').trim();
+      const v = (document.getElementById('nameInput').value || '').trim();
       const name = v || DEFAULT_NAME;
       localStorage.setItem(NAME_KEY, name);
-      // 初期化：最初はタネ状態から始める前提（必要に応じて変更）
-      localStorage.setItem('whoai_stage', 'tane');
-      // 初期の保持設定：とくに未設定
-      // localStorage.removeItem('whoai_keep');
-      // 次の画面へ（同一ディレクトリ）
+      localStorage.setItem('whoai_stage','tane');
       location.href = 'macaron.html';
     }
 
-    // 既に名前があるなら入力欄に表示
     const existing = localStorage.getItem(NAME_KEY);
-    if(existing){ $('nameInput').value = existing; }
+    if(existing){ document.getElementById('nameInput').value = existing; }
   </script>
 </body>
 </html>
