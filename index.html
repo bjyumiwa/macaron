@@ -5,34 +5,98 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WhoAI スタート</title>
   <style>
-    html,body{height:100%;margin:0}
+    html,body{
+      height:100%;margin:0;
+      font-family:"Noto Sans JP",sans-serif;
+    }
     body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;
-      /* ▼ 宇宙背景に変更 */
-      background:#000 url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
+      display:flex;align-items:center;justify-content:center;flex-direction:column;
+      color:#fff;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      text-align:center;
+      padding:20px;
     }
     .card{
       background:rgba(0,0,0,.55);
-      border:1px solid rgba(255,255,255,.15);
-      border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.5);
-      width:min(720px,92vw);padding:28px 24px;
+      backdrop-filter:blur(6px);
+      border-radius:20px;
+      padding:30px 24px;
+      max-width:480px;width:92%;
+      box-shadow:0 10px 40px rgba(0,0,0,.4);
     }
-    h1{margin:0 0 12px;font-size:32px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
-    p{margin:0 0 18px;opacity:.95;line-height:1.7}
-    img.logo{width:200px;max-width:55vw;filter:drop-shadow(0 8px 20px rgba(0,0,0,.5));margin:0 auto 16px;display:block}
-    .btn{padding:14px 28px;border:none;border-radius:14px;background:#ffd1ec;color:#141217;font-weight:700;cursor:pointer}
-    footer{margin-top:18px;font-size:13px;opacity:.8}
-    footer a{color:#fff;text-decoration:underline}
+    h1{margin-top:0;margin-bottom:12px;font-size:28px}
+    p{margin:0 0 20px;font-size:16px;line-height:1.6}
+    .miwacchi{width:120px;margin:14px auto;display:block}
+
+    .btn{
+      display:inline-block;margin-top:10px;
+      padding:12px 18px;border-radius:12px;
+      background:#ffd1ec;color:#141217;
+      font-weight:700;cursor:pointer;
+      text-decoration:none;
+    }
+    .btn:hover{opacity:.85}
+
+    footer{margin-top:18px;font-size:14px}
+    footer a{color:#ffd1ec;text-decoration:underline}
+    footer a:hover{opacity:1}
+
+    /* 言語セレクト */
+    .lang-box{
+      position:fixed;top:12px;right:12px;
+      display:flex;align-items:center;gap:6px;
+      background:rgba(0,0,0,.4);
+      padding:6px 10px;border-radius:12px;
+    }
+    .lang-box span{font-size:16px}
+    select{
+      padding:6px 10px;
+      border-radius:10px;
+      border:1px solid #444;
+      background:#fff;   /* 白背景 */
+      color:#000;        /* 黒文字 */
+      font-weight:600;
+      cursor:pointer;
+      appearance:none;
+      -webkit-appearance:none;
+      -moz-appearance:none;
+    }
+    select:focus{outline:2px solid #ffd1ec;}
   </style>
 </head>
 <body>
-  <main class="card">
+  <!-- 言語セレクト -->
+  <div class="lang-box">
+    <span>🌐</span>
+    <select id="langSelect">
+      <option value="ja">日本語</option>
+      <option value="en">English</option>
+      <option value="zh">中文</option>
+      <option value="ko">한국어</option>
+    </select>
+  </div>
+
+  <!-- メインカード -->
+  <div class="card">
     <h1>WhoAIへようこそ</h1>
-    <img class="logo" src="public/assets/stage1/miwacchi_open.png" alt="みわっち">
+    <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="miwacchi">
     <p>あなたの選択で姿を変え、進化していきます。<br>たくさんの会話をお楽しみください。</p>
-    <button class="btn" onclick="location.href='fortune.html'">はじめる</button>
-    <footer><a href="about.html">この研究について</a></footer>
-  </main>
+    <a href="fortune.html" class="btn">はじめる</a>
+    <footer>
+      <a href="about.html">この研究について</a>
+    </footer>
+  </div>
+
+  <script>
+    // 言語選択を保存
+    const sel = document.getElementById('langSelect');
+    const saved = localStorage.getItem('whoai_ui_lang') || 'ja';
+    sel.value = saved;
+    sel.addEventListener('change',()=>{
+      localStorage.setItem('whoai_ui_lang', sel.value);
+      alert("言語設定: "+sel.options[sel.selectedIndex].text);
+    });
+  </script>
 </body>
 </html>
