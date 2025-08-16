@@ -1,198 +1,128 @@
-<!-- FILE: /macaron/whoai_talk_evolved.html  -->
+<!-- FILE: /macaron/whoai_talk_evolved.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 会話（進化後／localStorage＋エクスポート/インポート）</title>
+  <title>WhoAI - 会話（進化後）</title>
   <style>
-    /* ====== 基本スタイル ====== */
     html, body { height: 100%; margin: 0; }
     body {
-      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-      color: #fff; background: #000;
-      background-image: url("public/assets/stage1/space_background.png"); /* 背景は共通の宇宙 */
+      font-family: "Noto Sans JP", system-ui, sans-serif;
+      color: #fff;
+      background: #000;
+      background-image: url("public/assets/stage1/space_background.png");
       background-size: cover; background-position: center; background-attachment: fixed;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
       padding: 16px; gap: 12px;
     }
     .topbar {
-      width: 100%; max-width: 880px; display: flex; align-items: center; justify-content: space-between;
-      gap: 8px; padding: 8px 10px; border-radius: 14px;
+      width: 100%; max-width: 880px; display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 14px;
       background: rgba(0,0,0,.35); backdrop-filter: blur(3px);
     }
-    .topbar-left { display: flex; align-items: center; gap: 10px; }
-    .filetag { font-size: 12px; opacity: .8; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12); }
-    .badge { font-size: 12px; opacity:.9; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12); }
-    .spacer { flex: 1; }
-
-    .stage { width: 100%; max-width: 880px; border-radius: 16px; padding: 14px;
+    .filetag, .badge {
+      font-size: 12px; opacity:.9; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12);
+    }
+    .stage {
+      width: 100%; max-width: 880px; border-radius: 16px; padding: 14px;
       background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
-      display: grid; grid-template-columns: 160px 1fr; gap: 14px; }
+      display: grid; grid-template-columns: 160px 1fr; gap: 14px;
+    }
     .avatar-zone { display:flex; align-items:flex-start; justify-content:center; }
-    .avatar-zone img { width: 140px; height: auto; filter: drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
-
+    .avatar-zone img { width: 160px; height: auto; filter: drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
     .chat-zone { display:flex; flex-direction:column; gap:10px; }
-    .name-row { display:flex; align-items:center; gap:8px; opacity:.95; font-weight:700; }
-    .name-row small { opacity:.8; font-weight:500; }
-
-    #chatArea { background: rgba(255,255,255,.1); border-radius: 12px; padding: 12px;
-      height: 420px; overflow-y: auto; scroll-behavior: smooth; }
+    .name-row { font-weight:700; opacity:.95; }
+    #chatArea {
+      background: rgba(255,255,255,.1); border-radius: 12px; padding: 12px;
+      height: 420px; overflow-y: auto; scroll-behavior: smooth;
+    }
     .msg { margin: 8px 0; display:flex; }
     .msg.user { justify-content: flex-end; }
     .msg.assistant { justify-content: flex-start; }
-    .bubble { max-width: 75%; padding: 10px 12px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; background: rgba(255,255,255,.12); }
-    .msg.user .bubble { background: rgba(61, 180, 255, .2); }
-    .msg.assistant .bubble { background: rgba(255, 97, 200, .2); }
+    .bubble {
+      max-width: 75%; padding: 10px 12px; border-radius: 12px; line-height: 1.6;
+      white-space: pre-wrap; word-wrap: break-word; background: rgba(255,255,255,.12);
+    }
+    .msg.user .bubble { background: rgba(61,180,255,.2); }
+    .msg.assistant .bubble { background: rgba(255,97,200,.2); }
     .role { display:block; font-size: 12px; opacity:.8; margin-bottom:4px; }
-
     .controls { display:flex; gap:8px; align-items:center; }
-    input[type="text"]{ flex: 1; min-width: 120px; padding: 10px 12px; border-radius: 10px; border: none; background: rgba(255,255,255,.9); color:#111; outline:none; }
-    button{ padding: 10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700; background:#ffd1ec; color:#111; }
-    button:disabled{ opacity:.6; cursor:not-allowed; }
-    .secondary{ background: rgba(255,255,255,.85); }
-
-    .hint{ font-size:12px; opacity:.85; }
-    .foot{ width:100%; max-width:880px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-
-    @media (max-width: 680px) { .stage { grid-template-columns: 1fr; } .avatar-zone{ order:2;} .chat-zone{ order:1;} }
+    input[type="text"] {
+      flex: 1; padding: 10px 12px; border-radius: 10px; border: none;
+      background: rgba(255,255,255,.9); color: #111; outline: none;
+    }
+    button {
+      padding: 10px 14px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700;
+      background: #ffd1ec; color: #111;
+    }
+    button:disabled { opacity:.6; cursor: not-allowed; }
+    .hint { font-size: 12px; opacity:.85; margin-top:8px; }
+    @media (max-width: 680px) {
+      .stage { grid-template-columns: 1fr; }
+      .avatar-zone { order: 2; }
+      .chat-zone { order: 1; }
+    }
   </style>
 </head>
 <body>
   <div class="topbar">
-    <div class="topbar-left">
-      <span class="filetag">FILE: /macaron/whoai_talk_evolved.html</span>
-      <span class="badge" id="userBadge">user: -</span>
-      <span class="badge" id="convoBadge">convo: -</span>
-      <span class="badge" id="windowBadge">window: 12</span>
-      <span class="badge" id="stageBadge">stage: evolved</span>
-    </div>
-    <div class="spacer"></div>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button id="btnExport" class="secondary" title="JSONで会話を保存">エクスポート</button>
-      <input id="fileImport" type="file" accept="application/json" style="display:none" />
-      <button id="btnImport" class="secondary" title="JSONから会話を読み込み">インポート</button>
-      <button id="btnReset" class="secondary" title="会話ログを消去（＝容姿を残す挙動）">会話をリセット</button>
-    </div>
+    <span class="filetag">FILE: /macaron/whoai_talk_evolved.html</span>
+    <span class="badge" id="userBadge">user: -</span>
+    <span class="badge" id="convoBadge">convo: -</span>
+    <span class="badge" id="windowBadge">window: 12</span>
   </div>
 
   <div class="stage">
     <div class="avatar-zone">
-      <img id="characterImg" alt="character" src="" />
+      <img id="charImg" alt="character" src="" />
     </div>
-
     <div class="chat-zone">
-      <div class="name-row">
-        <div>会話相手：<span id="assistantName">WhoAI</span> <small>(進化後/色はローカル設定に同期)</small></div>
-      </div>
-
+      <div class="name-row">会話相手：<span id="assistantName">WhoAI</span>（進化後）</div>
       <div id="chatArea"></div>
-
       <div class="controls">
         <input id="userInput" type="text" placeholder="メッセージを入力…（Enterで送信）" />
         <button id="btnSend">送信</button>
       </div>
-
-      <div class="hint">
-        ※ このページも <b>localStorage</b> に会話を保存し、<b>直近12発言</b>を API に同封します（方法A）。<br/>
-        進化後に引き継ぎたい場合はログを保持、やり直したい場合はリセットを押してね。
-      </div>
+      <div class="hint">※ 直近12発言をAPIに同封し、会話はlocalStorageに保存されます。</div>
     </div>
   </div>
 
-  <div class="foot">
-    <div class="hint">TALK_ENDPOINT は既存のまま固定。history/messages を同梱（サーバーが無視しても問題なし）。</div>
-  </div>
-
   <script>
-    // =============================================================
-    //  設定（必要に応じて調整）
-    // =============================================================
     const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
     const WINDOW_N = 12;
-    const SEND_HISTORY_IN_BODY = true;
 
-    // 進化後のキャラクター画像候補（stage2 → stage1 フォールバック）
-    // ※ 実在するファイル名に合わせて必要なら修正してください
-    const COLOR_TO_IMG_CANDIDATES = {
-      pink:   ['public/assets/stage2/pink_closed.png',   'public/assets/stage1/pink_closed.png'],
-      blue:   ['public/assets/stage2/blue_closed.png',   'public/assets/stage1/blue_closed.png'],
-      green:  ['public/assets/stage2/green_closed.png',  'public/assets/stage1/green_closed.png'],
-      purple: ['public/assets/stage2/purple_closed.png', 'public/assets/stage1/purple_closed.png']
+    // 色ごとの画像マッピング
+    const EVOLVED_SRC = {
+      pink:   { closed: 'pink_closed.png',  open: 'pink_open.png' },
+      blue:   { closed: 'blue_closed.png',  open: 'blue_open.png' },
+      green:  { closed: 'green_closed.png', open: 'green_open.png' },
+      purple: { closed: 'purple_closed.png',open: 'purple_open.png' }
     };
+    const color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
+    const base = 'public/assets/stage1';
+    const charImg = document.getElementById('charImg');
 
-    // 口パク等のアニメ用途：talking画像があるなら差し替えたいとき用（未使用ならそのまま）
-    const COLOR_TALKING_CANDIDATES = {
-      pink:   ['public/assets/stage2/pink_talking.png'],
-      blue:   ['public/assets/stage2/blue_talking.png'],
-      green:  ['public/assets/stage2/green_talking.png'],
-      purple: ['public/assets/stage2/purple_talking.png']
-    };
+    // 初期は閉じ目
+    charImg.src = `${base}/${EVOLVED_SRC[color]?.closed || EVOLVED_SRC.green.closed}`;
 
-    // =============================================================
-    //  localStorage 名前空間（端末ごとの userId / 会話ごとの convoId）
-    //  進化前と同じIDを使うので、会話はシームレスに継続します。
-    // =============================================================
-    const getOrCreate = (k) => {
-      const v = localStorage.getItem(k);
-      if (v) return v;
-      const nv = crypto.randomUUID();
-      localStorage.setItem(k, nv); return nv;
-    };
-    const userId = getOrCreate('whoai_userId');
-    const convoId = getOrCreate('whoai_conversationId');
-    const key = (suffix) => `whoai:${userId}:${convoId}:${suffix}`;
-
-    const readLog  = () => JSON.parse(localStorage.getItem(key('chatLog')) || '[]');
-    const writeLog = (log) => localStorage.setItem(key('chatLog'), JSON.stringify(log));
-    const resetLog = () => localStorage.removeItem(key('chatLog'));
-
-    // 任意設定
-    const playerName = localStorage.getItem('whoai_player_name') || 'あなた';
-    const assistantName = localStorage.getItem('whoai_character_name') || 'WhoAI';
-    const color = (localStorage.getItem('whoai_color') || '').toLowerCase();
-    localStorage.setItem('whoai_stage', 'evolved'); // 進化段階を記録（UIや遷移で使える）
-
-    // =============================================================
-    //  UI 初期化
-    // =============================================================
-    const userBadge = document.getElementById('userBadge');
-    const convoBadge = document.getElementById('convoBadge');
-    const windowBadge = document.getElementById('windowBadge');
-    const chatArea = document.getElementById('chatArea');
-    const userInput = document.getElementById('userInput');
-    const btnSend = document.getElementById('btnSend');
-    const btnExport = document.getElementById('btnExport');
-    const btnImport = document.getElementById('btnImport');
-    const btnReset = document.getElementById('btnReset');
-    const fileImport = document.getElementById('fileImport');
-    const characterImg = document.getElementById('characterImg');
-    document.getElementById('assistantName').textContent = assistantName;
-
-    userBadge.textContent = `user: ${userId.slice(0,8)}`;
-    convoBadge.textContent = `convo: ${convoId.slice(0,8)}`;
-    windowBadge.textContent = `window: ${WINDOW_N}`;
-
-    // 画像の段階的フォールバック（stage2がなければstage1）
-    function setCharacterImage() {
-      const cands = COLOR_TO_IMG_CANDIDATES[color];
-      if (!cands || !cands.length) { characterImg.style.display = 'none'; return; }
-      let idx = 0;
-      const trySet = () => {
-        if (idx >= cands.length) { characterImg.style.display = 'none'; return; }
-        const src = cands[idx++];
-        const img = new Image();
-        img.onload = () => { characterImg.src = src; characterImg.style.display = ''; };
-        img.onerror = trySet; // 次候補へ
-        img.src = src;
-      };
-      trySet();
+    // 喋ったときに開くアニメーション
+    function speakAnimation() {
+      charImg.src = `${base}/${EVOLVED_SRC[color]?.open || EVOLVED_SRC.green.open}`;
+      setTimeout(()=>{
+        charImg.src = `${base}/${EVOLVED_SRC[color]?.closed || EVOLVED_SRC.green.closed}`;
+      }, 1200);
     }
-    setCharacterImage();
 
-    // =============================================================
-    //  チャット描画
-    // =============================================================
+    // 会話ログ管理
+    const key = (s) => `whoai:evolved:${s}`;
+    const readLog = () => JSON.parse(localStorage.getItem(key('chatLog')) || '[]');
+    const writeLog = (log) => localStorage.setItem(key('chatLog'), JSON.stringify(log));
+
+    const playerName = 'あなた';
+    const assistantName = 'WhoAI';
+
+    const chatArea = document.getElementById('chatArea');
     function renderChat() {
       const log = readLog();
       chatArea.innerHTML = '';
@@ -203,9 +133,9 @@
         bubble.className = 'bubble';
         const role = document.createElement('span');
         role.className = 'role';
-        role.textContent = (m.role === 'user') ? `${playerName}：` : `${assistantName}：`;
+        role.textContent = (m.role==='user')?`${playerName}：`:`${assistantName}：`;
         bubble.appendChild(role);
-        bubble.appendChild(document.createTextNode(m.content || ''));
+        bubble.appendChild(document.createTextNode(m.content||''));
         div.appendChild(bubble);
         chatArea.appendChild(div);
       }
@@ -213,96 +143,46 @@
     }
     renderChat();
 
-    // =============================================================
-    //  送信処理（方法A：直近N発言を API に同封）
-    // =============================================================
+    // 送信処理
     async function talk(userText) {
-      // user追加
+      if (!userText) return;
       let log = readLog();
-      log.push({ role: 'user', content: userText, ts: Date.now() });
-      writeLog(log);
-      renderChat();
+      log.push({ role:'user', content:userText, ts:Date.now() });
+      writeLog(log); renderChat();
 
-      // 同封履歴
-      const history = log.slice(-WINDOW_N).map(({ role, content }) => ({ role, content }));
-
-      // ペイロード
-      const payload = SEND_HISTORY_IN_BODY ? {
-        userText, text: userText, history, messages: history
-      } : (() => {
-        const stitched = history.map(m => `${m.role === 'user' ? playerName : assistantName}: ${m.content}`).join('\n')
-          + `\n${playerName}: ${userText}`;
-        return { userText: stitched, text: stitched };
-      })();
-
-      // 送信
-      btnSend.disabled = true; userInput.disabled = true;
+      const history = log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
       let replyText = '';
       try {
-        const res = await fetch(TALK_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        const data = await res.json().catch(() => ({}));
-        replyText = data.reply || data.message || data.content
-          || (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content)
-          || data.text || '';
-        if (!replyText) replyText = '…';
-      } catch (e) {
-        replyText = '（通信エラー：応答を受信できませんでした）';
-        console.error(e);
-      } finally {
-        btnSend.disabled = false; userInput.disabled = false; userInput.focus();
+        const res = await fetch(TALK_ENDPOINT,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ userText, history })
+        });
+        const data = await res.json().catch(()=>({}));
+        replyText = data.reply || data.message || data.content || '…';
+      } catch(e) {
+        replyText = '（通信エラー）';
       }
 
-      // assistant追加
+      // ログにassistant追加
       log = readLog();
-      log.push({ role: 'assistant', content: replyText, ts: Date.now() });
-      writeLog(log);
-      renderChat();
+      log.push({ role:'assistant', content:replyText, ts:Date.now() });
+      writeLog(log); renderChat();
+
+      // 喋ったら目を開ける演出
+      speakAnimation();
     }
 
-    // =============================================================
-    //  イベント
-    // =============================================================
-    document.getElementById('btnSend').addEventListener('click', () => {
-      const text = userInput.value.trim();
-      if (!text) return;
-      userInput.value = '';
-      talk(text);
+    // イベント
+    const userInput=document.getElementById('userInput');
+    const btnSend=document.getElementById('btnSend');
+    btnSend.addEventListener('click',()=>{
+      const t=userInput.value.trim();
+      if(!t) return;
+      userInput.value='';
+      talk(t);
     });
-    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); document.getElementById('btnSend').click(); } });
-
-    btnReset.addEventListener('click', () => {
-      if (!confirm('会話ログを削除してリセットします（＝「容姿を残す」の挙動）。よろしいですか？')) return;
-      resetLog();
-      renderChat();
-    });
-
-    btnExport.addEventListener('click', () => {
-      const log = readLog();
-      const payload = { meta: { version: 1, exportedAt: new Date().toISOString(), userId, convoId, windowN: WINDOW_N, playerName, assistantName, color, stage: 'evolved' }, chatLog: log };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      const ts = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-      const fileName = `whoai_chatLog_evolved_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}.json`;
-      a.href = URL.createObjectURL(blob); a.download = fileName;
-      document.body.appendChild(a); a.click(); a.remove();
-    });
-
-    btnImport.addEventListener('click', () => fileImport.click());
-    fileImport.addEventListener('change', (e) => {
-      const file = e.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const data = JSON.parse(reader.result);
-          const imported = Array.isArray(data) ? data : (Array.isArray(data.chatLog) ? data.chatLog : null);
-          if (!imported) throw new Error('フォーマットが不正です。');
-          const sanitized = imported.filter(x => x && typeof x === 'object' && typeof x.content === 'string' && (x.role === 'user' || x.role === 'assistant')).map(x => ({ role: x.role, content: x.content, ts: x.ts || Date.now() }));
-          writeLog(sanitized); renderChat(); alert('インポート完了。');
-        } catch (err) { console.error(err); alert('インポートに失敗しました。JSON形式を確認してください。'); }
-        finally { e.target.value = ''; }
-      };
-      reader.readAsText(file, 'utf-8');
+    userInput.addEventListener('keydown',e=>{
+      if(e.key==='Enter'&&!e.isComposing){e.preventDefault();btnSend.click();}
     });
   </script>
 </body>
