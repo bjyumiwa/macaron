@@ -6,9 +6,14 @@
   <title>最後の確認</title>
   <style>
     html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;display:flex;align-items:center;justify-content:center}
-    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);padding:26px 22px;text-align:center;width:min(720px,94vw)}
-    a.btn{display:inline-block;margin-top:10px;padding:12px 16px;border-radius:12px;background:#6f4cff;color:#fff;text-decoration:none;font-weight:800}
+    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;
+      display:flex;align-items:center;justify-content:center}
+    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);
+      padding:26px 22px;text-align:center;width:min(720px,94vw)}
+    a.btn,button.btn{display:inline-block;margin-top:10px;padding:12px 16px;
+      border-radius:12px;background:#6f4cff;color:#fff;text-decoration:none;
+      font-weight:800;cursor:pointer;border:none}
+    button.btn{background:#333}
     .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
@@ -17,41 +22,32 @@
     <h2>アンケートへ</h2>
     <p>ご協力ありがとうございました。最後にアンケートにお答えください。</p>
     <a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header" target="_blank" rel="noopener">Googleフォームを開く</a>
+
+    <!-- ▼ 追加：全消去して最初に戻る -->
+    <div style="margin-top:16px">
+      <button id="backToStart" class="btn">スタートに戻る（記録を全消去）</button>
+    </div>
   </div>
   <div class="file-label">/macaron/identity_check.html</div>
-</body>
-</html>
 
-<!-- ===============================
-(オプション) FILE: /macaron/reset.html
-説明: 一発初期化ボタン（開発時に便利）
-=============================== -->
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI Reset</title>
-  <style>
-    body{font-family:sans-serif;background:#faf7fb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;color:#222}
-    .card{background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.07);padding:24px 20px;text-align:center;width:min(520px,92vw)}
-    button{padding:12px 16px;border:0;border-radius:12px;font-weight:700;background:#6f4cff;color:#fff;cursor:pointer}
-    .note{font-size:12px;opacity:.7;margin-top:10px}
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h2>WhoAI を初期化しますか？</h2>
-    <p>保存している名前・色・会話回数などを消して、最初からやり直します。</p>
-    <button id="resetBtn">初期化して最初の画面へ</button>
-    <div class="note">削除対象: whoai_* / macaronColor / whoai_chat など</div>
-  </div>
-<script>
-  document.getElementById('resetBtn').onclick=()=>{
-    Object.keys(localStorage).forEach(k=>{ if(/^(whoai_|macaron)/.test(k)) localStorage.removeItem(k); });
-    ['whoai_chat','whoai_name','whoai_stage','whoai_keep','macaronColor','whoai_turn','whoai_phase'].forEach(k=>localStorage.removeItem(k));
-    location.href='macaron.html?v=reset';
-  };
-</script>
+  <script>
+    function clearWhoAI() {
+      // WhoAI / macaron 関連を全削除
+      Object.keys(localStorage).forEach(k=>{
+        if (/^(whoai_|macaron)/.test(k)) localStorage.removeItem(k);
+      });
+      ['whoai_chat','whoai_name','whoai_stage','whoai_keep',
+       'macaronColor','whoai_turn','whoai_phase'].forEach(
+        k=>localStorage.removeItem(k)
+      );
+      // 保険フラグ
+      localStorage.setItem('whoai_auto_reset','1');
+    }
+
+    document.getElementById('backToStart').addEventListener('click', ()=>{
+      clearWhoAI();
+      location.href = 'macaron.html?v=fresh';
+    });
+  </script>
 </body>
 </html>
