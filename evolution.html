@@ -39,10 +39,13 @@
     img.onerror = ()=>{ img.onerror=null; img.src = `${base}/${EVOLVED_SRC.purple}`; };
     img.src = `${base}/${EVOLVED_SRC[color] || EVOLVED_SRC.purple}`;
 
+    // 進化したことを記録
     localStorage.setItem('whoai_stage','evolved');
     localStorage.setItem('whoai_turn','0');
     localStorage.setItem('whoai_phase','pre');
-    setTimeout(()=>{ location.href='whoai_talk.html'; }, 1100);
+
+    // ★ここを修正：進化後の会話ページにジャンプ
+    setTimeout(()=>{ location.href='whoai_talk_evolved.html'; }, 1100);
   </script>
 </body>
 </html>
