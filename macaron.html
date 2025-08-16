@@ -1,41 +1,53 @@
+<!-- /macaron.html ー 色選択ページ（既にあるならそのままでOK） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI スタート</title>
+  <title>好きなマカロンを選んでね</title>
   <style>
-    /* 既存スタイル省略 */
-    footer {
-      margin-top: 20px;
-      font-size: 13px;
-      opacity: .75;
-    }
-    footer a {
-      color: #fff;
-      text-decoration: underline;
-    }
-    footer a:hover {
-      opacity: 1;
-    }
+    html,body{height:100%;margin:0}
+    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;
+      display:flex;align-items:center;justify-content:center}
+    .wrap{width:min(980px,96vw);padding:24px}
+    h1{font-size:26px;margin:0 0 22px;text-align:center}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);
+      padding:18px;text-align:center;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
+    .card:hover{transform:translateY(-2px);box-shadow:0 14px 46px rgba(0,0,0,.10)}
+    .card img{width:120px;aspect-ratio:1/1;object-fit:contain;display:block;margin:8px auto 10px}
+    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>WhoAIへようこそ</h1>
-    <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="miwacchi">
-
-    <p>
-      あなたの選択で姿を変え、進化していきます。<br>
-      たくさんの会話をお楽しみください。
-    </p>
-
-    <a href="macaron.html" class="btn">はじめる</a>
-
-    <!-- ▼ 控えめな研究説明リンク -->
-    <footer>
-      <a href="about.html">この研究について</a>
-    </footer>
+  <div class="wrap">
+    <h1>好きなマカロンを選んでね</h1>
+    <div class="grid">
+      <div class="card" data-color="pink"><img src="public/assets/stage1/macaron_pink.png" alt="pink"></div>
+      <div class="card" data-color="blue"><img src="public/assets/stage1/macaron_blue.png" alt="blue"></div>
+      <div class="card" data-color="green"><img src="public/assets/stage1/macaron_green.png" alt="green"></div>
+      <div class="card" data-color="purple"><img src="public/assets/stage1/macaron_purple.png" alt="purple"></div>
+    </div>
   </div>
+  <div class="file-label">/macaron/macaron.html</div>
+
+  <script>
+    const allowed = ['pink','blue','green','purple'];
+    function saveColorAndGo(c){
+      const color = (c||'').toLowerCase().trim();
+      const chosen = allowed.includes(color)? color : 'green';
+      localStorage.setItem('macaronColor', chosen);
+      localStorage.setItem('whoai_stage','tane');
+      localStorage.setItem('whoai_turn','0');
+      localStorage.removeItem('whoai_phase');
+      location.href = 'naming.html';
+    }
+    document.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click',()=>saveColorAndGo(card.getAttribute('data-color')));
+      card.addEventListener('keydown',e=>{
+        if(e.key==='Enter'||e.key===' '){ e.preventDefault(); saveColorAndGo(card.getAttribute('data-color')); }
+      });
+    });
+  </script>
 </body>
 </html>
