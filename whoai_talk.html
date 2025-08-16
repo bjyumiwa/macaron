@@ -4,28 +4,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 会話（localStorage＋エクスポート/インポート）</title>
+  <title>WhoAI - 会話（localStorage＋自動保存）</title>
   <style>
     /* ====== 基本スタイル ====== */
     html, body { height: 100%; margin: 0; }
     body {
-      font-family: "Noto Sans JP", system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      font-family: "Noto Sans JP", system-ui, sans-serif;
       color: #fff;
       background: #000;
-      background-image: url("public/assets/stage1/space_background.png"); /* ← 画像は必ず public/ から */
+      background-image: url("public/assets/stage1/space_background.png");
       background-size: cover; background-position: center; background-attachment: fixed;
       display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
       padding: 16px; gap: 12px;
     }
-
     .topbar {
       width: 100%; max-width: 880px; display: flex; align-items: center; justify-content: space-between;
       gap: 8px; padding: 8px 10px; border-radius: 14px;
       background: rgba(0,0,0,.35); backdrop-filter: blur(3px);
     }
-    .topbar-left { display: flex; align-items: center; gap: 10px; }
-    .filetag { font-size: 12px; opacity: .8; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12); }
-    .badge { font-size: 12px; opacity:.9; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12); }
+    .filetag, .badge {
+      font-size: 12px; opacity:.9; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12);
+    }
     .spacer { flex: 1; }
 
     .stage {
@@ -37,8 +36,7 @@
     .avatar-zone img { width: 140px; height: auto; filter: drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
 
     .chat-zone { display:flex; flex-direction:column; gap:10px; }
-    .name-row { display:flex; align-items:center; gap:8px; opacity:.95; font-weight:700; }
-    .name-row small { opacity:.8; font-weight:500; }
+    .name-row { font-weight:700; opacity:.95; }
 
     #chatArea {
       background: rgba(255,255,255,.1); border-radius: 12px; padding: 12px;
@@ -51,13 +49,13 @@
       max-width: 75%; padding: 10px 12px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;
       background: rgba(255,255,255,.12);
     }
-    .msg.user .bubble { background: rgba(61, 180, 255, .2); }
-    .msg.assistant .bubble { background: rgba(255, 97, 200, .2); }
+    .msg.user .bubble { background: rgba(61,180,255,.2); }
+    .msg.assistant .bubble { background: rgba(255,97,200,.2); }
     .role { display:block; font-size: 12px; opacity:.8; margin-bottom:4px; }
 
     .controls { display:flex; gap:8px; align-items:center; }
     input[type="text"] {
-      flex: 1; min-width: 120px; padding: 10px 12px; border-radius: 10px; border: none;
+      flex: 1; padding: 10px 12px; border-radius: 10px; border: none;
       background: rgba(255,255,255,.9); color: #111; outline: none;
     }
     button {
@@ -65,12 +63,9 @@
       background: #ffd1ec; color: #111;
     }
     button:disabled { opacity:.6; cursor: not-allowed; }
-    .secondary { background: rgba(255,255,255,.85); }
 
-    .hint { font-size: 12px; opacity:.85; }
-    .foot { width: 100%; max-width: 880px; display:flex; gap:8px; flex-wrap: wrap; align-items:center; }
+    .hint { font-size: 12px; opacity:.85; margin-top:8px; }
 
-    /* スモールレイアウト */
     @media (max-width: 680px) {
       .stage { grid-template-columns: 1fr; }
       .avatar-zone { order: 2; }
@@ -80,269 +75,128 @@
 </head>
 <body>
   <div class="topbar">
-    <div class="topbar-left">
-      <span class="filetag">FILE: /macaron/whoai_talk.html</span>
-      <span class="badge" id="userBadge">user: -</span>
-      <span class="badge" id="convoBadge">convo: -</span>
-      <span class="badge" id="windowBadge">window: 12</span>
-    </div>
-    <div class="spacer"></div>
-    <div style="display:flex; gap:8px; align-items:center;">
-      <button id="btnExport" class="secondary" title="JSONで会話を保存">エクスポート</button>
-      <input id="fileImport" type="file" accept="application/json" style="display:none" />
-      <button id="btnImport" class="secondary" title="JSONから会話を読み込み">インポート</button>
-      <button id="btnReset" class="secondary" title="会話ログを消去（＝容姿を残す挙動）">会話をリセット</button>
-    </div>
+    <span class="filetag">FILE: /macaron/whoai_talk.html</span>
+    <span class="badge" id="userBadge">user: -</span>
+    <span class="badge" id="convoBadge">convo: -</span>
+    <span class="badge" id="windowBadge">window: 12</span>
   </div>
 
   <div class="stage">
     <div class="avatar-zone">
       <img id="characterImg" alt="character" src="" />
     </div>
-
     <div class="chat-zone">
-      <div class="name-row">
-        <div>会話相手：<span id="assistantName">WhoAI</span> <small>(進化/色はローカル設定に同期)</small></div>
-      </div>
-
+      <div class="name-row">会話相手：<span id="assistantName">WhoAI</span></div>
       <div id="chatArea"></div>
-
       <div class="controls">
         <input id="userInput" type="text" placeholder="メッセージを入力…（Enterで送信）" />
         <button id="btnSend">送信</button>
       </div>
-
       <div class="hint">
-        ※ このページは <b>localStorage</b> に会話を保存し、<b>直近12発言</b>を API に同封します（方法A）。<br/>
-        共有PCでは別プロフィールの利用を推奨。インポート/エクスポートで端末間移動も可能。
+        ※ 会話は <b>localStorage</b> に自動保存され、直近12発言を API に同封します。
       </div>
     </div>
   </div>
 
-  <div class="foot">
-    <div class="hint">TALK_ENDPOINT は既存のまま固定。history を同梱します（サーバー側が無視しても動作するフォールバック付）。</div>
-  </div>
-
   <script>
     // =============================================================
-    //  設定（必要に応じて調整）
+    // 設定
     // =============================================================
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // ← 既存のまま固定
-    const WINDOW_N = 12;             // 直近何発言を同封するか
-    const SEND_HISTORY_IN_BODY = true; // true: JSONでhistory/messages送付, false: 文字列に縫い付け
+    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+    const WINDOW_N = 12;
 
-    // カラーマッピング（localStorageの whoai_color に応じて画像を切替）
+    // キャラ画像マッピング（tane_◯◯ に修正）
     const COLOR_TO_IMG = {
-      pink:   'public/assets/stage1/pink_closed.png',
-      blue:   'public/assets/stage1/blue_closed.png',
-      green:  'public/assets/stage1/green_closed.png',
-      purple: 'public/assets/stage1/purple_closed.png'
+      pink:   'public/assets/stage1/tane_pink.png',
+      blue:   'public/assets/stage1/tane_blue.png',
+      green:  'public/assets/stage1/tane_green.png',
+      purple: 'public/assets/stage1/tane_purple.png'
     };
 
-    // =============================================================
-    //  localStorage 名前空間（端末ごとの userId / 会話ごとの convoId）
-    // =============================================================
-    const getOrCreate = (k) => {
-      const v = localStorage.getItem(k);
-      if (v) return v;
-      const nv = crypto.randomUUID();
-      localStorage.setItem(k, nv);
-      return nv;
-    };
-    const userId = getOrCreate('whoai_userId');
-    const convoId = getOrCreate('whoai_conversationId');
-    const key = (suffix) => `whoai:${userId}:${convoId}:${suffix}`;
+    // localStorageの識別子
+    const userId = crypto.randomUUID();
+    const convoId = crypto.randomUUID();
+    const key = (s) => `whoai:${s}`;
 
-    const readLog  = () => JSON.parse(localStorage.getItem(key('chatLog')) || '[]');
+    const readLog = () => JSON.parse(localStorage.getItem(key('chatLog')) || '[]');
     const writeLog = (log) => localStorage.setItem(key('chatLog'), JSON.stringify(log));
-    const resetLog = () => localStorage.removeItem(key('chatLog'));
 
-    // 任意で保存されている可能性のある情報
-    const playerName = localStorage.getItem('whoai_player_name') || 'あなた';
-    const assistantName = localStorage.getItem('whoai_character_name') || 'WhoAI';
-    const color = (localStorage.getItem('whoai_color') || '').toLowerCase();
+    const playerName = 'あなた';
+    const assistantName = 'WhoAI';
+    const color = (localStorage.getItem('whoai_color') || 'green').toLowerCase();
 
     // =============================================================
-    //  UI 初期化
+    // UI 初期化
     // =============================================================
-    const userBadge = document.getElementById('userBadge');
-    const convoBadge = document.getElementById('convoBadge');
-    const windowBadge = document.getElementById('windowBadge');
-    const chatArea = document.getElementById('chatArea');
-    const userInput = document.getElementById('userInput');
-    const btnSend = document.getElementById('btnSend');
-    const btnExport = document.getElementById('btnExport');
-    const btnImport = document.getElementById('btnImport');
-    const btnReset = document.getElementById('btnReset');
-    const fileImport = document.getElementById('fileImport');
-    const characterImg = document.getElementById('characterImg');
     document.getElementById('assistantName').textContent = assistantName;
+    document.getElementById('userBadge').textContent = `user: ${userId.slice(0,8)}`;
+    document.getElementById('convoBadge').textContent = `convo: ${convoId.slice(0,8)}`;
+    document.getElementById('windowBadge').textContent = `window: ${WINDOW_N}`;
 
-    userBadge.textContent = `user: ${userId.slice(0,8)}`;
-    convoBadge.textContent = `convo: ${convoId.slice(0,8)}`;
-    windowBadge.textContent = `window: ${WINDOW_N}`;
-
-    // キャラ画像（色が未設定なら非表示）
+    const characterImg = document.getElementById('characterImg');
     if (COLOR_TO_IMG[color]) {
       characterImg.src = COLOR_TO_IMG[color];
     } else {
       characterImg.style.display = 'none';
     }
 
-    // =============================================================
-    //  チャット描画
-    // =============================================================
+    const chatArea = document.getElementById('chatArea');
     function renderChat() {
       const log = readLog();
       chatArea.innerHTML = '';
       for (const m of log) {
         const div = document.createElement('div');
-        div.className = `msg ${m.role}`; // 'user' or 'assistant'
+        div.className = `msg ${m.role}`;
         const bubble = document.createElement('div');
         bubble.className = 'bubble';
         const role = document.createElement('span');
         role.className = 'role';
-        role.textContent = (m.role === 'user') ? `${playerName}：` : `${assistantName}：`;
+        role.textContent = (m.role==='user')?`${playerName}：`:`${assistantName}：`;
         bubble.appendChild(role);
-        bubble.appendChild(document.createTextNode(m.content || ''));
+        bubble.appendChild(document.createTextNode(m.content||''));
         div.appendChild(bubble);
         chatArea.appendChild(div);
       }
       chatArea.scrollTop = chatArea.scrollHeight;
     }
-
     renderChat();
 
     // =============================================================
-    //  送信処理（方法A：直近N発言を API に同封）
+    // 送信処理
     // =============================================================
     async function talk(userText) {
-      // 1) ログに user を追加
+      if (!userText) return;
       let log = readLog();
-      log.push({ role: 'user', content: userText, ts: Date.now() });
-      writeLog(log);
-      renderChat();
+      log.push({ role:'user', content:userText, ts:Date.now() });
+      writeLog(log); renderChat();
 
-      // 2) 同封する履歴を準備
-      const history = log.slice(-WINDOW_N).map(({ role, content }) => ({ role, content }));
-
-      // 3) ペイロード（サーバーが history/messages を無視してもよいようフォールバックも準備）
-      let payload;
-      if (SEND_HISTORY_IN_BODY) {
-        payload = {
-          userText,                 // サーバーが text を見る場合用
-          text: userText,           // 別名も入れておく
-          history,                  // 会話の配列（ChatML的）
-          messages: history         // 同じ意味で別名（保険）
-        };
-      } else {
-        const stitched = history.map(m => `${m.role === 'user' ? playerName : assistantName}: ${m.content}`).join('\n')
-                        + `\n${playerName}: ${userText}`;
-        payload = { userText: stitched, text: stitched };
-      }
-
-      // 4) 呼び出し
-      btnSend.disabled = true; userInput.disabled = true;
+      const history = log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
       let replyText = '';
       try {
-        const res = await fetch(TALK_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+        const res = await fetch(TALK_ENDPOINT,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ userText, history })
         });
-        const data = await res.json().catch(() => ({}));
-        // 返り値の代表的なパターンに対応
-        replyText = data.reply || data.message || data.content
-                   || (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content)
-                   || data.text || '';
-        if (!replyText) replyText = '…';
-      } catch (e) {
-        replyText = '（通信エラー：応答を受信できませんでした）';
-        console.error(e);
-      } finally {
-        btnSend.disabled = false; userInput.disabled = false; userInput.focus();
+        const data = await res.json().catch(()=>({}));
+        replyText = data.reply || data.message || data.content || '…';
+      } catch(e) {
+        replyText = '（通信エラー）';
       }
-
-      // 5) ログに assistant を追加
       log = readLog();
-      log.push({ role: 'assistant', content: replyText, ts: Date.now() });
-      writeLog(log);
-      renderChat();
+      log.push({ role:'assistant', content:replyText, ts:Date.now() });
+      writeLog(log); renderChat();
     }
 
-    // =============================================================
-    //  イベント
-    // =============================================================
-    btnSend.addEventListener('click', () => {
-      const text = userInput.value.trim();
-      if (!text) return;
-      userInput.value = '';
-      talk(text);
+    const userInput=document.getElementById('userInput');
+    const btnSend=document.getElementById('btnSend');
+    btnSend.addEventListener('click',()=>{
+      const t=userInput.value.trim();
+      if(!t) return;
+      userInput.value='';
+      talk(t);
     });
-    userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.isComposing) {
-        e.preventDefault();
-        btnSend.click();
-      }
-    });
-
-    btnReset.addEventListener('click', () => {
-      if (!confirm('会話ログを削除してリセットします（＝「容姿を残す」の挙動）。よろしいですか？')) return;
-      resetLog();
-      renderChat();
-    });
-
-    btnExport.addEventListener('click', () => {
-      const log = readLog();
-      const payload = {
-        meta: {
-          version: 1,
-          exportedAt: new Date().toISOString(),
-          userId, convoId, windowN: WINDOW_N, playerName, assistantName, color
-        },
-        chatLog: log
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      const ts = new Date();
-      const pad = (n) => String(n).padStart(2, '0');
-      const fileName = `whoai_chatLog_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}.json`;
-      a.href = URL.createObjectURL(blob);
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    });
-
-    btnImport.addEventListener('click', () => fileImport.click());
-    fileImport.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const data = JSON.parse(reader.result);
-          // 受け入れパターン1: { chatLog: [...] }
-          // 受け入れパターン2: そのまま配列 [...]
-          const imported = Array.isArray(data) ? data : (Array.isArray(data.chatLog) ? data.chatLog : null);
-          if (!imported) throw new Error('フォーマットが不正です。');
-
-          // 簡単なバリデーション（role/contentのみ採用）
-          const sanitized = imported
-            .filter(x => x && typeof x === 'object' && typeof x.content === 'string' && (x.role === 'user' || x.role === 'assistant'))
-            .map(x => ({ role: x.role, content: x.content, ts: x.ts || Date.now() }));
-
-          writeLog(sanitized);
-          renderChat();
-          alert('インポート完了。');
-        } catch (err) {
-          console.error(err);
-          alert('インポートに失敗しました。JSON形式を確認してください。');
-        } finally {
-          e.target.value = '';
-        }
-      };
-      reader.readAsText(file, 'utf-8');
+    userInput.addEventListener('keydown',e=>{
+      if(e.key==='Enter'&&!e.isComposing){e.preventDefault();btnSend.click();}
     });
   </script>
 </body>
