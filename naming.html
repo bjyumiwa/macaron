@@ -1,4 +1,3 @@
-<!-- FILE: /macaron/naming.html  → たねキャラを色（green/pink/blue/purple）に同期する完全版 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -9,83 +8,62 @@
     html,body{height:100%;margin:0}
     body{
       font-family:"Noto Sans JP",sans-serif;
-      background:#faf7fb; /* ライト背景固定 */
-      color:#222; display:flex; align-items:center; justify-content:center;
-      text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased;
+      background:#faf7fb; color:#222;
+      display:flex; align-items:center; justify-content:center;
     }
-
-    .wrap{ width:min(720px,96vw); padding:28px; }
-
-    .card{ background:#fff; border-radius:18px; padding:26px 22px; box-shadow:0 12px 40px rgba(0,0,0,.07); text-align:center; }
-    h1{ margin:0 0 10px; font-size:22px; color:#222 }
-    p{ margin:0 0 18px; opacity:.85; font-size:14px }
-
-    .character{ margin:16px 0 }
-    .character img{ width:160px; max-width:50vw; display:block; margin:auto }
-
-    .row{ display:flex; gap:10px; align-items:center; justify-content:center; }
-    .grow{ flex:1 }
-
-    input[type="text"]{ width:100%; padding:12px 14px; border:1px solid #e6e2ee; border-radius:12px; font-size:16px; background:#fcfbfe; outline:none; }
-    input[type="text"]:focus{ border-color:#bfa7ff; box-shadow:0 0 0 3px rgba(111,76,255,.12) }
-
-    .btn{ padding:12px 16px; border:0; border-radius:12px; font-weight:700; cursor:pointer }
-    .primary{ background:#6f4cff; color:#fff }
-
-    .mini-note{ font-size:12px; opacity:.7; margin-top:10px }
-
-    .file-label{ position:fixed; left:10px; bottom:10px; font-size:12px; opacity:.7 }
+    .card{background:#fff;border-radius:18px;padding:26px 22px;box-shadow:0 12px 40px rgba(0,0,0,.07);text-align:center;width:min(720px,96vw)}
+    .character img{width:160px;display:block;margin:16px auto}
+    input{width:70%;padding:12px;border:1px solid #e6e2ee;border-radius:12px;font-size:16px}
+    button{padding:12px 16px;border:0;border-radius:12px;font-weight:700;background:#6f4cff;color:#fff;margin-left:8px;cursor:pointer}
+    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1 id="title">この子に名前をつけてね</h1>
-      <p id="desc">あとで変更できます。入力したら「決定！」を押してね。</p>
+  <div class="card">
+    <h1>この子に名前をつけてね</h1>
+    <p>あとで変更できます。入力したら「決定！」を押してね。</p>
 
-      <div class="character">
-        <img id="taneImg" src="" alt="たねキャラ" onerror="this.src='public/assets/stage1/tane_green.png'">
-      </div>
-
-      <div class="row">
-        <div class="grow"><input id="nameInput" type="text" placeholder="WhoAIの名前を入力" maxlength="24" autofocus></div>
-        <button id="goBtn" class="btn primary" type="button">決定！</button>
-      </div>
-      <div class="mini-note" id="note">※ 入力が空のときは「WhoAI」になります</div>
+    <div class="character">
+      <img id="taneImg" src="" alt="たねキャラ" onerror="this.src='public/assets/stage1/tane_green.png'">
     </div>
+
+    <div>
+      <input id="nameInput" type="text" placeholder="WhoAIの名前を入力" maxlength="24" autofocus>
+      <button id="goBtn">決定！</button>
+    </div>
+    <div style="font-size:12px;opacity:.7;margin-top:10px">※ 入力が空のときは「WhoAI」になります</div>
   </div>
 
   <div class="file-label">/macaron/naming.html</div>
 
   <script>
-    // ========= たねキャラを色に同期（green/pink/blue/purple） =========
-    (function setTane(){
-      const allowed = ['green','pink','blue','purple'];
-      let color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
-      if(!allowed.includes(color)) color = 'green';
-      const path = `public/assets/stage1/tane_${color}.png`;
-      document.getElementById('taneImg').src = path + `?v=${Date.now()}`; // キャッシュ回避
-    })();
+    // 色の決定（green/pink/blue/purple 以外は green）
+    const allowed = ['green','pink','blue','purple'];
+    let color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
+    if(!allowed.includes(color)) color = 'green';
 
-    // ========= 名前を保存 → macaron.html へ =========
+    // たね画像の設定（キャッシュ回避クエリつき）
+    const path = `public/assets/stage1/tane_${color}.png`;
+    document.getElementById('taneImg').src = path + `?v=${Date.now()}`;
+    console.log('[naming] color=', color, ' img=', document.getElementById('taneImg').src);
+
+    // 名前保存 → macaron.html
     const NAME_KEY = 'whoai_name';
     const DEFAULT_NAME = 'WhoAI';
-
-    document.getElementById('goBtn').addEventListener('click', saveAndGo);
-    document.getElementById('nameInput').addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter' && !e.isComposing){ e.preventDefault(); saveAndGo(); }
+    const go = ()=>{
+      const v = (document.getElementById('nameInput').value || '').trim();
+      localStorage.setItem(NAME_KEY, v || DEFAULT_NAME);
+      localStorage.setItem('whoai_stage', 'tane');
+      location.href = 'macaron.html';
+    };
+    document.getElementById('goBtn').addEventListener('click', go);
+    document.getElementById('nameInput').addEventListener('keydown', e=>{
+      if(e.key==='Enter' && !e.isComposing){ e.preventDefault(); go(); }
     });
 
-    function saveAndGo(){
-      const v = (document.getElementById('nameInput').value || '').trim();
-      const name = v || DEFAULT_NAME;
-      localStorage.setItem(NAME_KEY, name);
-      localStorage.setItem('whoai_stage','tane');
-      location.href = 'macaron.html';
-    }
-
+    // 既存名があれば表示
     const existing = localStorage.getItem(NAME_KEY);
-    if(existing){ document.getElementById('nameInput').value = existing; }
+    if(existing) document.getElementById('nameInput').value = existing;
   </script>
 </body>
 </html>
