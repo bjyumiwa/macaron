@@ -3,45 +3,38 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 名前をつける</title>
+  <title>名前をつけよう</title>
   <style>
-    html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;display:flex;align-items:center;justify-content:center}
-    .card{background:#fff;border-radius:18px;padding:26px 22px;box-shadow:0 12px 40px rgba(0,0,0,.07);text-align:center;width:min(720px,96vw)}
-    .character img{width:160px;margin:16px auto;display:block}
-    input[type="text"]{width:70%;padding:12px;border:1px solid #e6e2ee;border-radius:12px;font-size:16px}
-    .btn{padding:12px 16px;border:0;border-radius:12px;font-weight:700;background:#6f4cff;color:#fff;margin-left:8px;cursor:pointer}
-    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
+    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;
+         display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);
+          padding:24px 20px;text-align:center;width:min(500px,92vw)}
+    input{padding:12px 14px;border-radius:12px;border:1px solid #ccc;width:80%;margin-top:12px}
+    button{padding:12px 16px;border-radius:12px;margin-top:14px;background:#6f4cff;color:#fff;font-weight:700;cursor:pointer}
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>この子に名前をつけてね</h1>
-    <p>あとで変更できます。入力したら「決定！」を押してね。</p>
-    <div class="character"><img id="taneImg" src="" alt="たねキャラ"></div>
-    <div>
-      <input id="nameInput" type="text" placeholder="WhoAIの名前を入力" maxlength="24" autofocus>
-      <button id="goBtn" class="btn">決定！</button>
-    </div>
-    <div style="font-size:12px;opacity:.7;margin-top:10px">※ 入力が空のときは「WhoAI」になります</div>
+    <h2>キャラクターに名前をつけてね</h2>
+    <form id="nameForm">
+      <input id="nameInput" type="text" placeholder="名前を入力" required>
+      <br>
+      <button type="submit">決定</button>
+    </form>
   </div>
-  <div class="file-label">/macaron/naming.html</div>
-  <script>
-    const allowed=['green','pink','blue','purple'];
-    let color=(localStorage.getItem('macaronColor')||'green').toLowerCase();
-    if(!allowed.includes(color)) color='green';
-    document.getElementById('taneImg').src = `public/assets/stage1/tane_${color}.png`;
 
-    const NAME_KEY='whoai_name', DEFAULT_NAME='WhoAI';
-    const go=()=>{
-      const v=(document.getElementById('nameInput').value||'').trim();
-      localStorage.setItem(NAME_KEY, v||DEFAULT_NAME);
-      // たね状態会話へ
+  <script>
+    const form=document.getElementById('nameForm');
+    const input=document.getElementById('nameInput');
+    form.addEventListener('submit',e=>{
+      e.preventDefault();
+      const name=input.value.trim();
+      if(!name){alert('名前を入力してください');return;}
+      localStorage.setItem('whoai_name', name);
+      localStorage.setItem('whoai_turn','0');
+      // 🔽 会話ページへ
       location.href='whoai_talk.html';
-    };
-    document.getElementById('goBtn').onclick=go;
-    document.getElementById('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); go(); }});
-    const existing=localStorage.getItem(NAME_KEY); if(existing) document.getElementById('nameInput').value=existing;
+    });
   </script>
 </body>
 </html>
