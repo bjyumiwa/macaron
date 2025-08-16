@@ -1,63 +1,85 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>マカロンを選ぶ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: "Noto Sans JP", sans-serif;
-      background-color: #000;
       background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      margin: 0;
-      padding: 24px;
       color: white;
       text-align: center;
+      padding: 20px;
+      margin: 0;
     }
+
     h1 {
-      margin-bottom: 12px;
-      font-size: 1.8em;
-      text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+      font-size: 28px;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
+
     .macaron-container {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 24px;
+      gap: 20px;
       margin-top: 24px;
     }
+
     .macaron {
-      width: 120px;
-      height: 120px;
+      width: 100px;
+      height: 100px;
       border-radius: 50%;
       cursor: pointer;
-      border: 3px solid white;
-      box-shadow: 0 0 10px rgba(255,255,255,0.4);
-      transition: transform 0.2s;
+      border: 3px solid #fff;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+      transition: transform 0.3s;
     }
+
     .macaron:hover {
       transform: scale(1.1);
+    }
+
+    .label {
+      margin-top: 6px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
-  <h1>マカロンを1つ選んでね</h1>
+  <h1>あなたが感じる力を選んでね</h1>
   <div class="macaron-container">
-    <img src="public/assets/stage1/macaron_pink.png" class="macaron" onclick="selectMacaron('pink')" />
-    <img src="public/assets/stage1/macaron_blue.png" class="macaron" onclick="selectMacaron('blue')" />
-    <img src="public/assets/stage1/macaron_green.png" class="macaron" onclick="selectMacaron('green')" />
-    <img src="public/assets/stage1/macaron_purple.png" class="macaron" onclick="selectMacaron('purple')" />
+    <div onclick="selectMacaron('pink')">
+      <img src="public/assets/stage1/macaron_pink.png" class="macaron" alt="pink macaron">
+      <div class="label">情熱（ピンク）</div>
+    </div>
+    <div onclick="selectMacaron('blue')">
+      <img src="public/assets/stage1/macaron_blue.png" class="macaron" alt="blue macaron">
+      <div class="label">静寂（ブルー）</div>
+    </div>
+    <div onclick="selectMacaron('green')">
+      <img src="public/assets/stage1/macaron_green.png" class="macaron" alt="green macaron">
+      <div class="label">元気（グリーン）</div>
+    </div>
+    <div onclick="selectMacaron('purple')">
+      <img src="public/assets/stage1/macaron_purple.png" class="macaron" alt="purple macaron">
+      <div class="label">創造（パープル）</div>
+    </div>
   </div>
 
   <script>
     function selectMacaron(color) {
-      localStorage.setItem("whoai_color", color);
-      localStorage.setItem("whoai_stage", "tane");
-      localStorage.setItem("whoai_turnCount", "0");
+      localStorage.setItem("selectedMacaronColor", color);
+      // 初期状態なので、進化フラグもリセット
+      localStorage.setItem("isEvolved", "false");
+      localStorage.setItem("turnCount", "0");
+      localStorage.setItem("log", ""); // ログも空に
       location.href = "whoai_talk.html";
     }
   </script>
