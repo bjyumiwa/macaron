@@ -1,92 +1,144 @@
-<!-- FILE: public/macaron/naming.html -->
+<!-- FILE: /macaron/naming.html  →  背景が暗くなる問題を解消した “完全版” -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>この子に名前をつけてね</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WhoAI - 名前をつける</title>
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-color: #000;
-      background-image: url("/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      margin: 0;
-      padding: 0;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+    html,body{height:100%;margin:0}
+    /* ▼ 明るい背景に変更（ダーク背景を使わない） */
+    body{
+      font-family:"Noto Sans JP",sans-serif;
+      background:#faf7fb; /* light */
+      color:#222; display:flex; align-items:center; justify-content:center;
+      text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased;
     }
 
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-      text-shadow: 0 0 8px rgba(0,0,0,0.6);
-    }
+    .wrap{ width:min(720px,96vw); padding:28px; }
 
-    img {
-      width: 120px;
-      margin-bottom: 20px;
-      animation: float 3s ease-in-out infinite;
+    .card{
+      background:#fff; border-radius:18px; padding:26px 22px; box-shadow:0 12px 40px rgba(0,0,0,.07);
     }
+    h1{ margin:0 0 10px; font-size:22px; color:#222 }
+    p{ margin:0 0 18px; opacity:.85; font-size:14px }
 
-    @keyframes float {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-      100% { transform: translateY(0); }
-    }
+    .row{ display:flex; gap:10px; align-items:center }
+    .grow{ flex:1 }
 
-    input {
-      padding: 10px;
-      font-size: 16px;
-      width: 250px;
-      border-radius: 6px;
-      border: none;
-      margin-bottom: 20px;
+    input[type="text"]{
+      width:100%; padding:12px 14px; border:1px solid #e6e2ee; border-radius:12px; font-size:16px;
+      background:#fcfbfe; outline:none;
     }
+    input[type="text"]:focus{ border-color:#bfa7ff; box-shadow:0 0 0 3px rgba(111,76,255,.12) }
 
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
-      background-color: #caffd0;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-    }
+    .btn{ padding:12px 16px; border:0; border-radius:12px; font-weight:700; cursor:pointer }
+    .primary{ background:#6f4cff; color:#fff }
+    .ghost{ background:#f2efff; color:#332a5a }
+    .btn:disabled{ opacity:.6; cursor:not-allowed }
+
+    .lang{ display:flex; gap:8px; margin-bottom:16px }
+    .tag{ font-size:12px; padding:5px 10px; border-radius:999px; background:#f2efff; color:#4c3f75; }
+
+    .mini-note{ font-size:12px; opacity:.7; margin-top:10px }
+
+    /* どのHTMLか分かるように左下に表示 */
+    .file-label{ position:fixed; left:10px; bottom:10px; font-size:12px; opacity:.7 }
   </style>
 </head>
 <body>
-  <h1>この子に名前をつけてね</h1>
-  <img id="taneImage" src="" alt="たねキャラ" />
-  <input type="text" id="nameInput" placeholder="WhoAIの名前を入力" />
-  <button onclick="saveName()">決定！</button>
+  <div class="wrap">
+    <div class="card">
+      <div class="lang">
+        <span class="tag" id="langTag">日本語</span>
+        <button id="switchLang" class="btn ghost" type="button">English</button>
+      </div>
+
+      <h1 id="title">キャラクターに名前をつけよう</h1>
+      <p id="desc">あとで変更できます。入力したら「つぎへ」を押してね。</p>
+
+      <div class="row">
+        <div class="grow"><input id="nameInput" type="text" placeholder="みわっち など" maxlength="24" autofocus></div>
+        <button id="goBtn" class="btn primary" type="button">つぎへ</button>
+      </div>
+      <div class="mini-note" id="note">※ 入力が空のときは「WhoAI」になります</div>
+    </div>
+  </div>
+
+  <div class="file-label">/macaron/naming.html</div>
 
   <script>
-    const color = localStorage.getItem('whoai_color') || 'pink';
-    const imageMap = {
-      pink: "/assets/stage1/tane_pink.png",
-      blue: "/assets/stage1/tane_blue.png",
-      green: "/assets/stage1/tane_green.png",
-      purple: "/assets/stage1/tane_purple.png"
-    };
-    document.getElementById('taneImage').src = imageMap[color];
-
-    function saveName() {
-      const name = document.getElementById('nameInput').value.trim();
-      if (name) {
-        localStorage.setItem("whoai_name", name);
-        window.location.href = "/macaron/whoai_talk.html";
-      } else {
-        alert("名前を入力してください！");
+    // ===== 言語切替（localStorageに保存） =====
+    const i18n = {
+      ja: {
+        langTag: '日本語', switch: 'English',
+        title: 'キャラクターに名前をつけよう',
+        desc: 'あとで変更できます。入力したら「つぎへ」を押してね。',
+        placeholder: 'みわっち など',
+        next: 'つぎへ',
+        note: '※ 入力が空のときは「WhoAI」になります'
+      },
+      en: {
+        langTag: 'English', switch: '日本語',
+        title: "Name your character",
+        desc: "You can change it later. Type a name and press 'Next'.",
+        placeholder: 'e.g., Miwacchi',
+        next: 'Next',
+        note: '※ If empty, the name will be "WhoAI"'
       }
+    };
+
+    const LANG_KEY = 'whoai_lang';
+    let lang = (localStorage.getItem(LANG_KEY) || 'ja');
+
+    const $ = (id)=>document.getElementById(id);
+    function applyTexts(){
+      const t = i18n[lang];
+      $('langTag').textContent = t.langTag;
+      $('switchLang').textContent = t.switch;
+      $('title').textContent = t.title;
+      $('desc').textContent = t.desc;
+      $('nameInput').placeholder = t.placeholder;
+      $('goBtn').textContent = t.next;
+      $('note').textContent = t.note;
+      // ページのlang属性も更新
+      document.documentElement.lang = (lang === 'ja' ? 'ja' : 'en');
     }
+    applyTexts();
+
+    $('switchLang').addEventListener('click', ()=>{
+      lang = (lang === 'ja' ? 'en' : 'ja');
+      localStorage.setItem(LANG_KEY, lang);
+      applyTexts();
+    });
+
+    // ===== 名前の保存 → macaron.html へ =====
+    const NAME_KEY = 'whoai_name';
+    const DEFAULT_NAME = 'WhoAI';
+
+    $('goBtn').addEventListener('click', saveAndGo);
+    $('nameInput').addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' && !e.isComposing){
+        e.preventDefault();
+        saveAndGo();
+      }
+    });
+
+    function saveAndGo(){
+      const v = ($('nameInput').value || '').trim();
+      const name = v || DEFAULT_NAME;
+      localStorage.setItem(NAME_KEY, name);
+      // 初期化：最初はタネ状態から始める前提（必要に応じて変更）
+      localStorage.setItem('whoai_stage', 'tane');
+      // 初期の保持設定：とくに未設定
+      // localStorage.removeItem('whoai_keep');
+      // 次の画面へ（同一ディレクトリ）
+      location.href = 'macaron.html';
+    }
+
+    // 既に名前があるなら入力欄に表示
+    const existing = localStorage.getItem(NAME_KEY);
+    if(existing){ $('nameInput').value = existing; }
   </script>
 </body>
 </html>
