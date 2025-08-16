@@ -59,14 +59,13 @@
   </div>
 
   <script>
-    // ===== 戻る無効（このページ滞在中）=====
-    // 履歴にダミーを積み続け、戻るを無効化
+    // ===== 戻る無効 =====
     history.pushState(null, "", location.href);
     window.onpopstate = () => { history.go(1); };
 
-    // ===== 直接アクセス/再入場ガード =====
+    // ===== ガード =====
     const CHAT_KEY = 'whoai_chat';
-    const LOCK_KEY = 'whoai_rebirth_lock'; // 選択後ロック
+    const LOCK_KEY = 'whoai_rebirth_lock';
     const allowed = ['pink','blue','green','purple'];
 
     function normColor(c){
@@ -75,18 +74,16 @@
     }
     const currentColor = normColor(localStorage.getItem('macaronColor') || 'green');
 
-    // 進入条件（進化・前半からの遷移）を満たさない/ロック済みなら追い返す
     (function entryGuard(){
       if (localStorage.getItem(LOCK_KEY) === '1') {
-        // すでに選択済み → 誤って戻ってきても talk へ
-        location.replace('whoai_talk.html');
+        // すでに選択済み → 誤って戻ってきても進化後トークへ
+        location.replace('whoai_talk_evolved.html');
         return;
       }
-      // 任意の追加ガード：進化前半フェーズ以外は入れない
       const stage = localStorage.getItem('whoai_stage');
       const phase = localStorage.getItem('whoai_phase');
       if (!(stage==='evolved' && phase==='pre')) {
-        location.replace('whoai_talk.html');
+        location.replace('whoai_talk_evolved.html');
       }
     })();
 
@@ -95,38 +92,32 @@
       return pool[Math.floor(Math.random()*pool.length)];
     }
 
-    // 二重クリック防止
     let decided = false;
     function lockAndGo(){
       decided = true;
       document.getElementById('guardMsg').style.display='block';
-      // ロック書き込み（以後 rebirth.html は再入場不可）
       localStorage.setItem(LOCK_KEY, '1');
-      // 後半フェーズとして再開
       localStorage.setItem('whoai_phase','post');
       localStorage.setItem('whoai_turn','0');
       localStorage.setItem('whoai_stage','evolved');
-      // 履歴を残さずに会話へ
-      location.replace('whoai_talk.html');
+      // 進化後会話へ
+      location.replace('whoai_talk_evolved.html');
     }
 
-    // 容姿を選ぶ：色そのまま / 会話リセット
+    // 容姿を選ぶ → 会話リセット
     document.getElementById('chooseAppearance').addEventListener('click', ()=>{
       if (decided) return;
-      // 表示用フラグ
       localStorage.setItem('whoai_keep','appearance');
-      // 会話ログをリセット
       localStorage.removeItem(CHAT_KEY);
       lockAndGo();
     }, { once:true });
 
-    // 記録を選ぶ：会話保持 / 色だけ変更
+    // 記録を選ぶ → 会話保持・色変更
     document.getElementById('chooseKeep').addEventListener('click', ()=>{
       if (decided) return;
       localStorage.setItem('whoai_keep','memory');
       const newColor = pickDifferentColor(currentColor);
       localStorage.setItem('macaronColor', newColor);
-      // 会話ログは保持（消さない）
       lockAndGo();
     }, { once:true });
   </script>
