@@ -1,4 +1,4 @@
-<!-- FILE: /macaron/naming.html  → 背景をライトに、画像パスを public/ から始める完全版 -->
+<!-- FILE: /macaron/naming.html  → 画像が出ない対策（存在チェック＋フォールバック）完全版 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -11,6 +11,7 @@
       font-family:"Noto Sans JP",sans-serif;
       background:#faf7fb; /* ライト背景固定 */
       color:#222; display:flex; align-items:center; justify-content:center;
+      text-rendering:optimizeLegibility; -webkit-font-smoothing:antialiased;
     }
 
     .wrap{ width:min(720px,96vw); padding:28px; }
@@ -36,7 +37,6 @@
 
     .btn{ padding:12px 16px; border:0; border-radius:12px; font-weight:700; cursor:pointer }
     .primary{ background:#6f4cff; color:#fff }
-    .ghost{ background:#f2efff; color:#332a5a }
     .btn:disabled{ opacity:.6; cursor:not-allowed }
 
     .mini-note{ font-size:12px; opacity:.7; margin-top:10px }
@@ -51,7 +51,7 @@
       <p id="desc">あとで変更できます。入力したら「決定！」を押してね。</p>
 
       <div class="character">
-        <img id="taneImg" src="public/assets/stage1/green_closed.png" alt="たねキャラ">
+        <img id="taneImg" src="" alt="たねキャラ">
       </div>
 
       <div class="row">
@@ -65,15 +65,42 @@
   <div class="file-label">/macaron/naming.html</div>
 
   <script>
+    // ========= 画像ロード：存在チェックして最初に読めたものを表示 =========
+    (function resolveCharacter(){
+      const color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
+      const base  = 'public/assets/stage1';
+      const candidates = [
+        `${base}/${color}_closed.png`,   // green_closed.png 等（よく使う）
+        `${base}/tane_${color}.png`,     // tane_green.png 等（もしあれば）
+        `${base}/${color}.png`,          // green.png 等
+        `${base}/pink_closed.png`,       // 最終フォールバック①（在庫率高）
+        `${base}/blue_closed.png`        // 最終フォールバック②
+      ];
+
+      const imgEl = document.getElementById('taneImg');
+
+      function tryNext(i){
+        if(i >= candidates.length){
+          console.warn('キャラ画像が見つかりませんでした');
+          imgEl.removeAttribute('src');
+          return;
+        }
+        const src = candidates[i];
+        const probe = new Image();
+        probe.onload = ()=>{ imgEl.src = src; };
+        probe.onerror = ()=>{ tryNext(i+1); };
+        probe.src = src + `?v=${Date.now()}`; // キャッシュ対策
+      }
+      tryNext(0);
+    })();
+
+    // ========= 名前を保存 → macaron.html へ =========
     const NAME_KEY = 'whoai_name';
     const DEFAULT_NAME = 'WhoAI';
 
     document.getElementById('goBtn').addEventListener('click', saveAndGo);
     document.getElementById('nameInput').addEventListener('keydown', (e)=>{
-      if(e.key === 'Enter' && !e.isComposing){
-        e.preventDefault();
-        saveAndGo();
-      }
+      if(e.key === 'Enter' && !e.isComposing){ e.preventDefault(); saveAndGo(); }
     });
 
     function saveAndGo(){
