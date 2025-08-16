@@ -1,72 +1,45 @@
-<!-- FILE: macaron_select.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>マカロン再選択 - 進化のきっかけ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2回目のマカロンを選ぶ</title>
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background-color: #000;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      color: white;
-      text-align: center;
-      padding: 40px 20px;
-    }
-    h1 {
-      font-size: 2em;
-      margin-bottom: 12px;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    }
-    .macaron {
-      display: inline-block;
-      margin: 16px;
-      cursor: pointer;
-      transition: transform 0.3s ease;
-    }
-    .macaron:hover {
-      transform: scale(1.15);
-    }
-    img {
-      width: 100px;
-      height: 100px;
-    }
-    p {
-      margin-top: 8px;
-      font-size: 0.95em;
-    }
+    html,body{height:100%;margin:0}
+    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;display:flex;align-items:center;justify-content:center}
+    .wrap{width:min(980px,96vw);padding:24px}
+    h1{font-size:26px;margin:0 0 22px;text-align:center}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);padding:18px;text-align:center;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
+    .card:hover{transform:translateY(-2px);box-shadow:0 14px 46px rgba(0,0,0,.10)}
+    .card img{width:120px;aspect-ratio:1/1;object-fit:contain;display:block;margin:8px auto 10px}
+    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
 <body>
-  <h1>ふたたびマカロンを選んでください</h1>
-  <p>どの力を取り入れて、進化しますか？</p>
-
-  <div class="macaron" onclick="selectMacaron('pink')">
-    <img src="public/assets/stage1/macaron_pink.png" alt="ピンクのマカロン" />
-    <p>情熱（ピンク）</p>
+  <div class="wrap">
+    <h1>もう一度、マカロンを選んでね</h1>
+    <div class="grid">
+      <div class="card" data-color="pink"><img src="public/assets/stage1/macaron_pink.png" alt="pink"></div>
+      <div class="card" data-color="blue"><img src="public/assets/stage1/macaron_blue.png" alt="blue"></div>
+      <div class="card" data-color="green"><img src="public/assets/stage1/macaron_green.png" alt="green"></div>
+      <div class="card" data-color="purple"><img src="public/assets/stage1/macaron_purple.png" alt="purple"></div>
+    </div>
   </div>
-  <div class="macaron" onclick="selectMacaron('blue')">
-    <img src="public/assets/stage1/macaron_blue.png" alt="青のマカロン" />
-    <p>静寂（ブルー）</p>
-  </div>
-  <div class="macaron" onclick="selectMacaron('green')">
-    <img src="public/assets/stage1/macaron_green.png" alt="緑のマカロン" />
-    <p>元気（グリーン）</p>
-  </div>
-  <div class="macaron" onclick="selectMacaron('purple')">
-    <img src="public/assets/stage1/macaron_purple.png" alt="紫のマカロン" />
-    <p>創造（パープル）</p>
-  </div>
+  <div class="file-label">/macaron/macaron_select.html</div>
 
   <script>
-    function selectMacaron(color) {
-      localStorage.setItem('evolvedColor', color); // 進化後の色を保存
-      window.location.href = "evolution.html";     // 次の画面へ遷移
+    const allowed = ['pink','blue','green','purple'];
+    function saveColorAndGo(c){
+      const chosen = (c||'').toLowerCase().trim();
+      const color  = allowed.includes(chosen) ? chosen : 'green';
+      localStorage.setItem('macaronColor', color);
+      location.href = 'evolution.html';
     }
+    document.querySelectorAll('.card').forEach(el=>{
+      el.addEventListener('click',()=> saveColorAndGo(el.getAttribute('data-color')));
+      el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); saveColorAndGo(el.getAttribute('data-color')); } });
+    });
   </script>
 </body>
 </html>
