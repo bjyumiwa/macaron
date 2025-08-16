@@ -6,9 +6,10 @@
   <title>進化中…</title>
   <style>
     html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;text-align:center;display:flex;align-items:center;justify-content:center}
+    body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;text-align:center;
+      display:flex;align-items:center;justify-content:center}
     .wrap{padding:24px}
-    .wrap img{width:180px;display:block;margin:12px auto}
+    .wrap img{width:180px;display:block;margin:12px auto;filter:drop-shadow(0 0 18px rgba(255,255,255,.35))}
     .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.75}
   </style>
 </head>
@@ -19,9 +20,25 @@
     <p>少し待ってね</p>
   </div>
   <div class="file-label">/macaron/evolution.html</div>
+
   <script>
-    const color=(localStorage.getItem('macaronColor')||'green').toLowerCase();
-    document.getElementById('img1').src = `public/assets/stage1/${color}_closed.png`;
+    const allowedColors = ['pink','blue','green','purple'];
+    const EVOLVED_SRC = {
+      pink:   'pink_closed.png',
+      blue:   'blue_closed.png',
+      green:  'green_closed.png',
+      purple: 'purple_closed.png'
+    };
+    function normalizeColor(c){
+      const t = String(c||'').toLowerCase().trim();
+      return allowedColors.includes(t) ? t : 'green';
+    }
+    const color = normalizeColor(localStorage.getItem('macaronColor'));
+    const base = 'public/assets/stage1';
+    const img  = document.getElementById('img1');
+    img.onerror = ()=>{ img.onerror=null; img.src = `${base}/${EVOLVED_SRC.purple}`; };
+    img.src = `${base}/${EVOLVED_SRC[color] || EVOLVED_SRC.purple}`;
+
     localStorage.setItem('whoai_stage','evolved');
     localStorage.setItem('whoai_turn','0');
     localStorage.setItem('whoai_phase','pre');
