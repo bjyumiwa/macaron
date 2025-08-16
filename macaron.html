@@ -1,78 +1,71 @@
+<!-- FILE: public/macaron/macaron.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>マカロンを選ぶ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
+    body {
       font-family: "Noto Sans JP", sans-serif;
-      background: url("/public/assets/stage1/space_background.png") no-repeat center center fixed;
-      background-size: cover;
-      color: white;
-      text-align: center;
+      background: #faf7fb;
+      margin: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
+      min-height: 100vh;
     }
 
     h1 {
-      font-size: 1.8em;
+      font-size: 24px;
       margin-bottom: 20px;
-      text-shadow: 0 0 10px #000;
+      color: #333;
     }
 
     .macaron-container {
       display: flex;
+      gap: 16px;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 20px;
     }
 
     .macaron {
       width: 100px;
       height: 100px;
+      border-radius: 50%;
       cursor: pointer;
-      transition: transform 0.2s ease;
+      border: 3px solid transparent;
+      transition: transform 0.3s, border-color 0.3s;
     }
 
     .macaron:hover {
       transform: scale(1.1);
+      border-color: #888;
     }
 
-    .description {
-      margin-top: 30px;
-      font-size: 1em;
-      max-width: 90%;
-      background: rgba(0,0,0,0.4);
-      padding: 10px 20px;
-      border-radius: 10px;
+    .footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #999;
     }
   </style>
 </head>
 <body>
-  <h1>マカロンを選んでください</h1>
-
+  <h1>好きなマカロンを選んでね</h1>
   <div class="macaron-container">
-    <img src="/public/assets/stage1/macaron_pink.png" alt="ピンク" class="macaron" onclick="selectMacaron('pink')">
-    <img src="/public/assets/stage1/macaron_blue.png" alt="青" class="macaron" onclick="selectMacaron('blue')">
-    <img src="/public/assets/stage1/macaron_green.png" alt="緑" class="macaron" onclick="selectMacaron('green')">
-    <img src="/public/assets/stage1/macaron_purple.png" alt="紫" class="macaron" onclick="selectMacaron('purple')">
+    <img src="/public/assets/stage1/macaron_pink.png" alt="Pink Macaron" class="macaron" onclick="selectMacaron('pink')" />
+    <img src="/public/assets/stage1/macaron_blue.png" alt="Blue Macaron" class="macaron" onclick="selectMacaron('blue')" />
+    <img src="/public/assets/stage1/macaron_green.png" alt="Green Macaron" class="macaron" onclick="selectMacaron('green')" />
+    <img src="/public/assets/stage1/macaron_purple.png" alt="Purple Macaron" class="macaron" onclick="selectMacaron('purple')" />
   </div>
 
-  <div class="description">
-    <p>ピンク：情熱 / 青：静寂 / 緑：元気 / 紫：創造</p>
-  </div>
+  <div class="footer">WhoAI Project</div>
 
   <script>
     function selectMacaron(color) {
       localStorage.setItem('macaronColor', color);
-      localStorage.setItem('turnCount', '0'); // 会話回数リセット
-      window.location.href = "/macaron/whoai_talk.html"; // 遷移
+      window.location.href = "/macaron/whoai_talk.html"; // 次の会話画面へ
     }
   </script>
 </body>
