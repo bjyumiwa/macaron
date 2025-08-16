@@ -6,37 +6,88 @@
   <title>復活の儀式</title>
   <style>
     html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;text-align:center;display:flex;align-items:center;justify-content:center}
-    .panel{width:min(680px,94vw);background:rgba(0,0,0,.45);backdrop-filter:blur(4px);padding:24px;border-radius:18px}
-    button{padding:12px 16px;border:0;border-radius:12px;font-weight:800;cursor:pointer;margin:8px}
-    .a{background:#ffd1ec;color:#141217}
-    .m{background:rgba(255,255,255,.16);color:#fff}
-    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.75}
+    body{
+      font-family:"Noto Sans JP",sans-serif;
+      background:#000;
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .card{
+      background:rgba(0,0,0,.65);
+      border-radius:18px;
+      padding:26px 22px;
+      text-align:center;
+      width:min(720px,94vw);
+      box-shadow:0 8px 40px rgba(0,0,0,.5);
+    }
+    .card img{
+      width:200px;
+      max-width:70%;
+      margin:18px auto;
+      display:block;
+      filter:drop-shadow(0 0 20px rgba(255,255,255,.3));
+      animation: float 4s ease-in-out infinite, glow 3s ease-in-out infinite;
+    }
+    /* ゆらゆら浮遊 */
+    @keyframes float {
+      0%,100% { transform: translateY(0px) rotate(0deg); }
+      50%     { transform: translateY(-10px) rotate(1deg); }
+    }
+    /* 光る */
+    @keyframes glow {
+      0%,100% { filter: drop-shadow(0 0 12px rgba(255,255,255,0.3)); }
+      50%     { filter: drop-shadow(0 0 28px rgba(255,255,200,0.8)); }
+    }
+    .btn{
+      display:inline-block;
+      margin:10px 8px 0;
+      padding:12px 16px;
+      border-radius:12px;
+      text-decoration:none;
+      font-weight:800;
+      cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .btn:hover{
+      transform:translateY(-2px);
+      box-shadow:0 6px 20px rgba(0,0,0,.3);
+    }
+    .btn-appearance{background:#f5a9d6;color:#000;}
+    .btn-keep{background:#444;color:#fff;}
+    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
 <body>
-  <div class="panel">
+  <div class="card">
     <h2>復活の儀式</h2>
     <p>次のどちらかを選んでください。</p>
-    <p><strong>容姿を選ぶ</strong>：外見はそのまま、会話はリセット（0から）</p>
-    <p><strong>記録を選ぶ</strong>：会話記録を保持したまま、さらに10回会話</p>
+
+    <!-- アイテム画像 -->
+    <img src="public/assets/stage1/drink_item.png" alt="復活アイテム">
+
+    <p>
+      <strong>容姿を選ぶ:</strong> 外見はそのまま、会話はリセット（0から）<br>
+      <strong>記録を選ぶ:</strong> 会話記録を保持したまま、さらに10回会話
+    </p>
     <div>
-      <button class="a" id="keepApp">容姿を選ぶ</button>
-      <button class="m" id="keepMem">記録を選ぶ</button>
+      <button class="btn btn-appearance" id="chooseAppearance">容姿を選ぶ</button>
+      <button class="btn btn-keep" id="chooseKeep">記録を選ぶ</button>
     </div>
   </div>
   <div class="file-label">/macaron/rebirth.html</div>
+
   <script>
-    const CHAT_KEY='whoai_chat';
-    document.getElementById('keepApp').onclick=()=>{
+    document.getElementById('chooseAppearance').onclick=()=>{
       localStorage.setItem('whoai_keep','appearance');
       localStorage.setItem('whoai_phase','post');
       localStorage.setItem('whoai_turn','0');
-      localStorage.removeItem(CHAT_KEY); // ログリセット
+      localStorage.removeItem('whoai_chat');
       location.href='whoai_talk.html';
     };
-    document.getElementById('keepMem').onclick=()=>{
-      localStorage.setItem('whoai_keep','memory');
+    document.getElementById('chooseKeep').onclick=()=>{
+      localStorage.setItem('whoai_keep','record');
       localStorage.setItem('whoai_phase','post');
       localStorage.setItem('whoai_turn','0');
       location.href='whoai_talk.html';
