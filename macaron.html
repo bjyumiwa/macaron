@@ -1,75 +1,78 @@
-<!-- FILE: public/macaron/macaron.html -->
+<!-- FILE: /macaron/macaron.html → 画像パスを public/ 配下に統一。色選択→保存→遷移の完全版 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>マカロンを選ぶ</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>好きなマカロンを選んでね</title>
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background: #faf7fb;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
+    html,body{height:100%;margin:0}
+    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;display:flex;align-items:center;justify-content:center}
+    .wrap{width:min(980px,96vw);padding:24px}
+    h1{font-size:28px;margin:0 0 22px;text-align:center}
 
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-      color: #333;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);padding:18px;text-align:center;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
+    .card:hover{transform:translateY(-2px);box-shadow:0 14px 46px rgba(0,0,0,.10)}
+    .card img{width:120px;aspect-ratio:1/1;object-fit:contain;display:block;margin:8px auto 10px}
+    .name{font-weight:800;margin-top:6px}
+    .desc{font-size:12px;opacity:.7}
 
-    .macaron-container {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .macaron {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 3px solid transparent;
-      transition: transform 0.3s, border-color 0.3s;
-    }
-
-    .macaron:hover {
-      transform: scale(1.1);
-      border-color: #888;
-    }
-
-    .footer {
-      margin-top: 40px;
-      font-size: 14px;
-      color: #999;
-    }
+    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
 <body>
-  <h1>好きなマカロンを選んでね</h1>
-  <div class="macaron-container">
-    <img src="/assets/stage1/macaron_pink.png" alt="Pink Macaron" class="macaron" onclick="selectMacaron('pink')" />
-    <img src="/assets/stage1/macaron_blue.png" alt="Blue Macaron" class="macaron" onclick="selectMacaron('blue')" />
-    <img src="/assets/stage1/macaron_green.png" alt="Green Macaron" class="macaron" onclick="selectMacaron('green')" />
-    <img src="/assets/stage1/macaron_purple.png" alt="Purple Macaron" class="macaron" onclick="selectMacaron('purple')" />
+  <div class="wrap">
+    <h1>好きなマカロンを選んでね</h1>
+
+    <div class="grid">
+      <div class="card" data-color="pink"  role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_pink.png"  alt="Pink Macaron"  onerror="this.src='public/assets/stage1/tane_pink.png'">
+        <div class="name">Pink</div>
+        <div class="desc">Macaron</div>
+      </div>
+      <div class="card" data-color="blue"  role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_blue.png"  alt="Blue Macaron"  onerror="this.src='public/assets/stage1/tane_blue.png'">
+        <div class="name">Blue</div>
+        <div class="desc">Macaron</div>
+      </div>
+      <div class="card" data-color="green" role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_green.png" alt="Green Macaron" onerror="this.src='public/assets/stage1/tane_green.png'">
+        <div class="name">Green</div>
+        <div class="desc">Macaron</div>
+      </div>
+      <div class="card" data-color="purple" role="button" tabindex="0">
+        <img src="public/assets/stage1/macaron_purple.png" alt="Purple Macaron" onerror="this.src='public/assets/stage1/tane_purple.png'">
+        <div class="name">Purple</div>
+        <div class="desc">Macaron</div>
+      </div>
+    </div>
   </div>
 
-  <div class="footer">WhoAI Project</div>
+  <div class="file-label">/macaron/macaron.html</div>
 
   <script>
-    function selectMacaron(color) {
-      localStorage.setItem('whoai_color', color);
+    // ===== 遷移先（最初の選択は tane へ、二度目以降はそのまま） =====
+    // ここでは最初の選択 → naming.html（たねキャラ表示）に固定
+    const NEXT_PAGE = 'naming.html';
+
+    const allowed = ['pink','blue','green','purple'];
+    function pick(e){
+      const card = e.currentTarget;
+      const color = card.getAttribute('data-color');
+      if(!allowed.includes(color)) return;
+      // 色を保存
+      localStorage.setItem('macaronColor', color);
+      // たね状態から始める
       localStorage.setItem('whoai_stage', 'tane');
-      localStorage.setItem('whoai_turnCount', '0');
-      window.location.href = "/macaron/whoai_talk.html";
+      // 遷移
+      location.href = NEXT_PAGE;
     }
+
+    document.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('click', pick);
+      card.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); pick(e); } });
+    });
   </script>
 </body>
 </html>
