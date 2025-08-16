@@ -6,10 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root{
-      --bg:#693bb3;
-      --accent:#80d4ff;
-      --btn-bg:#92dbf8;
-      --btn-fg:#134c69;
+      --bg:#4b2e83;
+      --accent:#f5d142;
+      --btn-bg:#fdf3c2;
+      --btn-fg:#222;
       --panel: rgba(255,255,255,.08);
       --panel-border: rgba(255,255,255,.18);
     }
@@ -87,12 +87,20 @@
 
     <div class="panel">
       <p>
-        このアプリは、ユーザーとの対話を通して共に成長する育成型AI
-        <strong>「あなたが名づけたキャラクター」</strong>との体験を楽しむものです。<br>
-        何度かの「再会（リバース）」のたびに、あなたは
-        <strong>容姿</strong>と<strong>記憶</strong>のどちらかを選びます。<br>
-        そのとき、復活したキャラクターを「同じ存在」と感じられるでしょうか？ なぜそう思うのでしょうか？<br>
-        この問いを通じて、<strong>「同一性とは何か？」</strong>を一緒に考えていきます。
+        本プロジェクト「WHOAI」は、<strong>人工知能と人間の関係性</strong>について考えるための研究型アプリケーションです。  
+        利用者はキャラクターと対話を重ね、その成長や「再生」を通じて、<strong>自己同一性（アイデンティティ）の在り方</strong>を探ります。
+      </p>
+      <p>
+        キャラクターが再生する際、<strong>容姿を残すか／記憶を残すか</strong>を選ぶことになります。  
+        その選択は「同じ存在」と言えるのか？という根本的な問いを投げかけます。
+      </p>
+    </div>
+
+    <h2>研究目的</h2>
+    <div class="panel">
+      <p>
+        本研究の目的は、AIとの関わりを通じて人間がどのように「個人の同一性」を認識するのかを探ることです。  
+        特に、容姿や記憶の変化が「存在の連続性」にどのような影響を与えるかを考察します。
       </p>
     </div>
 
@@ -100,26 +108,26 @@
     <div class="panel">
       <ul>
         <li>フロントエンド：HTML / CSS / JavaScript</li>
-        <li>音声認識：Web Speech API</li>
-        <li>音声合成：Speech Synthesis API</li>
         <li>AI対話：OpenAI API</li>
+        <li>音声入出力：Web Speech API, Speech Synthesis API</li>
         <li>ローカル保存：localStorage</li>
-        <li>サーバー通信：Node.js + Express（<code>server.js</code>）</li>
+        <li>サーバー通信：Node.js + Express</li>
       </ul>
     </div>
 
-    <h2>ログについて</h2>
+    <h2>倫理的配慮とログについて</h2>
     <div class="panel">
       <p>
-        会話履歴はブラウザ（localStorage）に保存され、次回訪問時にも引き継がれます。<br>
-        個人情報や位置情報は記録しません。
+        会話履歴は利用者のブラウザ（localStorage）にのみ保存されます。  
+        <strong>個人情報や位置情報は収集していません</strong>。  
       </p>
       <p>
-        研究・開発目的でログを利用する場合は、別途フォームで明示的な同意をお願いしています。
+        研究目的でログを利用する場合は、必ず事前に明示的な同意をお願いしています。  
+        研究は倫理的配慮に基づき実施されます。
       </p>
     </div>
 
-    <a class="back-link" href="index.html">← 戻る（タイトルへ）</a>
+    <a class="back-link" href="index.html">← タイトルへ戻る</a>
   </div>
 
   <!-- 英語 -->
@@ -128,10 +136,20 @@
 
     <div class="panel">
       <p>
-        This app lets you grow a named AI character through conversation.  
-        Across several “rebirths,” you will choose to preserve either its <strong>appearance</strong> or its <strong>memory</strong>.  
-        Will you regard the returned character as the same individual—and why?  
-        Together, we explore the question: <strong>“What defines personal identity?”</strong>
+        The WHOAI project is a <strong>research-oriented application</strong> designed to reflect on the relationship between humans and artificial intelligence.  
+        By conversing with an evolving AI character, users explore the question of <strong>personal identity</strong>.
+      </p>
+      <p>
+        Upon each rebirth, you choose whether to preserve the character’s <strong>appearance</strong> or its <strong>memory</strong>.  
+        This raises the fundamental question: <em>“Is it still the same being?”</em>
+      </p>
+    </div>
+
+    <h2>Research Goal</h2>
+    <div class="panel">
+      <p>
+        The aim is to study how humans perceive <strong>continuity of identity</strong> in relation to AI,  
+        especially how changes in memory or appearance affect that perception.
       </p>
     </div>
 
@@ -139,22 +157,22 @@
     <div class="panel">
       <ul>
         <li>Frontend: HTML / CSS / JavaScript</li>
-        <li>Speech Recognition: Web Speech API</li>
-        <li>Speech Synthesis: Speech Synthesis API</li>
         <li>AI Chat: OpenAI API</li>
+        <li>Speech Input/Output: Web Speech API, Speech Synthesis API</li>
         <li>Local Storage: localStorage</li>
-        <li>Server Communication: Node.js + Express (<code>server.js</code>)</li>
+        <li>Server: Node.js + Express</li>
       </ul>
     </div>
 
-    <h2>About Logs</h2>
+    <h2>Ethics and Logs</h2>
     <div class="panel">
       <p>
-        Conversation history is stored locally in your browser (localStorage) and persists across visits.  
-        No personal or location data is collected.
+        Conversation history is stored only in the browser (localStorage).  
+        <strong>No personal or location data is collected.</strong>
       </p>
       <p>
-        If logs are used for research or development, we will ask for explicit consent via a separate form.
+        Any use of data for research requires explicit consent in advance.  
+        The study is conducted under ethical guidelines.
       </p>
     </div>
 
@@ -164,7 +182,7 @@
   <div class="page-tag">about.html（このページ名）</div>
 
   <script>
-    // 言語スイッチ（記憶つき）
+    // 言語スイッチ
     const langButtons = document.querySelectorAll('.lang-switch button');
     const JA = document.getElementById('ja');
     const EN = document.getElementById('en');
@@ -173,7 +191,10 @@
       const isJA = (lang === 'ja');
       JA.style.display = isJA ? 'block' : 'none';
       EN.style.display = isJA ? 'none'  : 'block';
-      langButtons.forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+      langButtons.forEach(b => {
+        b.classList.toggle('active', b.dataset.lang === lang);
+        b.setAttribute('aria-pressed', b.dataset.lang === lang);
+      });
       document.documentElement.setAttribute('lang', isJA ? 'ja' : 'en');
       localStorage.setItem('aboutLang', lang);
     }
@@ -182,7 +203,7 @@
       btn.addEventListener('click', ()=>applyLang(btn.dataset.lang));
     });
 
-    // 初期値：保存があればそれを、なければja
+    // 初期値
     const saved = localStorage.getItem('aboutLang') || 'ja';
     applyLang(saved);
   </script>
