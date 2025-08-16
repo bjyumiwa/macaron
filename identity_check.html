@@ -1,8 +1,70 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>空ページ</title>
+  <meta charset="UTF-8" />
+  <title>WhoAI - 最後の質問</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background: url("/public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 1.1em;
+      max-width: 600px;
+      line-height: 1.8;
+      margin-bottom: 32px;
+    }
+
+    button {
+      padding: 14px 28px;
+      font-size: 1.1em;
+      background: #ffccf2;
+      color: #111;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: all 0.2s ease-in-out;
+    }
+
+    button:hover {
+      background: #ffc1eb;
+    }
+
+    .fade-in {
+      animation: fadeIn 2s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
-<body></body>
+<body class="fade-in">
+  <h1>あなたは、同じ「みわっち」だと思いますか？</h1>
+  <p>
+    外見が変わっても、記録が残っていても、あなたにとってこのキャラは「同じ存在」でしょうか？<br>
+    以下のアンケートに、あなたの考えを教えてください。
+  </p>
+
+  <button onclick="window.location.href='https://docs.google.com/forms/d/e/1FAIpQLSfzWdkmMetDfQ9CZGPzvmTaIaANHV6Ie471LA7mrPAXfpVmuA/viewform?usp=header'">
+    アンケートに進む
+  </button>
+</body>
 </html>
