@@ -1,12 +1,11 @@
-<!-- FILE: /macaron/whoai_talk.html  -->
+<!-- FILE: /macaron/whoai_talk.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 会話（localStorage＋自動保存）</title>
+  <title>WhoAI - 会話（タネ）</title>
   <style>
-    /* ====== 基本スタイル ====== */
     html, body { height: 100%; margin: 0; }
     body {
       font-family: "Noto Sans JP", system-ui, sans-serif;
@@ -18,15 +17,13 @@
       padding: 16px; gap: 12px;
     }
     .topbar {
-      width: 100%; max-width: 880px; display: flex; align-items: center; justify-content: space-between;
-      gap: 8px; padding: 8px 10px; border-radius: 14px;
+      width: 100%; max-width: 880px; display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 14px;
       background: rgba(0,0,0,.35); backdrop-filter: blur(3px);
     }
     .filetag, .badge {
       font-size: 12px; opacity:.9; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12);
     }
-    .spacer { flex: 1; }
-
     .stage {
       width: 100%; max-width: 880px; border-radius: 16px; padding: 14px;
       background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
@@ -34,10 +31,8 @@
     }
     .avatar-zone { display:flex; align-items:flex-start; justify-content:center; }
     .avatar-zone img { width: 140px; height: auto; filter: drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
-
     .chat-zone { display:flex; flex-direction:column; gap:10px; }
     .name-row { font-weight:700; opacity:.95; }
-
     #chatArea {
       background: rgba(255,255,255,.1); border-radius: 12px; padding: 12px;
       height: 420px; overflow-y: auto; scroll-behavior: smooth;
@@ -46,13 +41,12 @@
     .msg.user { justify-content: flex-end; }
     .msg.assistant { justify-content: flex-start; }
     .bubble {
-      max-width: 75%; padding: 10px 12px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;
-      background: rgba(255,255,255,.12);
+      max-width: 75%; padding: 10px 12px; border-radius: 12px; line-height: 1.6;
+      white-space: pre-wrap; word-wrap: break-word; background: rgba(255,255,255,.12);
     }
     .msg.user .bubble { background: rgba(61,180,255,.2); }
     .msg.assistant .bubble { background: rgba(255,97,200,.2); }
     .role { display:block; font-size: 12px; opacity:.8; margin-bottom:4px; }
-
     .controls { display:flex; gap:8px; align-items:center; }
     input[type="text"] {
       flex: 1; padding: 10px 12px; border-radius: 10px; border: none;
@@ -63,9 +57,7 @@
       background: #ffd1ec; color: #111;
     }
     button:disabled { opacity:.6; cursor: not-allowed; }
-
     .hint { font-size: 12px; opacity:.85; margin-top:8px; }
-
     @media (max-width: 680px) {
       .stage { grid-template-columns: 1fr; }
       .avatar-zone { order: 2; }
@@ -83,62 +75,42 @@
 
   <div class="stage">
     <div class="avatar-zone">
-      <img id="characterImg" alt="character" src="" />
+      <img id="charImg" alt="character" src="" />
     </div>
     <div class="chat-zone">
-      <div class="name-row">会話相手：<span id="assistantName">WhoAI</span></div>
+      <div class="name-row">会話相手：<span id="assistantName">WhoAI</span>（タネ）</div>
       <div id="chatArea"></div>
       <div class="controls">
         <input id="userInput" type="text" placeholder="メッセージを入力…（Enterで送信）" />
         <button id="btnSend">送信</button>
       </div>
-      <div class="hint">
-        ※ 会話は <b>localStorage</b> に自動保存され、直近12発言を API に同封します。
-      </div>
+      <div class="hint">※ 直近12発言をAPIに同封し、会話はlocalStorageに保存されます。</div>
     </div>
   </div>
 
   <script>
-    // =============================================================
-    // 設定
-    // =============================================================
     const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
     const WINDOW_N = 12;
 
-    // キャラ画像マッピング（tane_◯◯ に修正）
-    const COLOR_TO_IMG = {
-      pink:   'public/assets/stage1/tane_pink.png',
-      blue:   'public/assets/stage1/tane_blue.png',
-      green:  'public/assets/stage1/tane_green.png',
-      purple: 'public/assets/stage1/tane_purple.png'
+    // タネキャラ画像
+    const TANE_SRC = {
+      pink:   'tane_pink.png',
+      blue:   'tane_blue.png',
+      green:  'tane_green.png',
+      purple: 'tane_purple.png'
     };
+    const base = 'public/assets/stage1';
+    const charImg = document.getElementById('charImg');
+    const color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
+    charImg.src = `${base}/${TANE_SRC[color] || TANE_SRC.green}`;
 
-    // localStorageの識別子
-    const userId = crypto.randomUUID();
-    const convoId = crypto.randomUUID();
-    const key = (s) => `whoai:${s}`;
-
+    // 会話ログ管理
+    const key = (s) => `whoai:tane:${s}`;
     const readLog = () => JSON.parse(localStorage.getItem(key('chatLog')) || '[]');
     const writeLog = (log) => localStorage.setItem(key('chatLog'), JSON.stringify(log));
 
     const playerName = 'あなた';
     const assistantName = 'WhoAI';
-    const color = (localStorage.getItem('whoai_color') || 'green').toLowerCase();
-
-    // =============================================================
-    // UI 初期化
-    // =============================================================
-    document.getElementById('assistantName').textContent = assistantName;
-    document.getElementById('userBadge').textContent = `user: ${userId.slice(0,8)}`;
-    document.getElementById('convoBadge').textContent = `convo: ${convoId.slice(0,8)}`;
-    document.getElementById('windowBadge').textContent = `window: ${WINDOW_N}`;
-
-    const characterImg = document.getElementById('characterImg');
-    if (COLOR_TO_IMG[color]) {
-      characterImg.src = COLOR_TO_IMG[color];
-    } else {
-      characterImg.style.display = 'none';
-    }
 
     const chatArea = document.getElementById('chatArea');
     function renderChat() {
@@ -161,9 +133,7 @@
     }
     renderChat();
 
-    // =============================================================
     // 送信処理
-    // =============================================================
     async function talk(userText) {
       if (!userText) return;
       let log = readLog();
@@ -182,11 +152,21 @@
       } catch(e) {
         replyText = '（通信エラー）';
       }
+
       log = readLog();
       log.push({ role:'assistant', content:replyText, ts:Date.now() });
       writeLog(log); renderChat();
+
+      // 進化条件チェック（3回会話したら進化演出へ）
+      const userTurns = log.filter(m => m.role==='user').length;
+      if (userTurns >= 3) {
+        localStorage.setItem('whoai_stage','evolved');
+        localStorage.setItem('whoai_turn','0');
+        location.href = 'evolution.html';
+      }
     }
 
+    // イベント
     const userInput=document.getElementById('userInput');
     const btnSend=document.getElementById('btnSend');
     btnSend.addEventListener('click',()=>{
