@@ -21,6 +21,7 @@
       font-size: 24px;
       margin-bottom: 20px;
       color: #333;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
     .macaron-container {
@@ -54,18 +55,20 @@
 <body>
   <h1>好きなマカロンを選んでね</h1>
   <div class="macaron-container">
-    <img src="/public/assets/stage1/macaron_pink.png" alt="Pink Macaron" class="macaron" onclick="selectMacaron('pink')" />
-    <img src="/public/assets/stage1/macaron_blue.png" alt="Blue Macaron" class="macaron" onclick="selectMacaron('blue')" />
-    <img src="/public/assets/stage1/macaron_green.png" alt="Green Macaron" class="macaron" onclick="selectMacaron('green')" />
-    <img src="/public/assets/stage1/macaron_purple.png" alt="Purple Macaron" class="macaron" onclick="selectMacaron('purple')" />
+    <img src="/assets/stage1/macaron_pink.png" alt="Pink Macaron" class="macaron" onclick="selectMacaron('pink')" />
+    <img src="/assets/stage1/macaron_blue.png" alt="Blue Macaron" class="macaron" onclick="selectMacaron('blue')" />
+    <img src="/assets/stage1/macaron_green.png" alt="Green Macaron" class="macaron" onclick="selectMacaron('green')" />
+    <img src="/assets/stage1/macaron_purple.png" alt="Purple Macaron" class="macaron" onclick="selectMacaron('purple')" />
   </div>
 
   <div class="footer">WhoAI Project</div>
 
   <script>
     function selectMacaron(color) {
-      localStorage.setItem('macaronColor', color);
-      window.location.href = "/macaron/whoai_talk.html"; // 次の会話画面へ
+      localStorage.setItem('whoai_color', color);
+      localStorage.setItem('whoai_stage', 'tane');
+      localStorage.setItem('whoai_turnCount', '0');
+      window.location.href = "/macaron/whoai_talk.html";
     }
   </script>
 </body>
