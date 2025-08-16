@@ -5,51 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WhoAI スタート</title>
   <style>
-    body {
-      font-family: "Noto Sans JP", sans-serif;
-      background: #693bb3;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",sans-serif;color:#fff;
+      /* ▼ 宇宙背景に変更 */
+      background:#000 url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;
     }
-    .card {
-      text-align: center;
-      background: rgba(0,0,0,.4);
-      padding: 24px;
-      border-radius: 18px;
-      box-shadow: 0 8px 30px rgba(0,0,0,.3);
-      width: min(90vw, 500px);
+    .card{
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.15);
+      border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,.5);
+      width:min(720px,92vw);padding:28px 24px;
     }
-    h1 { margin-bottom: 16px }
-    .btn {
-      display:inline-block; margin-top:16px;
-      padding:12px 20px; border-radius:12px;
-      background:#ffd1ec; color:#141217;
-      font-weight:700; cursor:pointer; text-decoration:none;
-    }
-    footer { margin-top: 20px; font-size: 13px; opacity:.75 }
-    footer a { color:#fff; text-decoration: underline }
+    h1{margin:0 0 12px;font-size:32px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
+    p{margin:0 0 18px;opacity:.95;line-height:1.7}
+    img.logo{width:200px;max-width:55vw;filter:drop-shadow(0 8px 20px rgba(0,0,0,.5));margin:0 auto 16px;display:block}
+    .btn{padding:14px 28px;border:none;border-radius:14px;background:#ffd1ec;color:#141217;font-weight:700;cursor:pointer}
+    footer{margin-top:18px;font-size:13px;opacity:.8}
+    footer a{color:#fff;text-decoration:underline}
   </style>
 </head>
 <body>
-  <div class="card">
+  <main class="card">
     <h1>WhoAIへようこそ</h1>
-    <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" style="width:160px">
-
-    <p>
-      あなたの選択で姿を変え、進化していきます。<br>
-      たくさんの会話をお楽しみください。
-    </p>
-
-    <!-- 🔽 スタート先を fortune.html に -->
+    <img class="logo" src="public/assets/stage1/miwacchi_open.png" alt="みわっち">
+    <p>あなたの選択で姿を変え、進化していきます。<br>たくさんの会話をお楽しみください。</p>
     <button class="btn" onclick="location.href='fortune.html'">はじめる</button>
-
-    <footer>
-      <a href="about.html">この研究について</a>
-    </footer>
-  </div>
+    <footer><a href="about.html">この研究について</a></footer>
+  </main>
 </body>
 </html>
