@@ -107,15 +107,23 @@
 
   <script>
     const allowedColors = ['pink', 'blue', 'green', 'purple'];
+    const colorToPersonality = {
+  pink: '情熱',
+  blue: '静寂',
+  green: '元気',
+  purple: '創造'
+};
 
-    function saveColorAndProceed(color, personality) {
-      const selectedColor = (color || '').toLowerCase().trim();
-      const finalColor = allowedColors.includes(selectedColor) ? selectedColor : 'green';
-      localStorage.setItem('macaronColor', finalColor);
-      localStorage.setItem('macaronPersonality', personality);
-      location.href = 'evolution.html';
-    }
+function saveColorAndGo(c) {
+  const chosen = (c || '').toLowerCase().trim();
+  const color = ['pink', 'blue', 'green', 'purple'].includes(chosen) ? chosen : 'green';
+  localStorage.setItem('macaronColor', color);
+  localStorage.setItem('macaronPersonality', colorToPersonality[color]); // ★性格も保存
+  location.href = 'evolution.html';
+}
 
+
+  
     document.querySelectorAll('.card').forEach(card => {
       const color = card.dataset.color;
       const personality = card.dataset.personality;
