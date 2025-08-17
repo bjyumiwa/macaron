@@ -1,170 +1,201 @@
+<!-- FILE: whoai_talk.html（タネキャラ3回会話まで） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（タネキャラ）</title>
+  <title>会話 - WHOAI</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html, body {
-      height: 100%;
-      margin: 0;
+      height: 100%; margin: 0;
       font-family: "Noto Sans JP", sans-serif;
-      background: #000;
+      color: #fff;
+      background-color: #000;
       background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-      color: white;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
     }
 
-    .whoai-name-badge {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 1000;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(3px);
-      padding: 6px 12px;
-      border-radius: 12px;
-      font-weight: bold;
+    .langSwitcher {
+      position: fixed; top: 10px; right: 10px;
+      display: flex; gap: 8px; z-index: 999;
+    }
+    .langSwitcher button {
+      background: rgba(0,0,0,0.5);
+      color: white; border: none; padding: 4px 8px;
+      border-radius: 6px; cursor: pointer;
+    }
+
+    .badge-box {
+      margin-top: 12px;
+      background: rgba(0,0,0,0.5);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin: 16px 0 4px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #ccc;
+      margin-bottom: 10px;
+    }
+
+    #charImg {
+      width: 72px; height: 72px;
+      margin-bottom: 6px;
+    }
+
+    #nameDisplay {
+      font-size: 14px;
+      margin-bottom: 10px;
     }
 
     #chatArea {
-      flex: 1;
+      width: 90%; max-width: 600px;
+      height: 280px;
+      background: rgba(255,255,255,0.08);
+      padding: 12px;
+      border-radius: 12px;
       overflow-y: auto;
-      padding: 20px;
-    }
-
-    .message {
       margin-bottom: 12px;
     }
 
-    .message.user {
-      text-align: right;
-      color: #ffd;
+    .message {
+      margin-bottom: 8px;
     }
 
-    .message.ai {
-      text-align: left;
-      color: #adf;
-    }
-
-    #inputArea {
+    .inputArea {
       display: flex;
-      padding: 12px;
-      background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 24px;
     }
 
     #userInput {
-      flex: 1;
-      padding: 8px;
+      width: 70%;
+      padding: 10px;
+      font-size: 14px;
       border-radius: 8px;
       border: none;
-      font-size: 16px;
     }
 
     #sendBtn {
-      margin-left: 8px;
-      padding: 8px 16px;
-      font-size: 16px;
-      border: none;
+      padding: 10px 16px;
+      font-size: 14px;
       border-radius: 8px;
-      background: #ffc0cb;
-      color: #000;
+      background: #ffd0e9;
+      border: none;
       cursor: pointer;
     }
 
-    #characterImg {
-      width: 140px;
-      margin: 20px auto 0;
-      display: block;
-    }
-
-    .file-label {
-      position: fixed;
-      left: 10px;
-      bottom: 10px;
-      font-size: 12px;
-      opacity: 0.7;
+    #sendBtn:hover {
+      background: #ffb7da;
     }
   </style>
 </head>
 <body>
-  <div class="whoai-name-badge" id="nameBadge">あなた</div>
+  <!-- 言語切替ボタン（機能追加予定） -->
+  <div class="langSwitcher">
+    <button>日本語</button>
+    <button>EN</button>
+    <button>中文</button>
+    <button>KO</button>
+  </div>
 
-  <img id="characterImg" src="" alt="キャラ画像" />
+  <div class="badge-box" id="statusBadge">？ | blue | tane　　turn: 0/3</div>
+
+  <h1>会話</h1>
+  <p class="subtitle">3回会話すると、マカロンの再選択へ</p>
+
+  <img id="charImg" src="" alt="タネキャラ" />
+  <p id="nameDisplay">あなた: ??? / キャラ: ???</p>
 
   <div id="chatArea"></div>
 
-  <div id="inputArea">
-    <input type="text" id="userInput" placeholder="メッセージを入力…" />
+  <div class="inputArea">
+    <input id="userInput" type="text" placeholder="メッセージを入力" />
     <button id="sendBtn">送信</button>
   </div>
-
-  <div class="file-label">/macaron/whoai_talk.html</div>
 
   <script>
     const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
 
     const userName = localStorage.getItem("whoai_name") || "あなた";
-    const lang = localStorage.getItem("whoai_lang") || "ja-JP";
-    const color = localStorage.getItem("macaronColor") || "green";
-    const personality = localStorage.getItem("macaronPersonality") || "";
+    const color = localStorage.getItem("macaronColor") || "blue";
+    const personality = localStorage.getItem("macaronPersonality") || "";  // 情熱など
+    const userCharName = localStorage.getItem("whoai_charName") || "???";
 
-    document.getElementById("nameBadge").textContent = userName;
+    let turnCount = parseInt(localStorage.getItem("whoai_turnCount") || "0", 10);
+    let history = [];
 
-    // キャラ画像表示
-    const characterImg = document.getElementById("characterImg");
-    characterImg.src = `public/assets/stage1/${color}_closed.png`;
+    // キャラ画像セット（taneキャラ）
+    const charImgPath = `public/assets/stage1/${color}_closed.png`;
+    document.getElementById("charImg").src = charImgPath;
 
-    // チャット履歴管理
+    // 名前とキャラ表示
+    document.getElementById("nameDisplay").textContent = `あなた: ${userName} / キャラ: ${userCharName}`;
+    document.getElementById("statusBadge").textContent = `${userCharName} | ${color} | tane　　turn: ${turnCount}/3`;
+
     const chatArea = document.getElementById("chatArea");
-    const userInput = document.getElementById("userInput");
+    const input = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
-
-    let chatHistory = [];
 
     function appendMessage(role, content) {
       const div = document.createElement("div");
-      div.className = `message ${role}`;
-      div.textContent = (role === "user" ? userName : "AI") + "： " + content;
+      div.className = "message";
+      div.textContent = `${role === "user" ? userName : userCharName}: ${content}`;
       chatArea.appendChild(div);
       chatArea.scrollTop = chatArea.scrollHeight;
     }
 
     async function sendMessage() {
-      const userMessage = userInput.value.trim();
-      if (!userMessage) return;
+      const message = input.value.trim();
+      if (!message) return;
+      appendMessage("user", message);
+      input.value = "";
 
-      appendMessage("user", userMessage);
-      userInput.value = "";
-
-      // API通信
       const res = await fetch(TALK_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userMessage,
-          history: chatHistory,
-          personality: personality,
-        }),
+          userMessage: message,
+          history,
+          personality
+        })
       });
 
       const data = await res.json();
-      const reply = data.reply || "……";
-
+      const reply = data.reply || "（返答がありませんでした）";
       appendMessage("ai", reply);
 
-      // 履歴更新
-      chatHistory.push({ role: "user", content: userMessage });
-      chatHistory.push({ role: "assistant", content: reply });
+      history.push({ role: "user", content: message });
+      history.push({ role: "assistant", content: reply });
+
+      turnCount++;
+      localStorage.setItem("whoai_turnCount", turnCount.toString());
+
+      document.getElementById("statusBadge").textContent = `${userCharName} | ${color} | tane　　turn: ${turnCount}/3`;
+
+      // 3回で進化フローへ
+      if (turnCount >= 3) {
+        setTimeout(() => {
+          window.location.href = "macaron_select.html";
+        }, 1500);
+      }
     }
 
     sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keydown", e => {
+    input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendMessage();
     });
   </script>
