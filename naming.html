@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>名前をつけよう</title>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
+    html, body { height: 100%; margin: 0; }
     body {
       font-family: "Noto Sans JP", sans-serif;
       background: #000;
@@ -47,15 +44,8 @@
       filter: drop-shadow(0 8px 26px rgba(0, 0, 0, 0.15));
     }
 
-    h2 {
-      margin: 0 0 8px;
-    }
-
-    p.sub {
-      margin: 0 0 14px;
-      opacity: 0.8;
-    }
-
+    h2 { margin: 0 0 8px; }
+    p.sub { margin: 0 0 14px; opacity: 0.8; }
     input {
       width: 100%;
       padding: 12px 14px;
@@ -83,12 +73,8 @@
     }
 
     @media (max-width: 760px) {
-      .wrap {
-        grid-template-columns: 1fr;
-      }
-      .hero img {
-        width: 180px;
-      }
+      .wrap { grid-template-columns: 1fr; }
+      .hero img { width: 180px; }
     }
 
     #langSwitcher {
@@ -145,7 +131,6 @@
       <form id="nameForm">
         <input id="nameInput" type="text" placeholder="名前を入力" autocomplete="off" required>
         <button type="submit" id="submitBtn">決定して会話へ</button>
-       
       </form>
     </section>
   </div>
@@ -160,6 +145,7 @@
     let color = (localStorage.getItem('macaronColor') || '').toLowerCase().trim();
     if (!allowed.includes(color)) location.replace('fortune.html');
 
+    // 会話の初期化（タネ状態）
     if (!localStorage.getItem('whoai_stage')) localStorage.setItem('whoai_stage','tane');
     localStorage.setItem('whoai_turn','0');
     localStorage.removeItem('whoai_phase');
@@ -192,13 +178,11 @@
         'zh-CN': "现在的样子",
         'ko-KR': "현재의 모습"
       },
-     'heroDesc': {
-　　  'ja-JP': "初めまして。たくさんお話しようね",
-　　  'en-US': "Nice to meet you. Let's talk a lot!",
-　　  'zh-CN': "你好呀，我们来聊很多话吧！",
-　　  'ko-KR': "처음 뵙겠습니다. 우리 많이 이야기해요!"
-}
-
+      'heroDesc': {
+        'ja-JP': "初めまして。たくさんお話しようね",
+        'en-US': "Nice to meet you. Let's talk a lot!",
+        'zh-CN': "你好呀，我们来聊很多话吧！",
+        'ko-KR': "처음 뵙겠습니다. 우리 많이 이야기해요!"
       },
       'formTitle': {
         'ja-JP': "キャラクターに名前をつけてね",
@@ -217,8 +201,7 @@
         'en-US': "Confirm and talk",
         'zh-CN': "确认并开始对话",
         'ko-KR': "확정하고 대화로"
-      },
-     
+      }
     };
 
     function applyI18n(lang){
@@ -246,5 +229,3 @@
   </script>
 </body>
 </html>
-
-
