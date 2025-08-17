@@ -1,4 +1,4 @@
-<!-- whoai_talk.html 音声入力対応 完全版 -->
+<!-- FILE: public/whoai_talk.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -29,8 +29,6 @@
     .input-box button{margin-left:8px;padding:10px 16px;border:none;border-radius:8px;background:#6c5ce7;color:#fff;cursor:pointer}
     .char-img{width:80px;margin:10px auto;display:block}
     select{margin-top:6px;padding:4px}
-    #micBtn{margin-left:6px;padding:10px 14px;border:none;border-radius:8px;background:#ff7675;color:#fff;cursor:pointer}
-    #micBtn.on{background:#d63031}
   </style>
 </head>
 <body>
@@ -52,26 +50,27 @@
   <div class="input-box">
     <input id="msgInput" type="text" placeholder="メッセージを入力..." />
     <button id="sendBtn">送信</button>
-    <button id="micBtn">🎤 開始</button>
   </div>
 
 <script>
-const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
+const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk"; // API固定
 const CHAT_KEY = "whoai_chat";
 const MAX_TANE = 3;
 const MAX_EVOLVED = 10;
 
+// localStorageから情報取得
 const charName = localStorage.getItem("char_name") || "キャラ";
 const color = localStorage.getItem("macaronColor") || "blue";
-const stage = localStorage.getItem("stage") || "tane";
+const stage = localStorage.getItem("stage") || "tane"; // tane or evolved
 document.getElementById("charName").textContent = charName;
 
+// キャラ画像設定
 const charImg = document.getElementById("charImg");
 charImg.src = (stage==="tane")
   ? `public/assets/stage1/tane_${color}.png`
   : `public/assets/stage1/evolved_${color}.png`;
 
-// 多言語 UI
+// 言語設定
 const I18N = {
   title:{ "ja-JP":"会話","en-US":"Conversation","zh-CN":"对话","ko-KR":"대화"},
   subtitle_tane:{
@@ -99,7 +98,7 @@ const savedLang=localStorage.getItem("whoai_lang")||"ja-JP";
 langSelect.value=savedLang;applyI18n(savedLang);
 langSelect.addEventListener("change",()=>applyI18n(langSelect.value));
 
-// 会話履歴
+// 会話履歴読み込み
 let history=[];
 try{history=JSON.parse(localStorage.getItem(CHAT_KEY)||"[]");}catch(e){history=[];}
 const chatDiv=document.getElementById("chat");
@@ -127,7 +126,10 @@ async function handleSend(){
   try{
     const res=await fetch(TALK_ENDPOINT,{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:text,color,stage,history,charName,lang:langSelect.value})
+      body:JSON.stringify({
+        message:text,color,stage,history,
+        charName,lang:langSelect.value
+      })
     });
     const data=await res.json();
     const reply=data.reply||"......";
@@ -157,35 +159,6 @@ document.getElementById("sendBtn").addEventListener("click",handleSend);
 document.getElementById("msgInput").addEventListener("keypress",e=>{
   if(e.key==="Enter"){handleSend();}
 });
-
-// 🎤 音声認識
-const micBtn=document.getElementById("micBtn");
-let rec;let listening=false;
-if('webkitSpeechRecognition'in window){
-  rec=new webkitSpeechRecognition();
-  rec.lang=savedLang; // UI言語と揃える
-  rec.interimResults=false;
-  rec.maxAlternatives=1;
-  rec.continuous=false; // 一旦認識で終了
-
-  rec.onstart=()=>{
-    listening=true;micBtn.classList.add("on");micBtn.textContent="🔴 停止";
-  };
-  rec.onend=()=>{
-    listening=false;micBtn.classList.remove("on");micBtn.textContent="🎤 開始";
-  };
-  rec.onerror=(e)=>{console.warn(e);listening=false;micBtn.classList.remove("on");micBtn.textContent="🎤 開始";};
-  rec.onresult=(e)=>{
-    let text=e.results[0][0].transcript;
-    document.getElementById("msgInput").value=text;
-  };
-
-  micBtn.addEventListener("click",()=>{
-    if(!listening){rec.start();}else{rec.stop();}
-  });
-}else{
-  micBtn.style.display="none"; // ブラウザ未対応なら非表示
-}
 </script>
 </body>
 </html>
