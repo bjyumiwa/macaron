@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI スタート</title>
+  <title data-i18n="title">WhoAI スタート</title>
   <style>
     html,body{ height:100%; margin:0; font-family:"Noto Sans JP",sans-serif; }
     body{
@@ -22,24 +22,17 @@
     h1{ margin:0 0 12px; font-size:28px }
     p{ margin:0 0 20px; font-size:16px; line-height:1.6 }
     .miwacchi{ width:120px; margin:14px auto; display:block }
-
     .btn{
       display:inline-block; margin-top:10px; padding:12px 18px; border-radius:12px;
       background:#ffd1ec; color:#141217; font-weight:700; cursor:pointer; text-decoration:none;
     }
     .btn:hover{ opacity:.9 }
-
-    .lang-row{
-      margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;
-    }
+    .lang-row{ margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
     .lang-chip{
       border:0; border-radius:999px; padding:8px 12px;
       background:rgba(255,255,255,.14); color:#fff; font-weight:800; cursor:pointer;
     }
-    .lang-chip[aria-pressed="true"]{
-      outline:2px solid #ffd1ec; background:rgba(255,209,236,.18); color:#fff;
-    }
-
+    .lang-chip[aria-pressed="true"]{ outline:2px solid #ffd1ec; background:rgba(255,209,236,.18) }
     footer{ margin-top:14px; font-size:14px }
     footer a{ color:#ffd1ec; text-decoration:underline }
     footer a:hover{ opacity:1 }
@@ -47,14 +40,14 @@
 </head>
 <body>
   <div class="card" aria-live="polite">
-    <h1>WhoAIへようこそ</h1>
+    <h1 data-i18n="welcome">WhoAIへようこそ</h1>
     <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="miwacchi">
-    <p>あなたの選択で姿を変え、進化していきます。<br>たくさんの会話をお楽しみください。</p>
+    <p data-i18n="desc">あなたの選択で姿を変え、進化していきます。<br>たくさんの会話をお楽しみください。</p>
 
     <!-- スタート＝毎回フルリセット＋遷移 -->
-    <a href="macaron.html" id="startBtn" class="btn">はじめる</a>
+    <a href="macaron.html" id="startBtn" class="btn" data-i18n="start">はじめる</a>
 
-    <!-- 4か国語ボタン（見た目の行） -->
+    <!-- 4か国語ボタン -->
     <div class="lang-row" id="langRow" aria-label="言語を選択">
       <button type="button" class="lang-chip" data-lang="ja" aria-pressed="true">日本語</button>
       <button type="button" class="lang-chip" data-lang="en" aria-pressed="false">English</button>
@@ -63,41 +56,90 @@
     </div>
 
     <footer>
-      <a href="about.html">この研究について</a>
+      <a href="about.html" data-i18n="about">この研究について</a>
     </footer>
   </div>
 
   <script>
-    // ===== 言語（UI用＋会話用）キー =====
+    // ===== i18n 辞書（必要なキーだけ）=====
+    const I18N = {
+      ja: {
+        title:  "WhoAI スタート",
+        welcome:"WhoAIへようこそ",
+        desc:   "あなたの選択で姿を変え、進化していきます。<br>たくさんの会話をお楽しみください。",
+        start:  "はじめる",
+        about:  "この研究について"
+      },
+      en: {
+        title:  "WhoAI — Start",
+        welcome:"Welcome to WhoAI",
+        desc:   "Your choices will change its appearance and help it evolve.<br>Enjoy lots of conversations!",
+        start:  "Start",
+        about:  "About this study"
+      },
+      zh: {
+        title:  "WhoAI — 开始",
+        welcome:"欢迎来到 WhoAI",
+        desc:   "你的选择会改变它的外形并让它进化。<br>祝你聊天愉快！",
+        start:  "开始",
+        about:  "关于本研究"
+      },
+      ko: {
+        title:  "WhoAI — 시작",
+        welcome:"WhoAI에 오신 것을 환영합니다",
+        desc:   "당신의 선택에 따라 모습이 바뀌고 진화합니다.<br>즐겁게 대화해 보세요!",
+        start:  "시작하기",
+        about:  "이 연구에 대하여"
+      }
+    };
+
     const UI_LANG_KEY = 'whoai_ui_lang';
     const APP_LANG_KEY = 'whoai_lang';
     const DEFAULT_LANG = 'ja';
 
-    // 保存済みの言語を反映
+    // 現在の言語を決定
     const saved = localStorage.getItem(UI_LANG_KEY) || localStorage.getItem(APP_LANG_KEY) || DEFAULT_LANG;
     const row = document.getElementById('langRow');
-    function setActive(lang){
+
+    // 言語反映
+    function applyI18n(lang){
+      const pack = I18N[lang] || I18N[DEFAULT_LANG];
+      document.querySelectorAll('[data-i18n]').forEach(el=>{
+        const key = el.getAttribute('data-i18n');
+        if (!pack[key]) return;
+        if (el.tagName === 'TITLE') {
+          document.title = pack[key];
+        } else {
+          el.innerHTML = pack[key];
+        }
+      });
+      // 記録（以降のページで会話用にも使う）
+      localStorage.setItem(UI_LANG_KEY, lang);
+      localStorage.setItem(APP_LANG_KEY, lang);
+      // ボタンのaria状態を更新
       row.querySelectorAll('.lang-chip').forEach(btn=>{
         btn.setAttribute('aria-pressed', btn.dataset.lang === lang ? 'true' : 'false');
       });
-      localStorage.setItem(UI_LANG_KEY, lang);
-      localStorage.setItem(APP_LANG_KEY, lang);
+      // <html lang="..."> も更新（スクリーンリーダ用）
+      document.documentElement.setAttribute('lang', lang);
     }
-    setActive(saved);
 
-    // クリックで切替
+    // 初期適用
+    applyI18n(saved);
+
+    // 言語ボタンで切替
     row.addEventListener('click', (e)=>{
       const btn = e.target.closest('.lang-chip');
       if(!btn) return;
-      setActive(btn.dataset.lang || DEFAULT_LANG);
+      applyI18n(btn.dataset.lang || DEFAULT_LANG);
     });
 
     // ===== スタート＝毎回フルリセット → macaron.html =====
     document.getElementById('startBtn').addEventListener('click', (e)=>{
       e.preventDefault();
-      const lang = (row.querySelector('.lang-chip[aria-pressed="true"]')?.dataset.lang) || DEFAULT_LANG;
+      const lang = localStorage.getItem(UI_LANG_KEY) || DEFAULT_LANG;
 
-      // 完全初期化
+      // 完全初期化（言語は保持）
       try{
         Object.keys(localStorage).forEach(k=>{
           if (/^(whoai_|macaron)/.test(k)) localStorage.removeItem(k);
@@ -109,7 +151,6 @@
         ].forEach(k=>localStorage.removeItem(k));
       }catch(err){ console.warn('[reset error]', err); }
 
-      // 言語だけ持ち越し
       localStorage.setItem(UI_LANG_KEY, lang);
       localStorage.setItem(APP_LANG_KEY, lang);
 
