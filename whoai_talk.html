@@ -1,212 +1,191 @@
+<!-- whoai_talk.html 音声入力対応 完全版 -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <title>WhoAI Talk</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 会話</title>
   <style>
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",sans-serif;color:#fff;background:#000;
+      font-family:"Noto Sans JP",sans-serif;color:#fff;
       background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
       display:flex;flex-direction:column;align-items:center;justify-content:flex-start
     }
-    .whoai-name-badge{position:fixed;top:10px;right:10px;z-index:1000;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);padding:8px 12px;border-radius:12px;font-weight:700;font-size:14px}
-    header{margin-top:22px;text-align:center}
-    header h1{margin:6px 0 4px;font-size:22px;text-shadow:0 2px 10px rgba(0,0,0,.45)}
-    header p{margin:0;opacity:.9;font-size:13px}
-    .character{margin:14px 0 8px;display:flex;flex-direction:column;align-items:center}
-    .character img{width:160px;max-width:45vw;aspect-ratio:1/1;object-fit:contain;filter:drop-shadow(0 8px 30px rgba(0,0,0,.45));}
-    .status-chip{margin-top:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.1)}
-    #chatArea{width:min(680px,92vw);max-height:52vh;overflow-y:auto;padding:14px;border-radius:14px;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
-    .row{display:flex;flex-direction:column;gap:4px;margin:10px 0}
-    .row.me{align-items:flex-end}.row.ai{align-items:flex-start}
-    .label{font-size:12px;opacity:.8;background:rgba(255,255,255,.14);padding:3px 8px;border-radius:999px}
-    .bubble{display:inline-block;padding:10px 12px;border-radius:12px;max-width:88%;line-height:1.5}
-    .me .bubble{background:rgba(255,255,255,.15)} .ai .bubble{background:rgba(255,255,255,.08)}
-    form{width:min(680px,92vw);display:flex;gap:8px;margin:14px 0 8px;flex-wrap:wrap;align-items:center}
-    input[type="text"]{flex:1;min-width:240px;padding:12px 14px;border-radius:12px;border:none;outline:none;background:rgba(255,255,255,.12);color:#fff}
-    button{padding:12px 16px;border-radius:12px;border:none;cursor:pointer;font-weight:700}
-    #sendBtn{background:#ffd1ec;color:#141217}
-    #sendBtn:disabled{opacity:.7;cursor:not-allowed}
-    .ctrls{display:flex;gap:8px;align-items:center}
-    select{padding:10px 12px;border-radius:12px;border:none;background:rgba(255,255,255,.12);color:#fff}
-    .mic{background:#65f;}.mic.on{background:#e8519e}
-    .hint{font-size:12px;opacity:.8}
-    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.75}
+    header{padding:10px;text-align:center}
+    h1{margin:4px 0;font-size:20px}
+    .chat-container{flex:1;width:100%;max-width:600px;overflow-y:auto;padding:12px}
+    .msg{margin:8px 0;display:flex}
+    .msg.user{justify-content:flex-end}
+    .msg.bot{justify-content:flex-start}
+    .bubble{
+      padding:10px 14px;border-radius:16px;max-width:70%;line-height:1.5;
+      word-wrap:break-word;white-space:pre-wrap
+    }
+    .user .bubble{background:#4e9af1;color:#fff;border-bottom-right-radius:2px}
+    .bot .bubble{background:#444;color:#fff;border-bottom-left-radius:2px}
+    .input-box{display:flex;width:100%;max-width:600px;padding:10px;box-sizing:border-box}
+    .input-box input{flex:1;padding:10px;border-radius:8px;border:none;font-size:16px}
+    .input-box button{margin-left:8px;padding:10px 16px;border:none;border-radius:8px;background:#6c5ce7;color:#fff;cursor:pointer}
+    .char-img{width:80px;margin:10px auto;display:block}
+    select{margin-top:6px;padding:4px}
+    #micBtn{margin-left:6px;padding:10px 14px;border:none;border-radius:8px;background:#ff7675;color:#fff;cursor:pointer}
+    #micBtn.on{background:#d63031}
   </style>
 </head>
 <body>
-  <div class="whoai-name-badge" id="nameBadge">WhoAI</div>
   <header>
-    <h1>会話</h1>
-    <p id="subtitle">進行に応じて自動で次の画面へ進みます</p>
+    <h1 id="title">会話</h1>
+    <p id="subtitle">たねキャラで3回会話すると進化へ</p>
+    <img id="charImg" class="char-img" src="" alt="キャラ">
+    <p id="charName"></p>
+    <select id="langSelect">
+      <option value="ja-JP">日本語</option>
+      <option value="en-US">English</option>
+      <option value="zh-CN">中文</option>
+      <option value="ko-KR">한국어</option>
+    </select>
   </header>
-  <section class="character">
-    <img id="characterImg" alt="whoai character" src="">
-    <div class="status-chip" id="statusChip"></div>
-  </section>
 
-  <main id="chatArea" aria-live="polite" aria-label="chat log"></main>
+  <div id="chat" class="chat-container"></div>
 
-  <!-- 入力＋音声UI -->
-  <form id="chatForm">
-    <input id="userInput" type="text" placeholder="メッセージを入力（音声でもOK）" autocomplete="off" />
-    <div class="ctrls">
-      <select id="langSelect" title="音声入力言語">
-        <option value="ja-JP">日本語</option>
-        <option value="en-US">English</option>
-        <option value="zh-CN">中文（简体）</option>
-        <option value="ko-KR">한국어</option>
-      </select>
-      <button id="micBtn" type="button" class="mic" title="音声入力">🎤 開始</button>
-      <label class="hint"><input type="checkbox" id="autoSend" checked> 自動送信</label>
-      <button id="sendBtn" type="submit">送信</button>
-    </div>
-  </form>
+  <div class="input-box">
+    <input id="msgInput" type="text" placeholder="メッセージを入力..." />
+    <button id="sendBtn">送信</button>
+    <button id="micBtn">🎤 開始</button>
+  </div>
 
-  <div class="file-label">/macaron/whoai_talk.html</div>
+<script>
+const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
+const CHAT_KEY = "whoai_chat";
+const MAX_TANE = 3;
+const MAX_EVOLVED = 10;
 
-  <script>
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+const charName = localStorage.getItem("char_name") || "キャラ";
+const color = localStorage.getItem("macaronColor") || "blue";
+const stage = localStorage.getItem("stage") || "tane";
+document.getElementById("charName").textContent = charName;
 
-    /* ===== 口調（色ごとの人格） ===== */
-    const PERSONA = {
-      pink:{name:'丁寧',suffix:['ですね。','です。','でしょうか。','かと思います。'],softeners:['少々','もしよろしければ','よろしければ','念のため'],preambles:['失礼いたします。','承知しました。','かしこまりました。']},
-      green:{name:'やんちゃ',suffix:['だよ！','だね！','いこ！','ってね！'],softeners:['まぁ','ちょい','たぶん','きっと'],preambles:['よっ！','へへっ！','やった！','いくよ！']},
-      blue:{name:'引け目',suffix:['かも…','かな…','かもしれません…','ごめんね…'],softeners:['もし','たぶん','もしかしたら','あの…'],preambles:['すみません…','自信ないけど…','控えめに言うと…']},
-      purple:{name:'創造的',suffix:['みたい。','って感じ。','がひらめいた。','が生まれるね。'],softeners:['ふっと','直感で','インスピレーションで','想像すると'],preambles:['ひらめき！','イメージしてみて。','空想だけど…']}
-    };
-    function stylizeByColor(text, color) {
-      const p = PERSONA[color] || PERSONA.green;
-      let t = String(text || '').trim();
-      if (Math.random() < 0.15 && p.preambles.length) t = p.preambles[Math.floor(Math.random()*p.preambles.length)] + ' ' + t;
-      t = t.replace(/、/g, () => (Math.random()<0.25 && p.softeners.length) ? '、'+p.softeners[Math.floor(Math.random()*p.softeners.length)]+'、' : '、');
-      if (!/[。！？!]$/.test(t)) t += p.suffix[Math.floor(Math.random()*p.suffix.length)];
-      return t;
-    }
+const charImg = document.getElementById("charImg");
+charImg.src = (stage==="tane")
+  ? `public/assets/stage1/tane_${color}.png`
+  : `public/assets/stage1/evolved_${color}.png`;
 
-    /* ===== 状態・バッジ ===== */
-    const allowedColors=['pink','blue','green','purple'];
-    const EVOLVED_SRC = {pink:'pink_closed.png',blue:'blue_closed.png',green:'green_closed.png',purple:'purple_closed.png'};
-    const norm = c => allowedColors.includes(String(c||'').toLowerCase().trim()) ? String(c).toLowerCase().trim() : 'green';
+// 多言語 UI
+const I18N = {
+  title:{ "ja-JP":"会話","en-US":"Conversation","zh-CN":"对话","ko-KR":"대화"},
+  subtitle_tane:{
+    "ja-JP":"たねキャラで3回会話すると進化へ",
+    "en-US":"Talk 3 times with Tane → Evolution",
+    "zh-CN":"和种子角色对话3次 → 进化",
+    "ko-KR":"씨앗 캐릭터와 3번 대화 → 진화"
+  },
+  subtitle_evolved:{
+    "ja-JP":"進化キャラで10回会話すると復活の儀式へ",
+    "en-US":"Talk 10 times with evolved form → Rebirth ritual",
+    "zh-CN":"和进化角色对话10次 → 复活仪式",
+    "ko-KR":"진화 캐릭터와 10번 대화 → 부활의 의식"
+  }
+};
+const langSelect=document.getElementById("langSelect");
+function applyI18n(lang){
+  document.getElementById("title").textContent = I18N.title[lang]||I18N.title["ja-JP"];
+  document.getElementById("subtitle").textContent = (stage==="tane")
+    ? I18N.subtitle_tane[lang]
+    : I18N.subtitle_evolved[lang];
+  localStorage.setItem("whoai_lang", lang);
+}
+const savedLang=localStorage.getItem("whoai_lang")||"ja-JP";
+langSelect.value=savedLang;applyI18n(savedLang);
+langSelect.addEventListener("change",()=>applyI18n(langSelect.value));
 
-    const whoaiName = localStorage.getItem('whoai_name') || 'WhoAI';
-    let color = norm(localStorage.getItem('macaronColor'));
-    let stage = localStorage.getItem('whoai_stage') || 'tane';
-    let phase = localStorage.getItem('whoai_phase') || 'pre';
-    let keepChoice = localStorage.getItem('whoai_keep') || 'appearance';
-    let turn = parseInt(localStorage.getItem('whoai_turn') || '0', 10);
+// 会話履歴
+let history=[];
+try{history=JSON.parse(localStorage.getItem(CHAT_KEY)||"[]");}catch(e){history=[];}
+const chatDiv=document.getElementById("chat");
+function renderChat(){
+  chatDiv.innerHTML="";
+  history.forEach(m=>{
+    const msg=document.createElement("div");
+    msg.className="msg "+(m.role==="user"?"user":"bot");
+    msg.innerHTML=`<div class="bubble">${m.content}</div>`;
+    chatDiv.appendChild(msg);
+  });
+  chatDiv.scrollTop=chatDiv.scrollHeight;
+}
+renderChat();
 
-    const nameBadge = document.getElementById('nameBadge');
-    const statusChip = document.getElementById('statusChip');
-    const charImg = document.getElementById('characterImg');
-    const subtitle = document.getElementById('subtitle');
-    function updateBadges(){
-      nameBadge.textContent = `${whoaiName}｜${color}｜${stage}${phase==='post'?'（後半）':''}`;
-      statusChip.textContent = (stage==='evolved') ? '進化後の姿' : 'タネの姿';
-      subtitle.textContent = (stage==='tane')
-        ? 'たねキャラで3回会話すると、再びマカロン選択へ'
-        : (phase==='pre') ? '進化キャラで10回会話すると、復活の儀式へ'
-        : (keepChoice==='appearance') ? '容姿を残してリセット後の10回会話でアンケートへ'
-        : '記録を残したまま10回会話でアンケートへ';
-    }
-    function setCharacterSrc(){
-      const base='public/assets/stage1';
-      charImg.onerror = () => { charImg.onerror=null; charImg.src = `${base}/${EVOLVED_SRC.purple}`; };
-      charImg.src = (stage==='tane') ? `${base}/tane_${color}.png` : `${base}/${EVOLVED_SRC[color]||EVOLVED_SRC.purple}`;
-    }
-    setCharacterSrc(); updateBadges();
+// 送信処理
+async function handleSend(){
+  const input=document.getElementById("msgInput");
+  const text=input.value.trim();if(!text)return;
+  input.value="";
 
-    /* ===== チャット描画（話者ラベル付き） ===== */
-    const CHAT_KEY='whoai_chat';
-    let history=[]; try{ history=JSON.parse(localStorage.getItem(CHAT_KEY)||'[]'); }catch(e){ history=[]; }
-    const chatArea=document.getElementById('chatArea');
-    function speakerLabel(who){ return who==='me' ? 'あなた：' : `${whoaiName}：`; }
-    function addBubble(text, who='ai'){
-      const row=document.createElement('div'); row.className=`row ${who==='me'?'me':'ai'}`;
-      const label=document.createElement('div'); label.className='label'; label.textContent=speakerLabel(who);
-      const b=document.createElement('div'); b.className='bubble'; b.textContent=text;
-      row.appendChild(label); row.appendChild(b); chatArea.appendChild(row); chatArea.scrollTop=chatArea.scrollHeight;
-    }
-    history.forEach(m=>addBubble(m.content, m.role==='user'?'me':'ai'));
-    if(history.length===0) addBubble('はじめまして。準備ができたら話しかけてね。','ai');
+  history.push({role:"user",content:text});
+  renderChat();localStorage.setItem(CHAT_KEY,JSON.stringify(history));
 
-    /* ===== 送信処理 ===== */
-    const form=document.getElementById('chatForm');
-    const input=document.getElementById('userInput');
-    const sendBtn=document.getElementById('sendBtn');
-    form.addEventListener('submit',handleSend);
-
-    async function handleSend(e){
-      e && e.preventDefault();
-      const text=input.value.trim(); if(!text) return; input.value='';
-      addBubble(text,'me'); history.push({role:'user',content:text}); sendBtn.disabled=true;
-      try{
-        const personaHint={ color, style:(PERSONA[color]?.name||'default'),
-          guide:{pink:'丁寧に敬語',green:'やんちゃで砕けた口調',blue:'控えめでやさしく',purple:'創造的で比喩多め'}[color]};
-        const payload={ message:text, name:whoaiName, color, stage, keep:keepChoice, history, persona:personaHint };
-        const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-        if(!res.ok) throw new Error('API '+res.status);
-        const data=await res.json();
-        const reply = stylizeByColor((data&&data.reply)||'……（応答がありません）', color);
-        addBubble(reply,'ai'); history.push({role:'assistant',content:reply});
-        localStorage.setItem(CHAT_KEY, JSON.stringify(history));
-        turn+=1; localStorage.setItem('whoai_turn', String(turn)); maybeRoute();
-      }catch(err){ addBubble('通信に失敗しました。時間をおいて再試行してください。','ai'); console.error(err); }
-      finally{ sendBtn.disabled=false; }
-    }
-
-    /* ===== ルーティング ===== */
-    const THRESH_TANE=3, THRESH_EVOL=10;
-    function maybeRoute(){
-      if(stage==='tane' && turn>=THRESH_TANE){ localStorage.setItem('whoai_turn','0'); location.href='macaron_select.html'; return; }
-      if(stage==='evolved' && phase==='pre' && turn>=THRESH_EVOL){ localStorage.setItem('whoai_turn','0'); location.href='rebirth.html'; return; }
-      if(stage==='evolved' && phase==='post' && turn>=THRESH_EVOL){ localStorage.setItem('whoai_turn','0'); location.href='identity_check.html'; }
-    }
-
-    /* ===== 音声入力（Web Speech API） ===== */
-    const langSelect = document.getElementById('langSelect');
-    const micBtn = document.getElementById('micBtn');
-    const autoSend = document.getElementById('autoSend');
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let rec = null, listening=false;
-
-    function ensureRecognizer(){
-      if(!SpeechRecognition){ alert('このブラウザは音声入力に対応していません（Chrome 推奨）'); return null; }
-      if(rec) return rec;
-      rec = new SpeechRecognition();
-      rec.interimResults = true;
-      rec.maxAlternatives = 1;
-      rec.continuous = false; // 一旦一発認識
-      rec.onstart = ()=>{ listening=true; micBtn.classList.add('on'); micBtn.textContent='🛑 停止'; };
-      rec.onend   = ()=>{ listening=false; micBtn.classList.remove('on'); micBtn.textContent='🎤 開始'; };
-      rec.onerror = (e)=>{ console.warn(e); listening=false; micBtn.classList.remove('on'); micBtn.textContent='🎤 開始'; };
-      rec.onresult = (e)=>{
-        let finalText = '';
-        for(let i=e.resultIndex;i<e.results.length;i++){
-          const trans = e.results[i][0].transcript;
-          if(e.results[i].isFinal){ finalText += trans; }
-          else { input.value = trans; } // 途中経過を表示
-        }
-        if(finalText){
-          input.value = finalText;
-          if(autoSend.checked){ handleSend(); }
-        }
-      };
-      return rec;
-    }
-
-    micBtn.addEventListener('click', ()=>{
-      const r = ensureRecognizer(); if(!r) return;
-      if(listening){ r.stop(); return; }
-      r.lang = langSelect.value || 'ja-JP';
-      r.start();
+  try{
+    const res=await fetch(TALK_ENDPOINT,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:text,color,stage,history,charName,lang:langSelect.value})
     });
+    const data=await res.json();
+    const reply=data.reply||"......";
+    history.push({role:"bot",content:reply});
+    renderChat();localStorage.setItem(CHAT_KEY,JSON.stringify(history));
+    checkProgress();
+  }catch(e){
+    history.push({role:"bot",content:"[接続エラー]"});
+    renderChat();
+  }
+}
 
-    // Enterで送信（IME変換中は送らない）
-    input.addEventListener('keydown',(e)=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); handleSend(e); }});
-  </script>
+// 進行管理
+function checkProgress(){
+  const userTurns=history.filter(m=>m.role==="user").length;
+  if(stage==="tane" && userTurns>=MAX_TANE){
+    localStorage.setItem("stage","evolved");
+    window.location.href="macaron_select.html";
+  }
+  if(stage==="evolved" && userTurns>=MAX_EVOLVED){
+    window.location.href="rebirth.html";
+  }
+}
+
+// イベント
+document.getElementById("sendBtn").addEventListener("click",handleSend);
+document.getElementById("msgInput").addEventListener("keypress",e=>{
+  if(e.key==="Enter"){handleSend();}
+});
+
+// 🎤 音声認識
+const micBtn=document.getElementById("micBtn");
+let rec;let listening=false;
+if('webkitSpeechRecognition'in window){
+  rec=new webkitSpeechRecognition();
+  rec.lang=savedLang; // UI言語と揃える
+  rec.interimResults=false;
+  rec.maxAlternatives=1;
+  rec.continuous=false; // 一旦認識で終了
+
+  rec.onstart=()=>{
+    listening=true;micBtn.classList.add("on");micBtn.textContent="🔴 停止";
+  };
+  rec.onend=()=>{
+    listening=false;micBtn.classList.remove("on");micBtn.textContent="🎤 開始";
+  };
+  rec.onerror=(e)=>{console.warn(e);listening=false;micBtn.classList.remove("on");micBtn.textContent="🎤 開始";};
+  rec.onresult=(e)=>{
+    let text=e.results[0][0].transcript;
+    document.getElementById("msgInput").value=text;
+  };
+
+  micBtn.addEventListener("click",()=>{
+    if(!listening){rec.start();}else{rec.stop();}
+  });
+}else{
+  micBtn.style.display="none"; // ブラウザ未対応なら非表示
+}
+</script>
 </body>
 </html>
