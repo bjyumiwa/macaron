@@ -145,7 +145,7 @@
       <form id="nameForm">
         <input id="nameInput" type="text" placeholder="名前を入力" autocomplete="off" required>
         <button type="submit" id="submitBtn">決定して会話へ</button>
-        <div class="hint" id="noteHint">※ まだ色を決めていない場合は、占いからやり直します</div>
+       
       </form>
     </section>
   </div>
@@ -192,11 +192,13 @@
         'zh-CN': "现在的样子",
         'ko-KR': "현재의 모습"
       },
-      'heroDesc': {
-        'ja-JP': "占いで決まった色の「たねキャラ」です",
-        'en-US': "A seed character based on your fortune color",
-        'zh-CN': "通过占卜决定的颜色的“种子角色”",
-        'ko-KR': "운세로 결정된 색상의 ‘씨앗 캐릭터’입니다"
+     'heroDesc': {
+　　  'ja-JP': "初めまして。たくさんお話しようね",
+　　  'en-US': "Nice to meet you. Let's talk a lot!",
+　　  'zh-CN': "你好呀，我们来聊很多话吧！",
+　　  'ko-KR': "처음 뵙겠습니다. 우리 많이 이야기해요!"
+}
+
       },
       'formTitle': {
         'ja-JP': "キャラクターに名前をつけてね",
@@ -216,12 +218,7 @@
         'zh-CN': "确认并开始对话",
         'ko-KR': "확정하고 대화로"
       },
-      'noteHint': {
-        'ja-JP': "※ まだ色を決めていない場合は、占いからやり直します",
-        'en-US': "* If you haven’t selected a color, please start again from fortune.",
-        'zh-CN': "* 如果还没选择颜色，请重新开始占卜",
-        'ko-KR': "* 색상을 아직 선택하지 않았다면, 운세부터 다시 시작하세요"
-      }
+     
     };
 
     function applyI18n(lang){
@@ -249,4 +246,5 @@
   </script>
 </body>
 </html>
+
 
