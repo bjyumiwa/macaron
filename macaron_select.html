@@ -1,3 +1,4 @@
+<!-- FILE: /macaron/macaron_select.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -5,63 +6,128 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>2回目のマカロンを選ぶ</title>
   <style>
-    html,body{height:100%;margin:0}
-    body{font-family:"Noto Sans JP",sans-serif;background:#faf7fb;color:#222;display:flex;align-items:center;justify-content:center}
-    .wrap{width:min(980px,96vw);padding:24px}
-    h1{font-size:26px;margin:0 0 22px;text-align:center}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
-    .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);padding:18px;text-align:center;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
-    .card:hover{transform:translateY(-2px);box-shadow:0 14px 46px rgba(0,0,0,.10)}
-    .card img{width:120px;aspect-ratio:1/1;object-fit:contain;display:block;margin:8px auto 10px}
-    .card span{
-      display:inline-block;
-      margin-top:6px;
-      padding:4px 12px;
-      border-radius:999px;
-      background:rgba(0,0,0,.55); /* 半透明黒 */
-      color:#fff;
-      font-weight:700;
-      font-size:14px;
-      text-shadow:0 1px 4px rgba(0,0,0,.8);
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: "Noto Sans JP", sans-serif;
+      background: #faf7fb;
+      color: #222;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
+    .wrap {
+      width: min(980px, 96vw);
+      padding: 24px;
+    }
+    h1 {
+      font-size: 26px;
+      margin: 0 0 22px;
+      text-align: center;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.07);
+      padding: 18px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 46px rgba(0, 0, 0, 0.1);
+    }
+    .card img {
+      width: 120px;
+      aspect-ratio: 1/1;
+      object-fit: contain;
+      display: block;
+      margin: 8px auto 6px;
+    }
+    .card span {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      font-weight: 700;
+      font-size: 14px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+      margin-top: 4px;
+    }
+    .personality {
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+    }
+    .file-label {
+      position: fixed;
+      left: 10px;
+      bottom: 10px;
+      font-size: 12px;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>もう一度、マカロンを選んでね</h1>
-  <div class="grid">
-  <div class="card" data-color="pink">
-    <img src="public/assets/stage1/macaron_pink.png" alt="pink">
-    <span>ピンク</span>
+    <div class="grid">
+      <div class="card" data-color="pink" data-personality="情熱">
+        <img src="public/assets/stage1/macaron_pink.png" alt="ピンクマカロン" />
+        <span>ピンク</span>
+        <div class="personality">🔥 情熱</div>
+      </div>
+      <div class="card" data-color="blue" data-personality="静寂">
+        <img src="public/assets/stage1/macaron_blue.png" alt="ブルーマカロン" />
+        <span>ブルー</span>
+        <div class="personality">🌊 静寂</div>
+      </div>
+      <div class="card" data-color="green" data-personality="元気">
+        <img src="public/assets/stage1/macaron_green.png" alt="グリーンマカロン" />
+        <span>グリーン</span>
+        <div class="personality">🌱 元気</div>
+      </div>
+      <div class="card" data-color="purple" data-personality="創造">
+        <img src="public/assets/stage1/macaron_purple.png" alt="パープルマカロン" />
+        <span>パープル</span>
+        <div class="personality">🎨 創造</div>
+      </div>
+    </div>
   </div>
-  <div class="card" data-color="blue">
-    <img src="public/assets/stage1/macaron_blue.png" alt="blue">
-    <span>ブルー</span>
-  </div>
-  <div class="card" data-color="green">
-    <img src="public/assets/stage1/macaron_green.png" alt="green">
-    <span>グリーン</span>
-  </div>
-  <div class="card" data-color="purple">
-    <img src="public/assets/stage1/macaron_purple.png" alt="purple">
-    <span>パープル</span>
-  </div>
-</div>
 
   <div class="file-label">/macaron/macaron_select.html</div>
 
   <script>
-    const allowed = ['pink','blue','green','purple'];
-    function saveColorAndGo(c){
-      const chosen = (c||'').toLowerCase().trim();
-      const color  = allowed.includes(chosen) ? chosen : 'green';
-      localStorage.setItem('macaronColor', color);
+    const allowedColors = ['pink', 'blue', 'green', 'purple'];
+
+    function saveColorAndProceed(color, personality) {
+      const selectedColor = (color || '').toLowerCase().trim();
+      const finalColor = allowedColors.includes(selectedColor) ? selectedColor : 'green';
+      localStorage.setItem('macaronColor', finalColor);
+      localStorage.setItem('macaronPersonality', personality);
       location.href = 'evolution.html';
     }
-    document.querySelectorAll('.card').forEach(el=>{
-      el.addEventListener('click',()=> saveColorAndGo(el.getAttribute('data-color')));
-      el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); saveColorAndGo(el.getAttribute('data-color')); } });
+
+    document.querySelectorAll('.card').forEach(card => {
+      const color = card.dataset.color;
+      const personality = card.dataset.personality;
+      card.addEventListener('click', () => {
+        saveColorAndProceed(color, personality);
+      });
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          saveColorAndProceed(color, personality);
+        }
+      });
     });
   </script>
 </body>
