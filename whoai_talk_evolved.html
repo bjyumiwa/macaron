@@ -4,64 +4,63 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 会話（進化後）</title>
+  <title>WhoAI - 会話（進化後＋音声/多言語）</title>
   <style>
-    html, body { height: 100%; margin: 0; }
+    html, body { height:100%; margin:0; }
     body {
-      font-family: "Noto Sans JP", system-ui, sans-serif;
-      color: #fff;
-      background: #000;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover; background-position: center; background-attachment: fixed;
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-      padding: 16px; gap: 12px;
+      font-family:"Noto Sans JP", system-ui, sans-serif;
+      color:#fff; background:#000;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover; background-position:center; background-attachment:fixed;
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:16px; gap:12px;
     }
     .topbar {
-      width: 100%; max-width: 880px; display: flex; align-items: center; gap: 8px;
-      padding: 8px 10px; border-radius: 14px;
-      background: rgba(0,0,0,.35); backdrop-filter: blur(3px);
+      width:100%; max-width:880px; display:flex; gap:8px; align-items:center;
+      padding:8px 10px; border-radius:14px;
+      background:rgba(0,0,0,.35); backdrop-filter:blur(3px);
     }
-    .filetag, .badge {
-      font-size: 12px; opacity:.9; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.12);
-    }
+    .filetag,.badge { font-size:12px; opacity:.9; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.12); }
     .stage {
-      width: 100%; max-width: 880px; border-radius: 16px; padding: 14px;
-      background: rgba(0,0,0,.35); backdrop-filter: blur(4px);
-      display: grid; grid-template-columns: 160px 1fr; gap: 14px;
+      width:100%; max-width:880px; border-radius:16px; padding:14px;
+      background:rgba(0,0,0,.35); backdrop-filter:blur(4px);
+      display:grid; grid-template-columns:160px 1fr; gap:14px;
     }
     .avatar-zone { display:flex; align-items:flex-start; justify-content:center; }
-    .avatar-zone img { width: 160px; height: auto; filter: drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
+    .avatar-zone img { width:160px; height:auto; filter:drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
     .chat-zone { display:flex; flex-direction:column; gap:10px; }
     .name-row { font-weight:700; opacity:.95; }
     #chatArea {
-      background: rgba(255,255,255,.1); border-radius: 12px; padding: 12px;
-      height: 420px; overflow-y: auto; scroll-behavior: smooth;
+      background:rgba(255,255,255,.1); border-radius:12px; padding:12px;
+      height:420px; overflow-y:auto; scroll-behavior:smooth;
     }
-    .msg { margin: 8px 0; display:flex; }
-    .msg.user { justify-content: flex-end; }
-    .msg.assistant { justify-content: flex-start; }
+    .msg { margin:8px 0; display:flex; }
+    .msg.user { justify-content:flex-end; }
+    .msg.assistant { justify-content:flex-start; }
     .bubble {
-      max-width: 75%; padding: 10px 12px; border-radius: 12px; line-height: 1.6;
-      white-space: pre-wrap; word-wrap: break-word; background: rgba(255,255,255,.12);
+      max-width:75%; padding:10px 12px; border-radius:12px; line-height:1.6;
+      white-space:pre-wrap; word-wrap:break-word;
+      background:rgba(255,255,255,.12);
     }
-    .msg.user .bubble { background: rgba(61,180,255,.2); }
-    .msg.assistant .bubble { background: rgba(255,97,200,.2); }
-    .role { display:block; font-size: 12px; opacity:.8; margin-bottom:4px; }
+    .msg.user .bubble { background:rgba(61,180,255,.2); }
+    .msg.assistant .bubble { background:rgba(255,97,200,.2); }
+    .role { display:block; font-size:12px; opacity:.8; margin-bottom:4px; }
     .controls { display:flex; gap:8px; align-items:center; }
     input[type="text"] {
-      flex: 1; padding: 10px 12px; border-radius: 10px; border: none;
-      background: rgba(255,255,255,.9); color: #111; outline: none;
+      flex:1; padding:10px 12px; border-radius:10px; border:none;
+      background:rgba(255,255,255,.9); color:#111; outline:none;
     }
     button {
-      padding: 10px 14px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700;
-      background: #ffd1ec; color: #111;
+      padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700;
+      background:#ffd1ec; color:#111;
     }
-    button:disabled { opacity:.6; cursor: not-allowed; }
-    .hint { font-size: 12px; opacity:.85; margin-top:8px; }
-    @media (max-width: 680px) {
-      .stage { grid-template-columns: 1fr; }
-      .avatar-zone { order: 2; }
-      .chat-zone { order: 1; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    select { padding:4px; border-radius:6px; }
+    .hint { font-size:12px; opacity:.85; margin-top:8px; }
+    @media (max-width:680px){
+      .stage { grid-template-columns:1fr; }
+      .avatar-zone { order:2; }
+      .chat-zone { order:1; }
     }
   </style>
 </head>
@@ -70,7 +69,19 @@
     <span class="filetag">FILE: /macaron/whoai_talk_evolved.html</span>
     <span class="badge" id="userBadge">user: -</span>
     <span class="badge" id="convoBadge">convo: -</span>
-    <span class="badge" id="windowBadge">window: 12</span>
+    <span class="badge" id="turnBadge">turn: -/10</span>
+    <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+      <select id="langSelect" title="言語">
+        <option value="auto">Auto</option>
+        <option value="ja-JP">日本語</option>
+        <option value="en-US">English</option>
+        <option value="zh-CN">中文(简体)</option>
+        <option value="zh-TW">中文(繁體)</option>
+        <option value="ko-KR">한국어</option>
+      </select>
+      <button id="btnMic" title="音声入力">🎙️</button>
+      <button id="btnTTS" title="読み上げ ON/OFF">🔊</button>
+    </div>
   </div>
 
   <div class="stage">
@@ -84,106 +95,47 @@
         <input id="userInput" type="text" placeholder="メッセージを入力…（Enterで送信）" />
         <button id="btnSend">送信</button>
       </div>
-      <div class="hint">※ 直近12発言をAPIに同封し、会話はlocalStorageに保存されます。</div>
+      <div class="hint">※ localStorage に会話を保存。直近12発言をAPIへ送信。10ターン到達でアンケートへ。</div>
     </div>
   </div>
 
-  <script>
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-    const WINDOW_N = 12;
+<script>
+  // ===== 基本設定 =====
+  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+  const WINDOW_N = 12;
+  const MAX_TURNS = 10;
 
-    // 色ごとの画像マッピング
-    const EVOLVED_SRC = {
-      pink:   { closed: 'pink_closed.png',  open: 'pink_open.png' },
-      blue:   { closed: 'blue_closed.png',  open: 'blue_open.png' },
-      green:  { closed: 'green_closed.png', open: 'green_open.png' },
-      purple: { closed: 'purple_closed.png',open: 'purple_open.png' }
-    };
-    const color = (localStorage.getItem('macaronColor') || 'green').toLowerCase();
-    const base = 'public/assets/stage1';
-    const charImg = document.getElementById('charImg');
+  // ===== ID 永続化 =====
+  const getOrCreate = (k) => {
+    const v = localStorage.getItem(k);
+    if (v) return v;
+    const nv = crypto.randomUUID();
+    localStorage.setItem(k, nv);
+    return nv;
+  };
+  const userId = getOrCreate('whoai_userId');
+  const convoId = getOrCreate('whoai_conversationId');
 
-    // 初期は閉じ目
-    charImg.src = `${base}/${EVOLVED_SRC[color]?.closed || EVOLVED_SRC.green.closed}`;
+  if (localStorage.getItem('whoai_turn') == null) localStorage.setItem('whoai_turn','0');
+  const readTurn = () => parseInt(localStorage.getItem('whoai_turn')||'0',10);
+  const writeTurn = (n) => localStorage.setItem('whoai_turn', String(n));
 
-    // 喋ったときに開くアニメーション
-    function speakAnimation() {
-      charImg.src = `${base}/${EVOLVED_SRC[color]?.open || EVOLVED_SRC.green.open}`;
-      setTimeout(()=>{
-        charImg.src = `${base}/${EVOLVED_SRC[color]?.closed || EVOLVED_SRC.green.closed}`;
-      }, 1200);
-    }
+  // ===== 画像マッピング =====
+  const EVOLVED_SRC = {
+    pink:{closed:'pink_closed.png',open:'pink_open.png'},
+    blue:{closed:'blue_closed.png',open:'blue_open.png'},
+    green:{closed:'green_closed.png',open:'green_open.png'},
+    purple:{closed:'purple_closed.png',open:'purple_open.png'}
+  };
+  const base='public/assets/stage1';
+  const color=(localStorage.getItem('macaronColor')||'green').toLowerCase();
+  const charImg=document.getElementById('charImg');
+  const setClosed=()=>charImg.src=`${base}/${(EVOLVED_SRC[color]?.closed)||EVOLVED_SRC.green.closed}`;
+  const setOpen=()=>charImg.src=`${base}/${(EVOLVED_SRC[color]?.open)||EVOLVED_SRC.green.open}`;
+  setClosed();
+  function speakAnimation(){ setOpen(); setTimeout(setClosed,1200); }
 
-    // 会話ログ管理
-    const key = (s) => `whoai:evolved:${s}`;
-    const readLog = () => JSON.parse(localStorage.getItem(key('chatLog')) || '[]');
-    const writeLog = (log) => localStorage.setItem(key('chatLog'), JSON.stringify(log));
-
-    const playerName = 'あなた';
-    const assistantName = 'WhoAI';
-
-    const chatArea = document.getElementById('chatArea');
-    function renderChat() {
-      const log = readLog();
-      chatArea.innerHTML = '';
-      for (const m of log) {
-        const div = document.createElement('div');
-        div.className = `msg ${m.role}`;
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        const role = document.createElement('span');
-        role.className = 'role';
-        role.textContent = (m.role==='user')?`${playerName}：`:`${assistantName}：`;
-        bubble.appendChild(role);
-        bubble.appendChild(document.createTextNode(m.content||''));
-        div.appendChild(bubble);
-        chatArea.appendChild(div);
-      }
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-    renderChat();
-
-    // 送信処理
-    async function talk(userText) {
-      if (!userText) return;
-      let log = readLog();
-      log.push({ role:'user', content:userText, ts:Date.now() });
-      writeLog(log); renderChat();
-
-      const history = log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
-      let replyText = '';
-      try {
-        const res = await fetch(TALK_ENDPOINT,{
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ userText, history })
-        });
-        const data = await res.json().catch(()=>({}));
-        replyText = data.reply || data.message || data.content || '…';
-      } catch(e) {
-        replyText = '（通信エラー）';
-      }
-
-      // ログにassistant追加
-      log = readLog();
-      log.push({ role:'assistant', content:replyText, ts:Date.now() });
-      writeLog(log); renderChat();
-
-      // 喋ったら目を開ける演出
-      speakAnimation();
-    }
-
-    // イベント
-    const userInput=document.getElementById('userInput');
-    const btnSend=document.getElementById('btnSend');
-    btnSend.addEventListener('click',()=>{
-      const t=userInput.value.trim();
-      if(!t) return;
-      userInput.value='';
-      talk(t);
-    });
-    userInput.addEventListener('keydown',e=>{
-      if(e.key==='Enter'&&!e.isComposing){e.preventDefault();btnSend.click();}
-    });
-  </script>
-</body>
-</html>
+  // ===== 会話ログ =====
+  const key=(s)=>`whoai:evolved:${userId}:${convoId}:${s}`;
+  const readLog=()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
+  const writ
