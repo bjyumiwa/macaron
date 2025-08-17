@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 多言語対応</title>
+  <title>whoai_talk - デモ3回制限</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     html,body {
@@ -74,12 +74,15 @@
     const macaronColor = localStorage.getItem("macaronColor") || "green";
     const charName = localStorage.getItem("whoai_name") || "キャラ";
 
+    // 会話回数
+    let turn = 0;
+
     // キャプション翻訳辞書
     const CAPTION = {
       ja: (n)=> `${n}だよ。`,
       en: (n)=> `I’m ${n}.`,
       zh: (n)=> `我是${n}。`,
-      ko: (n)=> `나는 ${n}이야.`
+      ko: (n)=> `나는 ${n}이야。`
     };
 
     // キャラ画像と名前セット
@@ -126,6 +129,15 @@
         appendMessage(charName + ": " + (data.reply || "……"), "bot");
       } catch(err){
         appendMessage("エラー: 接続できませんでした", "bot");
+      }
+
+      // --- 会話カウント ---
+      turn++;
+      localStorage.setItem("whoai_turn", turn);
+
+      if(turn >= 3){
+        appendMessage("👉 次のマカロンを選びましょう！", "bot");
+        setTimeout(()=>{ location.href = "macaron_select.html"; }, 2000);
       }
     }
 
