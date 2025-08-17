@@ -13,19 +13,42 @@
     .card{background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.07);padding:18px;text-align:center;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
     .card:hover{transform:translateY(-2px);box-shadow:0 14px 46px rgba(0,0,0,.10)}
     .card img{width:120px;aspect-ratio:1/1;object-fit:contain;display:block;margin:8px auto 10px}
+    .card span{
+      display:inline-block;
+      margin-top:6px;
+      padding:4px 12px;
+      border-radius:999px;
+      background:rgba(0,0,0,.55); /* 半透明黒 */
+      color:#fff;
+      font-weight:700;
+      font-size:14px;
+      text-shadow:0 1px 4px rgba(0,0,0,.8);
+    }
     .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>もう一度、マカロンを選んでね</h1>
-    <div class="grid">
-      <div class="card" data-color="pink"><img src="public/assets/stage1/macaron_pink.png" alt="pink"></div>
-      <div class="card" data-color="blue"><img src="public/assets/stage1/macaron_blue.png" alt="blue"></div>
-      <div class="card" data-color="green"><img src="public/assets/stage1/macaron_green.png" alt="green"></div>
-      <div class="card" data-color="purple"><img src="public/assets/stage1/macaron_purple.png" alt="purple"></div>
-    </div>
+  <div class="grid">
+  <div class="card" data-color="pink">
+    <img src="public/assets/stage1/macaron_pink.png" alt="pink">
+    <span>ピンク</span>
   </div>
+  <div class="card" data-color="blue">
+    <img src="public/assets/stage1/macaron_blue.png" alt="blue">
+    <span>ブルー</span>
+  </div>
+  <div class="card" data-color="green">
+    <img src="public/assets/stage1/macaron_green.png" alt="green">
+    <span>グリーン</span>
+  </div>
+  <div class="card" data-color="purple">
+    <img src="public/assets/stage1/macaron_purple.png" alt="purple">
+    <span>パープル</span>
+  </div>
+</div>
+
   <div class="file-label">/macaron/macaron_select.html</div>
 
   <script>
