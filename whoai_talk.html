@@ -2,151 +2,167 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <title>タネキャラと会話しよう（3回）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>whoai_talk - タネキャラ会話（3回で進化へ）</title>
   <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;
-      color:#fff;
-      background:#000 url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex;flex-direction:column;
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      margin: 0;
+      background: url("/public/assets/stage1/space_background.png") center/cover fixed;
+      color: #fff;
     }
-    header{
-      padding:10px;
-      text-align:center;
-      font-weight:bold;
-      background:rgba(0,0,0,.4);
-      backdrop-filter:blur(4px);
+    .character-img {
+      width: 120px;
+      margin: 16px auto;
+      display: block;
+      animation: float 3s ease-in-out infinite;
     }
-    #chat{
-      flex:1;
-      overflow-y:auto;
-      padding:16px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+      100% { transform: translateY(0); }
     }
-    .bubble{
-      max-width:70%;
-      padding:10px 14px;
-      border-radius:14px;
-      position:relative;
-      word-wrap:break-word;
+    #chat {
+      max-width: 600px;
+      margin: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
-    .user{
-      align-self:flex-end;
-      background:#4a90e2;
+    .msg {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
     }
-    .ai{
-      align-self:flex-start;
-      background:#6f4cff;
+    .msg.user {
+      justify-content: flex-end;
     }
-    .name-label{
-      font-size:12px;
-      margin-bottom:2px;
-      opacity:0.85;
+    .bubble {
+      padding: 10px 14px;
+      border-radius: 16px;
+      max-width: 70%;
+      line-height: 1.5;
     }
-    #inputArea{
-      display:flex;
-      border-top:1px solid #444;
+    .user-bubble {
+      background: #4cafef;
+      color: #fff;
+      text-align: right;
     }
-    #msgInput{
-      flex:1;
-      padding:12px;
-      font-size:16px;
-      border:0;
-      outline:none;
+    .char-bubble {
+      background: #673ab7;
+      color: #fff;
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
     }
-    #sendBtn{
-      padding:0 20px;
-      background:#6f4cff;
-      border:0;
-      color:#fff;
-      font-weight:bold;
-      cursor:pointer;
+    .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+    #inputArea {
+      display: flex;
+      padding: 12px;
+      max-width: 600px;
+      margin: auto;
+    }
+    #inputArea input {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
+      border: none;
+    }
+    #inputArea button {
+      padding: 8px 16px;
+      margin-left: 8px;
+    }
+    .name-label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 4px;
     }
   </style>
 </head>
 <body>
-  <header id="headerTitle">タネキャラと会話しよう（3回）</header>
+  <h2 style="text-align:center;">タネキャラと会話しよう（3回）</h2>
+  <!-- ゆらゆらキャラ -->
+  <img id="mainChar" class="character-img" src="" alt="キャラ">
+
   <div id="chat"></div>
+
   <div id="inputArea">
-    <input id="msgInput" type="text" placeholder="メッセージを入力…" />
-    <button id="sendBtn">送信</button>
+    <input id="msgInput" type="text" placeholder="メッセージを入力..." />
+    <button onclick="sendMessage()">送信</button>
   </div>
 
   <script>
-    // --- 定数 ---
+    const userName = localStorage.getItem("yourName") || "あなた";
+    const charName = localStorage.getItem("whoai_name") || "キャラ";
+    const color = localStorage.getItem("macaronColor") || "blue";
     const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
 
-    // --- 名前 ---
-    const yourName = localStorage.getItem("your_name") || "あなた";
-    const charName = localStorage.getItem("whoai_name") || "キャラ";
-
-    // --- 会話回数 ---
-    let turn = Number(localStorage.getItem("whoai_turn") || 0);
-
-    // DOM
     const chat = document.getElementById("chat");
     const input = document.getElementById("msgInput");
-    const sendBtn = document.getElementById("sendBtn");
+    const mainChar = document.getElementById("mainChar");
 
-    // メッセージ描画
-    function renderMessage(speaker, text, type){
-      const wrap = document.createElement("div");
-      const label = document.createElement("div");
-      label.className = "name-label";
-      label.textContent = `${speaker}：`;
-      const bubble = document.createElement("div");
-      bubble.className = `bubble ${type}`;
-      bubble.textContent = text;
-      wrap.appendChild(label);
-      wrap.appendChild(bubble);
-      chat.appendChild(wrap);
+    // キャラ画像を反映
+    mainChar.src = `/public/assets/stage1/tane_${color}.png`;
+
+    let talkCount = 0;
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.className = "msg " + sender;
+      if (sender === "user") {
+        msg.innerHTML = `
+          <div class="bubble user-bubble">
+            <span class="name-label">${userName}：</span>
+            ${text}
+          </div>`;
+      } else {
+        msg.innerHTML = `
+          <div class="bubble char-bubble">
+            <img src="/public/assets/stage1/tane_${color}.png" class="icon" />
+            <div>
+              <span class="name-label">${charName}：</span>
+              ${text}
+            </div>
+          </div>`;
+      }
+      chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
 
-    // API送信
-    async function sendMessage(){
+    async function sendMessage() {
       const text = input.value.trim();
-      if(!text) return;
+      if (!text) return;
+      addMessage(text, "user");
       input.value = "";
-      renderMessage(yourName, text, "user");
 
-      try{
+      try {
         const res = await fetch(TALK_ENDPOINT, {
-          method:"POST",
-          headers:{ "Content-Type":"application/json" },
-          body:JSON.stringify({ message:text })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
         });
         const data = await res.json();
-        const reply = data.reply || "……";
-        renderMessage(charName, reply, "ai");
+        addMessage(data.reply, "char");
+      } catch {
+        addMessage("（通信エラー）", "char");
+      }
 
-        turn++;
-        localStorage.setItem("whoai_turn", turn);
-
-        // 3回終わったら進化へ
-        if(turn >= 3){
-          setTimeout(()=>{
-            location.href = "macaron_select.html";
-          }, 1200);
-        }
-      }catch(e){
-        renderMessage(charName, "エラーが発生しました。", "ai");
+      talkCount++;
+      if (talkCount >= 3) {
+        setTimeout(() => {
+          window.location.href = "macaron_select.html";
+        }, 1500);
       }
     }
 
-    sendBtn.addEventListener("click", sendMessage);
-    input.addEventListener("keypress", e=>{
-      if(e.key==="Enter") sendMessage();
+    input.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
     });
-
-    // 初回あいさつ
-    if(turn === 0){
-      renderMessage(charName, "やあ、" + yourName + "！よろしくね。", "ai");
-    }
   </script>
 </body>
 </html>
