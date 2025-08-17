@@ -1,79 +1,73 @@
-<!-- FILE: /macaron/whoai_talk_evolved.html -->
+<!-- FILE: public/whoai_talk_evolved.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>会話 | WhoAI（進化後）</title>
+  <title>whoai_talk - 進化キャラで会話</title>
   <style>
-    html,body{height:100%;margin:0}
-    body{
-      font-family:"Noto Sans JP",system-ui,sans-serif;
-      color:#fff;background:#000;
-      background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px
-    }
-    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
-    .chip{
-      background:rgba(0,0,0,.35);backdrop-filter:blur(3px);
-      padding:6px 10px;border-radius:999px;font-size:12px
-    }
-    .title{font-size:28px;font-weight:800;letter-spacing:.06em;margin-top:2px}
-    .subtitle{font-size:12px;opacity:.9;margin-top:-4px}
-
-    .hero{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 4px}
-    .hero img{width:180px;max-width:52vw;height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5))}
-    .hero small{opacity:.85}
-
-    .card{
-      width:min(920px,96vw);
-      background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
-      border-radius:18px;padding:12px
+    html, body { height:100%; margin:0; }
+    body {
+      font-family:"Noto Sans JP",sans-serif;
+      color:#fff;
+      background:#000 url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
+      display:flex; flex-direction:column;
     }
 
-    #chatArea{
-      height:48vh;max-height:520px;min-height:280px;
-      overflow-y:auto;scroll-behavior:smooth;
-      background:rgba(255,255,255,.10);
-      border-radius:14px;padding:12px
+    .chips {
+      position:fixed; top:8px; left:50%; transform:translateX(-50%);
+      display:flex; gap:10px; z-index:1000;
     }
-    .msg{display:flex;margin:10px 0}
-    .msg.user{justify-content:flex-end}
-    .msg.assistant{justify-content:flex-start}
-    .bubble{
-      max-width:82%;padding:12px 14px;border-radius:16px;line-height:1.7;
-      white-space:pre-wrap;word-wrap:break-word;background:rgba(255,255,255,.12)
+    .chip {
+      background:rgba(0,0,0,.55); backdrop-filter:blur(3px);
+      padding:6px 12px; border-radius:999px; font-size:14px; font-weight:700;
     }
-    .msg.user .bubble{background:rgba(61,180,255,.20)}
-    .msg.assistant .bubble{background:rgba(255,97,200,.20)}
-    .role{display:block;font-size:12px;opacity:.8;margin-bottom:4px}
 
-    .controls{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
-    input[type=text]{
-      flex:1;min-width:200px;padding:12px 14px;border:none;border-radius:12px;
-      background:rgba(255,255,255,.92);color:#111;outline:none
-    }
-    button,select,label.switch{
-      padding:10px 12px;border:none;border-radius:12px;
-      background:#ffd1ec;color:#111;font-weight:700;cursor:pointer
-    }
-    button:disabled{opacity:.6;cursor:not-allowed}
-    select{padding:10px;font-weight:600}
-    .switch{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.2)}
-    .switch input{accent-color:#6f4cff}
-    .hint{font-size:12px;opacity:.85;margin:4px 2px 0}
+    .title { text-align:center; font-size:22px; margin-top:60px; }
+    .subtitle { text-align:center; font-size:14px; opacity:.8; margin-bottom:10px; }
 
-    @media (min-width:900px){
-      #chatArea{height:56vh}
-      .hero img{width:200px}
+    .hero {
+      text-align:center; margin:10px auto 6px;
+    }
+    .hero img {
+      width:180px; height:180px; object-fit:contain;
+      filter: drop-shadow(0 8px 26px rgba(0,0,0,.5));
+    }
+
+    .card {
+      flex:1; margin:10px auto; width:min(680px,92vw);
+      background:rgba(255,255,255,.08);
+      border-radius:16px; padding:12px; overflow-y:auto;
+    }
+    #chatArea { display:flex; flex-direction:column; gap:10px; }
+
+    .bubble { padding:10px 14px; border-radius:14px; max-width:75%; }
+    .bubble.user {
+      align-self:flex-end; background:#6f4cff; color:#fff;
+      border-bottom-right-radius:0;
+    }
+    .bubble.ai {
+      align-self:flex-start; background:#444; color:#fff;
+      border-bottom-left-radius:0;
+    }
+
+    .inputRow {
+      display:flex; gap:8px; padding:10px;
+      width:min(680px,92vw); margin:0 auto 14px;
+    }
+    #userInput {
+      flex:1; padding:12px; border-radius:12px; border:0; font-size:16px;
+    }
+    #sendBtn {
+      padding:12px 16px; border-radius:12px; border:0; cursor:pointer;
+      background:#ff66cc; color:#fff; font-weight:700;
     }
   </style>
 </head>
 <body>
   <!-- 上部チップ -->
   <div class="chips">
-    <span class="chip">もち | <span id="chipColor">-</span> | evolved</span>
+    <span class="chip"><span id="chipName">キャラ</span> | <span id="chipColor">-</span> | evolved</span>
     <span class="chip">turn: <span id="turnChip">0</span>/10</span>
   </div>
   <div class="title">会話</div>
@@ -82,169 +76,81 @@
   <!-- キャラ（中央上） -->
   <div class="hero">
     <img id="charImg" alt="進化後の姿">
-    <small>進化後の姿</small>
+    <div id="charLabel"><small>進化後の姿</small></div>
   </div>
 
   <!-- チャットカード -->
-  <div class="card" style="padding:12px">
+  <div class="card">
     <div id="chatArea"></div>
-
-    <!-- 入力と操作 -->
-    <div class="controls">
-      <input id="userInput" type="text" placeholder="メッセージを入力（音声でもOK）">
-      <button id="btnSend">送信</button>
-      <button id="btnMic" title="音声入力">🎙️</button>
-      <button id="btnTTS" title="読み上げ">🔊</button>
-      <select id="langSelect" title="言語">
-        <option value="ja-JP">日本語</option>
-        <option value="en-US">English</option>
-        <option value="zh-CN">中文(简体)</option>
-        <option value="zh-TW">中文(繁體)</option>
-        <option value="ko-KR">한국어</option>
-      </select>
-      <label class="switch" title="音声認識の結果を自動送信">
-        <input type="checkbox" id="autoSend" checked> 自動送信
-      </label>
-    </div>
-
-    <div class="hint">※ 会話は localStorage に保存／直近12発言をAPIに同封。10ターン到達でアンケートへ。</div>
   </div>
 
-<script>
-  // ===== 設定 =====
-  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // ←VercelのAPI（GitHub PagesでもOK）
-  const WINDOW_N = 12;
-  const TURN_LIMIT = 10;
+  <!-- 入力欄 -->
+  <div class="inputRow">
+    <input id="userInput" placeholder="メッセージを入力..." />
+    <button id="sendBtn">送信</button>
+  </div>
 
-  // ===== 画像マッピング（進化後 open/closed）=====
-  const EVOLVED_SRC = {
-    pink:{closed:'public/assets/stage1/pink_closed.png', open:'public/assets/stage1/pink_open.png'},
-    blue:{closed:'public/assets/stage1/blue_closed.png', open:'public/assets/stage1/blue_open.png'},
-    green:{closed:'public/assets/stage1/green_closed.png', open:'public/assets/stage1/green_open.png'},
-    purple:{closed:'public/assets/stage1/purple_closed.png', open:'public/assets/stage1/purple_open.png'}
-  };
-  const color = (localStorage.getItem('macaronColor') || 'pink').toLowerCase();
-  document.getElementById('chipColor').textContent = color;
+  <script>
+    const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk"; // ←APIは固定
 
-  // ===== ID & ログ =====
-  const getOrCreate=(k)=>{let v=localStorage.getItem(k); if(v) return v; v=crypto.randomUUID(); localStorage.setItem(k,v); return v;};
-  const userId=getOrCreate('whoai_userId');
-  const convoId=getOrCreate('whoai_conversationId');
-  const key=(s)=>`whoai:evolved:${userId}:${convoId}:${s}`;
-  const readLog=()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
-  const writeLog=(log)=>localStorage.setItem(key('chatLog'), JSON.stringify(log));
-  const readTurn=()=>parseInt(localStorage.getItem(key('turn'))||'0',10);
-  const writeTurn=(n)=>localStorage.setItem(key('turn'), String(n));
+    // 名前と色を取得
+    const charName = localStorage.getItem("whoai_name") || "キャラ";
+    const color = (localStorage.getItem("macaronColor") || "-").toLowerCase();
+    let turn = parseInt(localStorage.getItem("whoai_turn") || "0", 10);
 
-  // ===== キャラ表示（口パク）=====
-  const charImg=document.getElementById('charImg');
-  const setClosed=()=> charImg.src = EVOLVED_SRC[color]?.closed || EVOLVED_SRC.pink.closed;
-  const setOpen=()=>   charImg.src = EVOLVED_SRC[color]?.open   || EVOLVED_SRC.pink.open;
-  setClosed();
+    document.getElementById("chipName").textContent = charName;
+    document.getElementById("chipColor").textContent = color;
+    document.getElementById("turnChip").textContent = turn;
 
-  // ===== 描画 =====
-  const chatArea=document.getElementById('chatArea');
-  const playerName = localStorage.getItem('whoai_player_name') || 'あなた';
-  const assistantName = localStorage.getItem('whoai_character_name') || 'もち';
-  function render(){
-    const log=readLog(); chatArea.innerHTML='';
-    for(const m of log){
-      const row=document.createElement('div'); row.className=`msg ${m.role}`;
-      const b=document.createElement('div'); b.className='bubble';
-      const r=document.createElement('span'); r.className='role';
-      r.textContent=(m.role==='user'?playerName:assistantName)+'：';
-      b.appendChild(r); b.appendChild(document.createTextNode(m.content||'')); row.appendChild(b);
-      chatArea.appendChild(row);
+    // 進化後キャラ画像設定
+    const img = document.getElementById("charImg");
+    img.src = `public/assets/stage1/${color}_evolved.png`;
+    document.getElementById("charLabel").innerHTML = `<small>${charName} の進化後の姿</small>`;
+
+    const chatArea = document.getElementById("chatArea");
+    const input = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function addBubble(text, cls) {
+      const div = document.createElement("div");
+      div.className = "bubble " + cls;
+      div.textContent = (cls === "ai" ? charName + ": " : "あなた: ") + text;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
     }
-    chatArea.scrollTop=chatArea.scrollHeight;
-    document.getElementById('turnChip').textContent = String(readTurn());
-  }
-  render();
 
-  // ===== 送信 =====
-  async function talk(userText){
-    if(!userText.trim()) return;
-    if(readTurn()>=TURN_LIMIT){ location.href='identity_check.html'; return; }
+    async function sendMessage() {
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = "";
 
-    let log=readLog();
-    log.push({role:'user',content:userText,ts:Date.now()}); writeLog(log); render();
+      addBubble(msg, "user");
+      turn++;
+      localStorage.setItem("whoai_turn", turn);
+      document.getElementById("turnChip").textContent = turn;
 
-    // 口パク
-    setOpen();
+      try {
+        const res = await fetch(TALK_ENDPOINT, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        addBubble(data.reply || "……", "ai");
+      } catch(e) {
+        addBubble("（通信エラー）", "ai");
+      }
 
-    // Chat Completions互換で送る（サーバが messages を見るため安全）
-    const history=log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
-    const messages=[{role:'system',content:'You are a kind partner AI. Reply briefly in the user’s language.'}, ...history, {role:'user',content:userText}];
+      // 10ターンで儀式へ
+      if (turn >= 10) {
+        setTimeout(()=>location.href="rebirth.html",1200);
+      }
+    }
 
-    let reply='…';
-    try{
-      const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',temperature:0.7,max_tokens:220,messages})});
-      const data=await res.json().catch(()=>({}));
-      reply = data.reply || reply;
-    }catch(e){ reply='（通信エラー）'; console.error(e); }
-
-    log=readLog(); log.push({role:'assistant',content:reply,ts:Date.now()}); writeLog(log); render();
-
-    // 口を閉じる
-    setTimeout(setClosed, 450);
-
-    // かわいい声でTTS
-    speakCute(reply, document.getElementById('langSelect').value);
-
-    // ターン加算＆終了
-    const t=readTurn()+1; writeTurn(t); document.getElementById('turnChip').textContent=String(t);
-    if(t>=TURN_LIMIT){ setTimeout(()=>location.href='identity_check.html', 900); }
-  }
-
-  // ===== 入力UI =====
-  const userInput=document.getElementById('userInput');
-  document.getElementById('btnSend').onclick=()=>{ const t=userInput.value.trim(); if(!t) return; userInput.value=''; talk(t); };
-  userInput.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); document.getElementById('btnSend').click(); } });
-
-  // ===== 音声入力（Web Speech API）=====
-  const btnMic=document.getElementById('btnMic');
-  const autoSend=document.getElementById('autoSend');
-  let recognition=null,recognizing=false;
-  function ensureRec(){
-    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR) return null;
-    if(recognition) return recognition;
-    recognition=new SR();
-    recognition.interimResults=false; recognition.continuous=false; recognition.maxAlternatives=1;
-    recognition.onresult=(e)=>{
-      const text=e.results[0][0].transcript || '';
-      if(autoSend.checked){ talk(text); }
-      else { userInput.value=text; userInput.focus(); }
-    };
-    recognition.onend=()=>{recognizing=false;btnMic.textContent='🎙️';};
-    recognition.onerror=()=>{recognizing=false;btnMic.textContent='🎙️';};
-    return recognition;
-  }
-  btnMic.onclick=()=>{
-    const rec=ensureRec(); if(!rec){ alert('このブラウザは音声入力に未対応です'); return; }
-    rec.lang=document.getElementById('langSelect').value || (navigator.language||'ja-JP');
-    if(recognizing){ rec.stop(); return; }
-    recognizing=true; btnMic.textContent='🛑'; try{ rec.start(); }catch{}
-  };
-
-  // ===== TTS（かわいらしい声）=====
-  document.getElementById('btnTTS').onclick=()=>{
-    const last=[...readLog()].reverse().find(m=>m.role==='assistant');
-    if(last) speakCute(last.content, document.getElementById('langSelect').value);
-  };
-  function speakCute(text,lang){
-    if(!('speechSynthesis' in window)) return;
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang=lang; u.rate=1.05; u.pitch=1.6; u.volume=1;
-    const voices=speechSynthesis.getVoices();
-    const cute=voices.find(v=>v.lang===lang && /(girl|child|female|Kyoko|Google 日本語)/i.test(v.name))
-              || voices.find(v=>v.lang.startsWith(lang.split('-')[0]));
-    if(cute) u.voice=cute;
-    try{ window.speechSynthesis.cancel(); }catch{}
-    window.speechSynthesis.speak(u);
-  }
-  // iOS対策：voices 遅延読み込み
-  if('speechSynthesis' in window){ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=()=>{}; }
-</script>
+    sendBtn.addEventListener("click", sendMessage);
+    input.addEventListener("keypress", e => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
 </body>
 </html>
