@@ -1,4 +1,4 @@
-<!-- /macaron.html ー 色選択ページ（既にあるならそのままでOK） -->
+<!-- FILE: /macaron/macaron.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -21,7 +21,7 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>好きなマカロンを選んでね</h1>
+    <h1 id="title">好きなマカロンを選んでね</h1>
     <div class="grid">
       <div class="card" data-color="pink"><img src="public/assets/stage1/macaron_pink.png" alt="pink"></div>
       <div class="card" data-color="blue"><img src="public/assets/stage1/macaron_blue.png" alt="blue"></div>
@@ -42,12 +42,26 @@
       localStorage.removeItem('whoai_phase');
       location.href = 'naming.html';
     }
+
     document.querySelectorAll('.card').forEach(card=>{
       card.addEventListener('click',()=>saveColorAndGo(card.getAttribute('data-color')));
       card.addEventListener('keydown',e=>{
         if(e.key==='Enter'||e.key===' '){ e.preventDefault(); saveColorAndGo(card.getAttribute('data-color')); }
       });
     });
+
+    // 多言語テキスト
+    const langText = {
+      'ja-JP': '好きなマカロンを選んでね',
+      'en-US': 'Choose your favorite macaron',
+      'zh-CN': '请选择你喜欢的马卡龙',
+      'ko-KR': '좋아하는 마카롱을 골라주세요'
+    };
+
+    // 選択された言語を取得して表示
+    const lang = localStorage.getItem('whoai_lang') || 'ja-JP';
+    const titleEl = document.getElementById('title');
+    if (langText[lang]) titleEl.textContent = langText[lang];
   </script>
 </body>
 </html>
