@@ -138,4 +138,138 @@
   // ===== 会話ログ =====
   const key=(s)=>`whoai:evolved:${userId}:${convoId}:${s}`;
   const readLog=()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
-  const writ
+  const writeLog=(log)=>localStorage.setItem(key('chatLog'),JSON.stringify(log));
+
+  // ===== UI =====
+  const playerName=localStorage.getItem('whoai_player_name')||'あなた';
+  const assistantName=localStorage.getItem('whoai_character_name')||'WhoAI';
+  document.getElementById('assistantName').textContent=assistantName;
+  document.getElementById('userBadge').textContent=`user: ${userId.slice(0,8)}`;
+  document.getElementById('convoBadge').textContent=`convo: ${convoId.slice(0,8)}`;
+  const turnBadge=document.getElementById('turnBadge');
+  const updateTurnBadge=()=>turnBadge.textContent=`turn: ${readTurn()}/${MAX_TURNS}`;
+  updateTurnBadge();
+
+  const chatArea=document.getElementById('chatArea');
+  function renderChat(){
+    const log=readLog();
+    chatArea.innerHTML='';
+    for(const m of log){
+      const div=document.createElement('div'); div.className=`msg ${m.role}`;
+      const bubble=document.createElement('div'); bubble.className='bubble';
+      const role=document.createElement('span'); role.className='role';
+      role.textContent=(m.role==='user')?`${playerName}：`:`${assistantName}：`;
+      bubble.appendChild(role);
+      bubble.appendChild(document.createTextNode(m.content||'')); div.appendChild(bubble);
+      chatArea.appendChild(div);
+    }
+    chatArea.scrollTop=chatArea.scrollHeight; updateTurnBadge();
+  }
+  renderChat();
+
+  // ===== 言語 & 音声ユーティリティ =====
+  const LANG_KEY='whoai_lang'; const TTS_KEY='whoai_tts_on';
+  const langSelect=document.getElementById('langSelect');
+  const btnMic=document.getElementById('btnMic');
+  const btnTTS=document.getElementById('btnTTS');
+  langSelect.value=localStorage.getItem(LANG_KEY)||'auto';
+  btnTTS.textContent=((localStorage.getItem(TTS_KEY)??'1')==='1')?'🔊':'🔈';
+
+  function currentLang(){return langSelect.value;}
+  function shortLang(v){if(v.startsWith('ja'))return'Japanese';
+    if(v.startsWith('en'))return'English';
+    if(v==='zh-TW')return'Traditional Chinese';
+    if(v.startsWith('zh'))return'Chinese';
+    if(v.startsWith('ko'))return'Korean';
+    return'Auto';}
+
+  // STT
+  let recognition=null,recognizing=false;
+  function ensureRecognizer(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR)return null;
+    if(recognition)return recognition;
+    recognition=new SR(); recognition.interimResults=false;
+    recognition.continuous=false; recognition.maxAlternatives=1;
+    recognition.onresult=(e)=>{
+      const text=e.results[0][0].transcript||'';
+      userInput.value=text; btnSend.click();
+    };
+    recognition.onend=()=>{recognizing=false;updateMicUI();};
+    recognition.onerror=()=>{recognizing=false;updateMicUI();};
+    return recognition;
+  }
+  function startSTT(){
+    const rec=ensureRecognizer(); if(!rec){alert('音声入力未対応');return;}
+    const lang=currentLang(); rec.lang=(lang==='auto')?navigator.language:lang;
+    recognizing=true; updateMicUI(); try{rec.start();}catch{}
+  }
+  function stopSTT(){ if(recognition)recognition.stop(); recognizing=false; updateMicUI(); }
+  function updateMicUI(){ btnMic.textContent=recognizing?'🛑':'🎙️'; }
+
+  // TTS
+  function speakTTS(text,lang){
+    const on=(localStorage.getItem(TTS_KEY)??'1')==='1'; if(!on)return;
+    if(!('speechSynthesis'in window))return;
+    const u=new SpeechSynthesisUtterance(text);
+    const target=(lang&&lang!=='auto')?lang:(navigator.language||'ja-JP');
+    const voices=window.speechSynthesis.getVoices();
+    const v=voices.find(v=>v.lang===target)||voices.find(v=>v.lang.startsWith(target.split('-')[0]))||null;
+    if(v)u.voice=v; u.lang=v?.lang||target;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }
+  window.speechSynthesis.onvoiceschanged=()=>{};
+
+  langSelect.addEventListener('change',()=>localStorage.setItem(LANG_KEY,langSelect.value));
+  btnMic.addEventListener('click',()=>{if(recognizing)stopSTT();else startSTT();});
+  btnTTS.addEventListener('click',()=>{
+    const now=(localStorage.getItem(TTS_KEY)??'1')==='1';
+    localStorage.setItem(TTS_KEY,now?'0':'1');
+    btnTTS.textContent=now?'🔈':'🔊'; window.speechSynthesis.cancel();
+  });
+
+  // ===== talk =====
+  async function talk(userText){
+    if(!userText.trim())return;
+    let log=readLog(); log.push({role:'user',content:userText,ts:Date.now()});
+    writeLog(log); renderChat();
+
+    const history=log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
+    const cl=currentLang();
+    const sys=(cl==='auto')
+      ?'You are a kind partner AI. Reply briefly in the same language as the user.'
+      :`You are a kind partner AI. Reply briefly in ${shortLang(cl)}.`;
+    const messages=[{role:'system',content:sys},...history,{role:'user',content:userText}];
+
+    let replyText='';
+    try{
+      const res=await fetch(TALK_ENDPOINT,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'gpt-4o-mini',temperature:0.7,max_tokens:220,messages})
+      });
+      const data=await res.json().catch(()=>({}));
+      replyText=data.reply||'…';
+    }catch(e){replyText='（通信エラー）';}
+
+    log=readLog(); log.push({role:'assistant',content:replyText,ts:Date.now()});
+    writeLog(log); renderChat();
+
+    speakAnimation();
+    speakTTS(replyText,currentLang());
+
+    let turn=readTurn(); turn+=1; writeTurn(turn); updateTurnBadge();
+    if(turn>=MAX_TURNS){ setTimeout(()=>{location.href='identity_check.html';},800); }
+  }
+
+  const userInput=document.getElementById('userInput');
+  const btnSend=document.getElementById('btnSend');
+  btnSend.addEventListener('click',()=>{
+    const t=userInput.value.trim(); if(!t)return;
+    userInput.value=''; talk(t);
+  });
+  userInput.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'&&!e.isComposing){e.preventDefault();btnSend.click();}
+  });
+</script>
+</body>
+</html>
