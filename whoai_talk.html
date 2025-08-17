@@ -1,238 +1,172 @@
-<!-- FILE: whoai_talk.html（タネキャラ3回会話） -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - 会話（タネキャラ3回）</title>
+  <title>whoai_talk - 会話（タネキャラ）</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    html,body {
+    html, body {
       height: 100%;
       margin: 0;
       font-family: "Noto Sans JP", sans-serif;
-      color: #fff;
       background: #000;
       background-image: url("public/assets/stage1/space_background.png");
       background-size: cover;
       background-position: center;
       background-attachment: fixed;
-    }
-
-    .badge-box {
-      position: fixed;
-      top: 12px;
-      left: 12px;
-      z-index: 999;
+      color: white;
       display: flex;
-      gap: 12px;
+      flex-direction: column;
     }
 
-    .badge {
-      background: rgba(0,0,0,0.5);
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    h1 {
-      text-align: center;
-      font-size: 28px;
-      margin-top: 48px;
-      margin-bottom: 4px;
-      text-shadow: 0 0 6px rgba(0,0,0,0.4);
-    }
-
-    .subtitle {
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.8;
-    }
-
-    #charImg {
-      display: block;
-      margin: 20px auto 10px;
-      width: 120px;
-      height: auto;
-      image-rendering: auto;
-    }
-
-    #nameDisplay {
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.9;
-      margin-bottom: 10px;
+    .whoai-name-badge {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(3px);
+      padding: 6px 12px;
+      border-radius: 12px;
+      font-weight: bold;
     }
 
     #chatArea {
-      max-width: 640px;
-      margin: 0 auto;
-      background: rgba(0,0,0,0.25);
-      padding: 12px;
-      border-radius: 16px;
-      min-height: 300px;
-      overflow-y: auto;
-    }
-
-    .inputArea {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: center;
-      padding: 10px;
-      max-width: 640px;
-      margin: 20px auto;
-      flex-wrap: wrap;
-    }
-
-    input[type="text"] {
       flex: 1;
-      padding: 10px 12px;
-      border-radius: 12px;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .message {
+      margin-bottom: 12px;
+    }
+
+    .message.user {
+      text-align: right;
+      color: #ffd;
+    }
+
+    .message.ai {
+      text-align: left;
+      color: #adf;
+    }
+
+    #inputArea {
+      display: flex;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+    }
+
+    #userInput {
+      flex: 1;
+      padding: 8px;
+      border-radius: 8px;
       border: none;
       font-size: 16px;
-      width: 100%;
-      max-width: 400px;
     }
 
-    button {
-      padding: 10px 14px;
-      border-radius: 12px;
+    #sendBtn {
+      margin-left: 8px;
+      padding: 8px 16px;
+      font-size: 16px;
       border: none;
+      border-radius: 8px;
+      background: #ffc0cb;
+      color: #000;
       cursor: pointer;
-      font-weight: 700;
     }
 
-    #langSwitcher {
+    #characterImg {
+      width: 140px;
+      margin: 20px auto 0;
+      display: block;
+    }
+
+    .file-label {
       position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 1000;
-      display: flex;
-      gap: 6px;
-    }
-
-    .lang-chip {
-      border: 0;
-      border-radius: 999px;
-      padding: 6px 10px;
+      left: 10px;
+      bottom: 10px;
       font-size: 12px;
-      background: rgba(255, 255, 255, 0.15);
-      color: #fff;
-      font-weight: 800;
-      cursor: pointer;
-      text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(4px);
-      border: 1px solid rgba(255, 255, 255, 0.4);
-    }
-
-    .lang-chip[aria-pressed="true"] {
-      outline: 2px solid #ffd1ec;
-      background: rgba(255, 209, 236, 0.4);
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
+  <div class="whoai-name-badge" id="nameBadge">あなた</div>
 
-  <!-- 言語切り替え -->
-  <div id="langSwitcher">
-    <button class="lang-chip" data-lang="ja-JP">日本語</button>
-    <button class="lang-chip" data-lang="en-US">EN</button>
-    <button class="lang-chip" data-lang="zh-CN">中文</button>
-    <button class="lang-chip" data-lang="ko-KR">KO</button>
+  <img id="characterImg" src="" alt="キャラ画像" />
+
+  <div id="chatArea"></div>
+
+  <div id="inputArea">
+    <input type="text" id="userInput" placeholder="メッセージを入力…" />
+    <button id="sendBtn">送信</button>
   </div>
 
-  <!-- 状態バッジ -->
-  <div class="badge-box">
-    <div class="badge" id="badgeName">もち | blue | tane</div>
-    <div class="badge" id="badgeTurn">turn: 0/3</div>
-  </div>
-
-  <h1 id="talkTitle">会話</h1>
-  <p class="subtitle" id="talkSub">3回会話すると、マカロンの再選択へ</p>
-
-  <img id="charImg" src="" alt="キャラ表示" />
-  <p id="nameDisplay"></p>
-
-  <div id="chatArea">
-    <!-- チャットログ表示場所 -->
-  </div>
-
-  <div class="inputArea">
-    <input type="text" id="userInput" placeholder="メッセージを入力">
-    <button onclick="send()">送信</button>
-  </div>
+  <div class="file-label">/macaron/whoai_talk.html</div>
 
   <script>
-    const color = localStorage.getItem('macaronColor') || 'blue';
-    const stage = 'tane';
-    const turn = Number(localStorage.getItem('whoai_turn') || '0');
-    const name = localStorage.getItem('whoai_name') || 'あなた';
+    const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
 
-    // キャラ画像設定
-    const basePath = 'public/assets/stage1';
-    const img = document.getElementById('charImg');
-    img.src = `${basePath}/${stage}_${color}.png`;
-    img.onerror = () => { img.src = `${basePath}/tane_green.png`; };
+    const userName = localStorage.getItem("whoai_name") || "あなた";
+    const lang = localStorage.getItem("whoai_lang") || "ja-JP";
+    const color = localStorage.getItem("macaronColor") || "green";
+    const personality = localStorage.getItem("macaronPersonality") || "";
 
-    // 表示名
-    document.getElementById('badgeName').textContent = `${name} | ${color} | ${stage}`;
-    document.getElementById('badgeTurn').textContent = `turn: ${turn}/3`;
-    document.getElementById('nameDisplay').textContent = `あなた: ${name} / キャラ: ${name}`;
+    document.getElementById("nameBadge").textContent = userName;
 
-    // ダミー送信関数（API連携は既存処理に合わせて追加）
-    function send() {
-      const input = document.getElementById('userInput');
-      const val = input.value.trim();
-      if (!val) return;
-      const log = document.createElement('div');
-      log.textContent = `あなた: ${val}`;
-      document.getElementById('chatArea').appendChild(log);
-      input.value = '';
+    // キャラ画像表示
+    const characterImg = document.getElementById("characterImg");
+    characterImg.src = `public/assets/stage1/${color}_closed.png`;
+
+    // チャット履歴管理
+    const chatArea = document.getElementById("chatArea");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    let chatHistory = [];
+
+    function appendMessage(role, content) {
+      const div = document.createElement("div");
+      div.className = `message ${role}`;
+      div.textContent = (role === "user" ? userName : "AI") + "： " + content;
+      chatArea.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
     }
 
-    // 言語切り替え
-    const I18N = {
-      talkTitle: {
-        'ja-JP': "会話",
-        'en-US': "Talk",
-        'zh-CN': "对话",
-        'ko-KR': "대화"
-      },
-      talkSub: {
-        'ja-JP': "3回会話すると、マカロンの再選択へ",
-        'en-US': "Talk 3 times to reselect macaron",
-        'zh-CN': "对话3次后重新选择马卡龙",
-        'ko-KR': "3번 대화하면 마카롱 다시 선택"
-      }
-    };
+    async function sendMessage() {
+      const userMessage = userInput.value.trim();
+      if (!userMessage) return;
 
-    const APP_LANG_KEY = 'whoai_lang';
-    let currentLang = localStorage.getItem(APP_LANG_KEY) || 'ja-JP';
+      appendMessage("user", userMessage);
+      userInput.value = "";
 
-    function applyI18n(lang){
-      currentLang = lang;
-      localStorage.setItem(APP_LANG_KEY, lang);
-      for (const key in I18N) {
-        const el = document.getElementById(key);
-        if (el && I18N[key][lang]) {
-          el.textContent = I18N[key][lang];
-        }
-      }
-      document.querySelectorAll('.lang-chip').forEach(btn => {
-        btn.setAttribute('aria-pressed', btn.dataset.lang === lang);
+      // API通信
+      const res = await fetch(TALK_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userMessage,
+          history: chatHistory,
+          personality: personality,
+        }),
       });
+
+      const data = await res.json();
+      const reply = data.reply || "……";
+
+      appendMessage("ai", reply);
+
+      // 履歴更新
+      chatHistory.push({ role: "user", content: userMessage });
+      chatHistory.push({ role: "assistant", content: reply });
     }
 
-    document.getElementById('langSwitcher').addEventListener('click', e => {
-      const btn = e.target.closest('.lang-chip');
-      if (!btn) return;
-      applyI18n(btn.dataset.lang);
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") sendMessage();
     });
-
-    applyI18n(currentLang);
   </script>
 </body>
 </html>
