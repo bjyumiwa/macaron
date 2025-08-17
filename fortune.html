@@ -1,110 +1,164 @@
+<!-- FILE: /macaron/fortune.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>今日の占い ✨</title>
+  <title>マカロン占い ✨</title>
   <style>
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",sans-serif; color:#fff;
+      font-family:"Noto Sans JP",sans-serif;color:#fff;
       background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex; align-items:center; justify-content:center; text-align:center; padding:24px;
+      display:flex;align-items:center;justify-content:center;text-align:center;padding:20px
     }
     .panel{
-      width:min(980px,96vw);
-      background:rgba(0,0,0,.45); backdrop-filter:blur(4px);
-      border-radius:24px; padding:28px 24px; box-shadow:0 10px 40px rgba(0,0,0,.35)
+      width:min(980px,96vw);background:rgba(0,0,0,.45);backdrop-filter:blur(6px);
+      border-radius:24px;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.35)
     }
-    h1{font-size:32px;margin:6px 0 18px;text-shadow:0 2px 12px rgba(0,0,0,.4)}
-    p{font-size:18px;margin:0 0 22px;line-height:1.8;opacity:.95}
+    h1{font-size:28px;margin:2px 0 10px;text-shadow:0 2px 12px rgba(0,0,0,.4)}
+    .sub{opacity:.95;margin:0 0 12px}
 
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px}
+    /* --- 選択グリッド --- */
+    .grid{
+      display:grid;gap:16px;grid-template-columns:repeat(4,1fr);
+      margin:12px 0
+    }
+    @media (max-width:760px){ .grid{grid-template-columns:repeat(2,1fr)} }
+
     .card{
-      position:relative;
-      background:#fff;border-radius:18px;
-      box-shadow:0 12px 40px rgba(0,0,0,.07);
-      padding:18px;text-align:center;cursor:pointer;
-      transition:transform .12s ease, box-shadow .12s ease
+      position:relative;background:rgba(255,255,255,.12);
+      border-radius:18px;padding:12px;cursor:pointer;
+      transition:transform .12s ease, background .12s ease, box-shadow .12s ease;
+      box-shadow:0 8px 28px rgba(0,0,0,.20)
     }
-    .card:hover{transform:translateY(-2px);box-shadow:0 14px 46px rgba(0,0,0,.10)}
-    .card img{width:120px;aspect-ratio:1/1;object-fit:contain;display:block;margin:8px auto 10px}
-    .file-label{position:fixed;left:10px;bottom:10px;font-size:12px;opacity:.7}
+    .card:hover{transform:translateY(-2px);background:rgba(255,255,255,.18)}
+    .card img{width:120px;height:120px;object-fit:contain;display:block;margin:8px auto}
 
-    /* === ★ 可読性改善ここから === */
+    /* 可読性アップ（ラベル帯） */
     .card span{
-      display:inline-block;
-      margin-top:6px;
-      background: rgba(0,0,0,.62);
-      color:#fff;
-      font-weight:800;
-      font-size:15px;
-      letter-spacing:.03em;
-      border-radius:999px;
-      padding:6px 12px;
-      text-shadow:0 1px 4px rgba(0,0,0,.85);
-      -webkit-text-stroke:.2px rgba(0,0,0,.35);
-      backdrop-filter: blur(2px);
+      display:inline-block;margin-top:6px;padding:6px 12px;
+      background:rgba(0,0,0,.62);color:#fff;font-weight:800;font-size:15px;letter-spacing:.03em;
+      border-radius:999px;text-shadow:0 1px 4px rgba(0,0,0,.85);-webkit-text-stroke:.2px rgba(0,0,0,.35);
+      backdrop-filter:blur(2px)
     }
-    /* 下端を暗めにして文字映えさせる */
     .card::after{
-      content:"";
-      position:absolute; left:0; right:0; bottom:0; height:40%;
-      background:linear-gradient(to top, rgba(0,0,0,.35), rgba(0,0,0,0));
-      border-radius:18px;
-      pointer-events:none;
+      content:"";position:absolute;left:0;right:0;bottom:0;height:38%;
+      background:linear-gradient(to top, rgba(0,0,0,.35), rgba(0,0,0,0));border-radius:18px;pointer-events:none
     }
-    /* === ★ 可読性改善ここまで === */
+
+    /* --- 結果ビュー --- */
+    .result{margin-top:12px;padding:12px 10px;background:rgba(0,0,0,.28);
+      border-radius:16px;display:none}
+    .fortune{font-size:18px;line-height:1.8;margin:6px 0 10px}
+    .chip{display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border-radius:999px;
+      background:rgba(255,255,255,.16);font-weight:800}
+    .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+    .actions{margin-top:10px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .btn{border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer}
+    .primary{background:#ffd1ec;color:#141217}
+    .ghost{background:rgba(255,255,255,.18);color:#fff}
   </style>
 </head>
 <body>
-  <div class="panel">
-    <h1>マカロン占いの結果は・・・？ ✨</h1>
-    <div class="grid">
-      <div class="card" data-color="pink">
-        <img src="public/assets/stage1/macaron_pink.png" alt="ピンク">
-        <span>ピンク</span>
+  <div class="panel" aria-live="polite">
+    <h1>マカロン占い ✨</h1>
+    <p class="sub">好きなマカロンを選ぶと、その色の今日の運勢が出ます。</p>
+
+    <!-- ① 選択 -->
+    <div id="selectView">
+      <div class="grid">
+        <div class="card" data-color="pink">
+          <img src="public/assets/stage1/macaron_pink.png" alt="ピンク"><span>ピンク</span>
+        </div>
+        <div class="card" data-color="blue">
+          <img src="public/assets/stage1/macaron_blue.png" alt="ブルー"><span>ブルー</span>
+        </div>
+        <div class="card" data-color="green">
+          <img src="public/assets/stage1/macaron_green.png" alt="グリーン"><span>グリーン</span>
+        </div>
+        <div class="card" data-color="purple">
+          <img src="public/assets/stage1/macaron_purple.png" alt="パープル"><span>パープル</span>
+        </div>
       </div>
-      <div class="card" data-color="blue">
-        <img src="public/assets/stage1/macaron_blue.png" alt="ブルー">
-        <span>ブルー</span>
-      </div>
-      <div class="card" data-color="green">
-        <img src="public/assets/stage1/macaron_green.png" alt="グリーン">
-        <span>グリーン</span>
-      </div>
-      <div class="card" data-color="purple">
-        <img src="public/assets/stage1/macaron_purple.png" alt="パープル">
-        <span>パープル</span>
+      <div class="actions">
+        <button id="btnRandom" class="btn ghost">おまかせ（ランダム）</button>
       </div>
     </div>
-    <div style="margin-top:20px;">
-      <button id="randomBtn" class="card" style="padding:12px 24px;background:rgba(255,255,255,.16);color:#fff;font-weight:700;">おまかせ（ランダム）</button>
+
+    <!-- ② 結果 -->
+    <div id="resultView" class="result">
+      <div class="chip">
+        <span class="dot" id="colorDot"></span>
+        <span id="colorName">—</span>
+      </div>
+      <div id="fortuneText" class="fortune">結果を表示中…</div>
+      <div class="actions">
+        <button id="btnChange" class="btn ghost">色を変える</button>
+        <button id="btnNext" class="btn primary">次へ（名前をつける）</button>
+      </div>
     </div>
   </div>
-  <div class="file-label">/macaron/fortune.html</div>
 
-  <script>
-    const allowed = ['pink','blue','green','purple'];
-    function saveColorAndGo(c){
-      const chosen = (c||'').toLowerCase().trim();
-      const color  = allowed.includes(chosen) ? chosen : 'green';
-      localStorage.setItem('macaronColor', color);
-      location.href = 'fortune_result.html?color='+color;
-    }
-    document.querySelectorAll('.card').forEach(el=>{
-      const color = el.getAttribute('data-color');
-      if(color){
-        el.addEventListener('click',()=> saveColorAndGo(color));
-        el.addEventListener('keydown',e=>{
-          if(e.key==='Enter'||e.key===' '){ e.preventDefault(); saveColorAndGo(color); }
-        });
-      }
+<script>
+  // 占い文
+  const TABLE = {
+    pink:   { jp:'ピンク（情熱）',   msg:'あなたはとても情熱的。ワクワクする挑戦が、きょうのあなたを前に進めます。' },
+    blue:   { jp:'ブルー（静寂）',   msg:'心が澄み、集中の波が来ています。静かな一歩が大きな前進に。' },
+    green:  { jp:'グリーン（元気）', msg:'エネルギー満タン！体を動かすほど、良いひらめきが生まれます。' },
+    purple: { jp:'パープル（創造）', msg:'あなたはとても創造的で、みんなにインスピレーションを与えるでしょう。' }
+  };
+  const DOT = {pink:'#ff77c8', blue:'#7bb6ff', green:'#5ad269', purple:'#b388ff'};
+  const COLORS = ['pink','blue','green','purple'];
+
+  const $ = (id)=>document.getElementById(id);
+  const selectView = $('selectView');
+  const resultView = $('resultView');
+
+  function showResult(color){
+    const t = TABLE[color];
+    // 色保存（以降のページで使用）
+    localStorage.setItem('macaronColor', color);
+    localStorage.setItem('whoai_stage','tane'); // 任意
+    localStorage.setItem('whoai_turn','0');     // 任意
+
+    // 表示
+    $('colorDot').style.background = DOT[color];
+    $('colorName').textContent = `選んだ色：${t.jp}`;
+    $('fortuneText').textContent = t.msg;
+
+    // 切り替え
+    selectView.style.display = 'none';
+    resultView.style.display = 'block';
+  }
+
+  // クリックで選択
+  document.querySelectorAll('.card[data-color]').forEach(el=>{
+    el.addEventListener('click', ()=> showResult(el.dataset.color));
+    el.addEventListener('keydown', e=>{
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showResult(el.dataset.color); }
     });
-    document.getElementById('randomBtn').addEventListener('click',()=>{
-      const color = allowed[Math.floor(Math.random()*allowed.length)];
-      saveColorAndGo(color);
-    });
-  </script>
+    el.tabIndex = 0; // キーボード操作可
+  });
+
+  // おまかせ
+  $('btnRandom').onclick = ()=>{
+    const c = COLORS[Math.floor(Math.random()*COLORS.length)];
+    showResult(c);
+  };
+
+  // 色を変える
+  $('btnChange').onclick = ()=>{
+    resultView.style.display = 'none';
+    selectView.style.display = 'block';
+  };
+
+  // 次へ（命名ページへ）
+  $('btnNext').onclick = ()=>{ location.href = 'naming.html'; };
+
+  // テスト用: ?color=blue で直接結果表示
+  const p = new URLSearchParams(location.search).get('color');
+  if(p && COLORS.includes(p)) showResult(p);
+</script>
 </body>
 </html>
