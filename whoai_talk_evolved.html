@@ -145,7 +145,9 @@
   // ===== 描画 =====
   const chatArea=document.getElementById('chatArea');
   const playerName = localStorage.getItem('whoai_player_name') || 'あなた';
-  const assistantName = localStorage.getItem('whoai_character_name') || 'もち';
+  const assistantName = localStorage.getItem("whoai_name") || "キャラ";
+  const charName = localStorage.getItem("whoai_name") || "キャラ";
+
   function render(){
     const log=readLog(); chatArea.innerHTML='';
     for(const m of log){
