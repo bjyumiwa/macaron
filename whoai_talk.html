@@ -58,7 +58,6 @@
     <span class="tag" id="convoTag">convo:-</span>
     <span class="tag">turn:<span id="turnTag">0</span>/3</span>
     <div style="flex:1"></div>
-    <!-- 言語選択 -->
     <select id="langSel" class="select" title="Language">
       <option value="ja">日本語</option>
       <option value="en">English</option>
@@ -75,7 +74,7 @@
       <div class="name">会話相手：<span id="assistantName">WhoAI</span>（タネ）</div>
       <div id="chatArea"></div>
       <div class="controls">
-        <button id="micBtn" class="mic" title="音声入力">🎤</button>
+        <button id="micBtn" class="mic" title="音声入力（認識→自動送信）">🎤</button>
         <input id="userInput" type="text" placeholder="メッセージを入力…（Enterで送信）">
         <button id="sendBtn">送信</button>
       </div>
@@ -87,8 +86,8 @@
     // ================== 設定 ==================
     const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
     const WINDOW_N = 12;
-    const MAX_TURNS = 3;                      // タネ期は3往復で終了
-    const EVOLVE_URL = 'whoai_talk_evolved.html'; // 進化後へ
+    const MAX_TURNS = 3;                           // タネ期は3往復で進化
+    const EVOLVE_URL = 'whoai_talk_evolved.html';  // 進化後へ
     const COLOR_TO_TANE = {
       pink:  'public/assets/stage1/tane_pink.png',
       blue:  'public/assets/stage1/tane_blue.png',
@@ -113,25 +112,39 @@
     const key = (s)=>`whoai:${userId}:${convoId}:${s}`;
     const readLog = ()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
     const writeLog= (log)=>localStorage.setItem(key('chatLog'), JSON.stringify(log));
+
     const playerName = localStorage.getItem('whoai_player_name') || 'あなた';
-    const assistantName = localStorage.getItem('whoai_character_name') || 'WhoAI';
+    // ★ キーゆれ両対応
+    const assistantName = localStorage.getItem('whoai_character_name') || localStorage.getItem('whoai_name') || 'WhoAI';
     const color = (localStorage.getItem('macaronColor')||'green').toLowerCase();
     const storedLang = localStorage.getItem('whoai_lang') || 'ja';
 
     // ============ UI 初期化 ============
     const $ = (id)=>document.getElementById(id);
-    $('assistantName').textContent = assistantName;
+    $('assistantName').textContent = assistantName;      // ← 確実に表示
     $('userTag').textContent = `user: ${userId.slice(0,8)}`;
     $('convoTag').textContent = `convo: ${convoId.slice(0,8)}`;
     $('langSel').value = LANGS[storedLang] ? storedLang : 'ja';
     $('characterImg').src = COLOR_TO_TANE[color] || COLOR_TO_TANE.green;
+
+    // ============ 往復数を数える関数 ============
+    function countPairs(log){
+      let pairs = 0;
+      let expect = 'user';
+      for(const m of log){
+        if(m.role === expect){
+          if(expect === 'assistant') pairs++;   // ユーザー→アシスタントで1往復
+          expect = (expect === 'user' ? 'assistant' : 'user');
+        }
+      }
+      return pairs;
+    }
 
     // ============ 描画 ============
     function render(){
       const area = $('chatArea');
       area.innerHTML = '';
       const log = readLog();
-      let turn = 0;
       for(const m of log){
         const div = document.createElement('div');
         div.className = `msg ${m.role}`;
@@ -144,9 +157,8 @@
         b.appendChild(document.createTextNode(m.content||''));
         div.appendChild(b);
         area.appendChild(div);
-        if(m.role==='assistant') turn++; // 1往復カウント
       }
-      $('turnTag').textContent = Math.min(turn, MAX_TURNS);
+      $('turnTag').textContent = Math.min(countPairs(log), MAX_TURNS);
       area.scrollTop = area.scrollHeight;
     }
     render();
@@ -161,7 +173,6 @@
       const lang = $('langSel').value;
       localStorage.setItem('whoai_lang', lang);
       const sys = LANGS[lang].system.replace('{name}', assistantName);
-
       const history = log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
 
       $('sendBtn').disabled = true; $('userInput').disabled = true;
@@ -190,11 +201,10 @@
       log.push({role:'assistant', content:reply, ts:Date.now()});
       writeLog(log); render();
 
-      // ターン上限で進化へ（タネ期だけ）
-      const assistantTurns = readLog().filter(m=>m.role==='assistant').length;
-      if(assistantTurns >= MAX_TURNS){
+      // ターン上限で進化へ（往復数で判定）
+      const pairs = countPairs(readLog());
+      if(pairs >= MAX_TURNS){
         localStorage.setItem('whoai_stage','evolved');
-        // 進化用フラグ（任意）：ここで whoai_talk_evolved.html 側が拾って演出
         location.href = EVOLVE_URL;
       }
     }
@@ -216,7 +226,7 @@
       localStorage.setItem('whoai_lang', $('langSel').value);
     });
 
-    // ============ 音声入力（Web Speech API） ============
+    // ============ 音声入力（Web Speech API：認識→自動送信） ============
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     let rec = null;
     let recActive = false;
@@ -224,15 +234,18 @@
     function setupRec(){
       if(!SR){ $('micBtn').disabled = true; $('micBtn').title = '音声入力に未対応のブラウザです'; return; }
       rec = new SR();
-      const lang = $('langSel').value;
-      rec.lang = LANGS[lang]?.sr || 'ja-JP';
       rec.interimResults = false;
       rec.continuous = false;
+      rec.lang = LANGS[$('langSel').value]?.sr || 'ja-JP';
 
       rec.onresult = (e)=>{
-        const text = Array.from(e.results).map(r=>r[0].transcript).join('');
-        $('userInput').value = text;
+        const text = Array.from(e.results).map(r=>r[0].transcript).join('').trim();
         $('micBtn').classList.remove('rec');
+        recActive = false;
+        if(text){
+          $('userInput').value = '';   // 入力欄は使わず自動送信
+          send(text);
+        }
       };
       rec.onend = ()=>{ recActive=false; $('micBtn').classList.remove('rec'); };
       rec.onerror = ()=>{ recActive=false; $('micBtn').classList.remove('rec'); };
@@ -240,13 +253,13 @@
     setupRec();
 
     $('langSel').addEventListener('change', ()=>{
-      if(rec){ rec.stop(); rec = null; }
+      if(rec){ try{rec.stop();}catch{} rec=null; }
       setupRec();
     });
 
     $('micBtn').addEventListener('click', ()=>{
       if(!rec) return;
-      if(recActive){ rec.stop(); recActive=false; $('micBtn').classList.remove('rec'); return; }
+      if(recActive){ try{rec.stop();}catch{} recActive=false; $('micBtn').classList.remove('rec'); return; }
       try{
         rec.lang = LANGS[$('langSel').value]?.sr || 'ja-JP';
         rec.start();
