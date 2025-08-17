@@ -27,78 +27,77 @@
       display:inline-block; margin-top:10px; padding:12px 18px; border-radius:12px;
       background:#ffd1ec; color:#141217; font-weight:700; cursor:pointer; text-decoration:none;
     }
-    .btn:hover{ opacity:.85 }
+    .btn:hover{ opacity:.9 }
 
-    footer{ margin-top:18px; font-size:14px }
+    .lang-row{
+      margin-top:12px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;
+    }
+    .lang-chip{
+      border:0; border-radius:999px; padding:8px 12px;
+      background:rgba(255,255,255,.14); color:#fff; font-weight:800; cursor:pointer;
+    }
+    .lang-chip[aria-pressed="true"]{
+      outline:2px solid #ffd1ec; background:rgba(255,209,236,.18); color:#fff;
+    }
+
+    footer{ margin-top:14px; font-size:14px }
     footer a{ color:#ffd1ec; text-decoration:underline }
     footer a:hover{ opacity:1 }
-
-    /* 言語セレクト（右上固定） */
-    .lang-box{
-      position:fixed; top:12px; right:12px;
-      display:flex; align-items:center; gap:6px;
-      background:rgba(0,0,0,.4);
-      padding:6px 10px; border-radius:12px;
-    }
-    .lang-box span{ font-size:16px }
-    select{
-      padding:6px 10px; border-radius:10px; border:1px solid #444;
-      background:#fff; color:#000; font-weight:600; cursor:pointer;
-      appearance:none; -webkit-appearance:none; -moz-appearance:none;
-    }
-    select:focus{ outline:2px solid #ffd1ec; }
   </style>
 </head>
 <body>
-  <!-- 言語セレクト -->
-  <div class="lang-box" aria-label="UI language">
-    <span>🌐</span>
-    <select id="langSelect">
-      <option value="ja">日本語</option>
-      <option value="en">English</option>
-      <option value="zh">中文</option>
-      <option value="ko">한국어</option>
-    </select>
-  </div>
-
-  <!-- メインカード -->
   <div class="card" aria-live="polite">
     <h1>WhoAIへようこそ</h1>
     <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="miwacchi">
     <p>あなたの選択で姿を変え、進化していきます。<br>たくさんの会話をお楽しみください。</p>
+
     <!-- スタート＝毎回フルリセット＋遷移 -->
     <a href="macaron.html" id="startBtn" class="btn">はじめる</a>
+
+    <!-- 4か国語ボタン（見た目の行） -->
+    <div class="lang-row" id="langRow" aria-label="言語を選択">
+      <button type="button" class="lang-chip" data-lang="ja" aria-pressed="true">日本語</button>
+      <button type="button" class="lang-chip" data-lang="en" aria-pressed="false">English</button>
+      <button type="button" class="lang-chip" data-lang="zh" aria-pressed="false">中文</button>
+      <button type="button" class="lang-chip" data-lang="ko" aria-pressed="false">한국어</button>
+    </div>
+
     <footer>
       <a href="about.html">この研究について</a>
     </footer>
   </div>
 
   <script>
-    // ===== 言語選択（UI用 & 会話用の両方に保存） =====
+    // ===== 言語（UI用＋会話用）キー =====
     const UI_LANG_KEY = 'whoai_ui_lang';
-    const APP_LANG_KEY = 'whoai_lang'; // 以降のページ（会話）で参照
-    const sel = document.getElementById('langSelect');
+    const APP_LANG_KEY = 'whoai_lang';
+    const DEFAULT_LANG = 'ja';
 
-    // 過去の保存値を優先（無ければja）
-    const saved = localStorage.getItem(UI_LANG_KEY) || localStorage.getItem(APP_LANG_KEY) || 'ja';
-    sel.value = saved;
+    // 保存済みの言語を反映
+    const saved = localStorage.getItem(UI_LANG_KEY) || localStorage.getItem(APP_LANG_KEY) || DEFAULT_LANG;
+    const row = document.getElementById('langRow');
+    function setActive(lang){
+      row.querySelectorAll('.lang-chip').forEach(btn=>{
+        btn.setAttribute('aria-pressed', btn.dataset.lang === lang ? 'true' : 'false');
+      });
+      localStorage.setItem(UI_LANG_KEY, lang);
+      localStorage.setItem(APP_LANG_KEY, lang);
+    }
+    setActive(saved);
 
-    sel.addEventListener('change', ()=>{
-      const v = sel.value || 'ja';
-      localStorage.setItem(UI_LANG_KEY, v);
-      localStorage.setItem(APP_LANG_KEY, v);
-      // アラートはそのまま（レイアウト崩さずフィードバック）
-      alert("言語設定: " + sel.options[sel.selectedIndex].text);
+    // クリックで切替
+    row.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.lang-chip');
+      if(!btn) return;
+      setActive(btn.dataset.lang || DEFAULT_LANG);
     });
 
     // ===== スタート＝毎回フルリセット → macaron.html =====
     document.getElementById('startBtn').addEventListener('click', (e)=>{
-      e.preventDefault(); // aタグの遷移を一旦止める
+      e.preventDefault();
+      const lang = (row.querySelector('.lang-chip[aria-pressed="true"]')?.dataset.lang) || DEFAULT_LANG;
 
-      // 今選ばれている言語は先に退避
-      const lang = sel.value || 'ja';
-
-      // WhoAI/macaron関連を全削除（完全初期化）
+      // 完全初期化
       try{
         Object.keys(localStorage).forEach(k=>{
           if (/^(whoai_|macaron)/.test(k)) localStorage.removeItem(k);
@@ -110,11 +109,10 @@
         ].forEach(k=>localStorage.removeItem(k));
       }catch(err){ console.warn('[reset error]', err); }
 
-      // 言語だけは持ち越し（以降のページで使用）
+      // 言語だけ持ち越し
       localStorage.setItem(UI_LANG_KEY, lang);
       localStorage.setItem(APP_LANG_KEY, lang);
 
-      // マカロン選択へ
       location.href = 'macaron.html';
     });
   </script>
