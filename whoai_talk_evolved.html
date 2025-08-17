@@ -23,12 +23,16 @@
     }
     .badge { padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.12); }
 
+    /* ===== ステージを横並びに修正 ===== */
     .stage {
       width:100%; max-width:880px;
       border-radius:16px; padding:14px;
       background:rgba(0,0,0,.35); backdrop-filter:blur(4px);
-      display:flex; flex-direction:column; gap:14px;
+      display:grid; grid-template-columns:160px 1fr; gap:14px;
     }
+    .avatar-zone { display:flex; justify-content:center; align-items:flex-start; }
+    .avatar-zone img { width:140px; filter:drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
+
     .chat-zone { display:flex; flex-direction:column; gap:10px; }
     .name-row { font-weight:700; opacity:.95; }
 
@@ -62,10 +66,14 @@
     button:disabled { opacity:.6; cursor:not-allowed; }
     select { padding:8px; border-radius:8px; }
 
-    .avatar-zone { display:flex; justify-content:center; margin-top:8px; }
-    .avatar-zone img { width:160px; filter:drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
-
     .hint { font-size:12px; opacity:.85; margin-top:6px; }
+
+    /* スマホでは縦並びに */
+    @media (max-width:680px){
+      .stage{ grid-template-columns:1fr; }
+      .avatar-zone{ order:2; margin-top:8px; }
+      .chat-zone{ order:1; }
+    }
   </style>
 </head>
 <body>
@@ -77,6 +85,9 @@
   </div>
 
   <div class="stage">
+    <div class="avatar-zone">
+      <img id="charImg" alt="character"/>
+    </div>
     <div class="chat-zone">
       <div class="name-row">会話相手：<span id="assistantName">WhoAI</span>（進化後）</div>
       <div id="chatArea"></div>
@@ -97,18 +108,14 @@
 
       <div class="hint">※ 会話はlocalStorageに保存され、直近12発言をAPIに送信。10ターンで終了。</div>
     </div>
-
-    <div class="avatar-zone">
-      <img id="charImg" alt="character"/>
-    </div>
   </div>
 
 <script>
-  const TALK_ENDPOINT = '/api/talk';
+  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
   const WINDOW_N = 12;
   const TURN_LIMIT = 10;
 
-  // キャラ画像マッピング（進化後 closed/open）
+  // キャラ画像（進化後 closed/open）
   const COLOR_TO_IMG = {
     pink:   { closed:'public/assets/stage1/pink_closed.png', open:'public/assets/stage1/pink_open.png' },
     blue:   { closed:'public/assets/stage1/blue_closed.png', open:'public/assets/stage1/blue_open.png' },
@@ -124,11 +131,10 @@
   const readLog = ()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
   const writeLog = (log)=>localStorage.setItem(key('chatLog'),JSON.stringify(log));
 
-  // 色とターン
   const color = (localStorage.getItem('whoai_color')||'pink').toLowerCase();
   let turn = parseInt(localStorage.getItem(key('turn'))||'0');
 
-  // UI 初期化
+  // UI
   document.getElementById('userBadge').textContent=`user:${userId.slice(0,6)}`;
   document.getElementById('convoBadge').textContent=`convo:${convoId.slice(0,6)}`;
   document.getElementById('turnBadge').textContent=`turn:${turn}/${TURN_LIMIT}`;
@@ -157,7 +163,6 @@
     let log=readLog(); log.push({role:'user',content:userText,ts:Date.now()});
     writeLog(log); renderChat();
 
-    // 開口アニメ
     charImg.src=COLOR_TO_IMG[color].open;
 
     const history=log.slice(-WINDOW_N);
@@ -174,14 +179,11 @@
     log=readLog(); log.push({role:'assistant',content:replyText,ts:Date.now()});
     writeLog(log); renderChat();
 
-    // 閉口に戻す
     setTimeout(()=>{ charImg.src=COLOR_TO_IMG[color].closed; },400);
 
-    // 音声再生
     const lang=document.getElementById('langSelect').value;
     speakCute(replyText,lang);
 
-    // ターン加算
     turn++; localStorage.setItem(key('turn'),turn);
     document.getElementById('turnBadge').textContent=`turn:${turn}/${TURN_LIMIT}`;
   }
@@ -213,7 +215,7 @@
     if(last){ speakCute(last.content,document.getElementById('langSelect').value); }
   };
 
-  // かわいらしい声で読み上げ
+  // かわいらしい声
   function speakCute(text,lang){
     const utter=new SpeechSynthesisUtterance(text);
     utter.lang=lang; utter.rate=1.05; utter.pitch=1.6; utter.volume=1;
