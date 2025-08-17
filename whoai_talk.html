@@ -1,149 +1,239 @@
-<!-- FILE: whoai_talk.html（タネキャラ3回会話）完全版 -->
+<!-- FILE: /macaron/whoai_talk.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>whoai_talk - タネキャラ会話</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>会話 | WhoAI（タネキャラ）</title>
   <style>
-    html, body {
-      height: 100%; margin: 0;
-      font-family: "Noto Sans JP", sans-serif;
-      background: #000;
-      background-image: url("public/assets/stage1/space_background.png");
-      background-size: cover; background-position: center;
-      color: white;
-      display: flex; flex-direction: column;
+    html,body{height:100%;margin:0}
+    body{
+      font-family:"Noto Sans JP",system-ui,sans-serif;
+      color:#fff;background:#000;
+      background-image:url("public/assets/stage1/space_background.png");
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px
     }
-    .badge-box {
-      position: fixed; top: 12px; left: 12px; z-index: 1000;
-      display: flex; gap: 10px;
+    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .chip{
+      background:rgba(0,0,0,.35);backdrop-filter:blur(3px);
+      padding:6px 10px;border-radius:999px;font-size:12px
     }
-    .badge {
-      background: rgba(0,0,0,0.4);
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: bold;
-      border: 1px solid rgba(255,255,255,0.3);
+    .title{font-size:28px;font-weight:800;letter-spacing:.06em;margin-top:2px}
+    .subtitle{font-size:12px;opacity:.9;margin-top:-4px}
+
+    .hero{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 4px}
+    .hero img{width:180px;max-width:52vw;height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5))}
+    .hero small{opacity:.85}
+
+    .card{
+      width:min(920px,96vw);
+      background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+      border-radius:18px;padding:12px
     }
-    #charImg {
-      width: 100px;
-      margin: 80px auto 10px;
-      display: block;
+
+    #chatArea{
+      height:48vh;max-height:520px;min-height:280px;
+      overflow-y:auto;scroll-behavior:smooth;
+      background:rgba(255,255,255,.10);
+      border-radius:14px;padding:12px
     }
-    #nameDisplay {
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.8;
-      margin-bottom: 10px;
+    .msg{display:flex;margin:10px 0}
+    .msg.user{justify-content:flex-end}
+    .msg.assistant{justify-content:flex-start}
+    .bubble{
+      max-width:72%;padding:12px 14px;border-radius:16px;line-height:1.7;
+      white-space:pre-wrap;word-wrap:break-word;
     }
-    #chatArea {
-      flex: 1;
-      padding: 10px;
-      max-width: 600px;
-      margin: 0 auto;
-      overflow-y: auto;
+    .msg.user .bubble{background:rgba(61,180,255,.20)}
+    .msg.assistant .bubble{background:rgba(255,97,200,.20)}
+    .role{display:block;font-size:12px;opacity:.8;margin-bottom:4px}
+
+    .controls{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+    input[type=text]{
+      flex:1;min-width:200px;padding:12px 14px;border:none;border-radius:12px;
+      background:rgba(255,255,255,.92);color:#111;outline:none
     }
-    .message {
-      max-width: 80%;
-      margin: 8px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.1);
-      white-space: pre-wrap;
+    button,select,label.switch{
+      padding:10px 12px;border:none;border-radius:12px;
+      background:#ffd1ec;color:#111;font-weight:700;cursor:pointer
     }
-    .user { align-self: flex-end; background: rgba(255,255,255,0.2); text-align: right; }
-    .ai { align-self: flex-start; background: rgba(0,0,0,0.4); text-align: left; }
-    .inputArea {
-      display: flex; padding: 12px;
-      max-width: 600px; margin: 0 auto;
-    }
-    #userInput {
-      flex: 1; padding: 10px; font-size: 16px;
-      border-radius: 10px; border: none;
-    }
-    button {
-      margin-left: 10px;
-      padding: 10px 16px;
-      border-radius: 10px;
-      font-weight: bold;
-      cursor: pointer;
-      border: none;
-    }
+    button:disabled{opacity:.6;cursor:not-allowed}
+    select{padding:10px;font-weight:600}
+    .switch{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.2)}
+    .switch input{accent-color:#6f4cff}
+    .hint{font-size:12px;opacity:.85;margin:4px 2px 0}
   </style>
 </head>
 <body>
-  <div class="badge-box">
-    <div class="badge" id="badgeName"></div>
-    <div class="badge" id="badgeTurn"></div>
+  <div class="chips">
+    <span class="chip"><span id="chipColor">-</span> | tane</span>
+    <span class="chip">turn: <span id="turnChip">0</span>/3</span>
+  </div>
+  <div class="title">会話</div>
+  <div class="subtitle">3回会話すると、マカロンの再選択へ</div>
+
+  <div class="hero">
+    <img id="charImg" alt="タネキャラ">
+    <small id="nameBadge">キャラ：？？</small>
   </div>
 
-  <img id="charImg" src="" alt="キャラ" />
-  <p id="nameDisplay"></p>
+  <div class="card">
+    <div id="chatArea"></div>
 
-  <div id="chatArea" style="display:flex; flex-direction:column;"></div>
-
-  <div class="inputArea">
-    <input type="text" id="userInput" placeholder="メッセージを入力">
-    <button onclick="send()">送信</button>
+    <div class="controls">
+      <input id="userInput" type="text" placeholder="メッセージを入力（Enterでも送信）">
+      <button id="btnSend">送信</button>
+      <button id="btnMic" title="音声入力">🎙️</button>
+      <button id="btnTTS" title="読み上げ">🔊</button>
+      <select id="langSelect">
+        <option value="ja-JP">日本語</option>
+        <option value="en-US">English</option>
+        <option value="zh-CN">中文(简体)</option>
+        <option value="zh-TW">中文(繁體)</option>
+        <option value="ko-KR">한국어</option>
+      </select>
+      <label class="switch" title="音声認識の結果を自動送信">
+        <input type="checkbox" id="autoSend" checked> 自動送信
+      </label>
+    </div>
+    <div class="hint">※ 会話は localStorage に保存／3ターン到達で進化へ。</div>
   </div>
+<script>
+const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+const WINDOW_N = 12;
+const TURN_LIMIT = 3;
 
-  <script>
-    const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
-    const charName = localStorage.getItem("char_name") || "キャラ";
-    const color = localStorage.getItem("macaronColor") || "blue";
-    let turnCount = Number(localStorage.getItem("whoai_turn") || 0);
+const TANE_SRC = {
+  pink: 'public/assets/stage1/pink_tane.png',
+  blue: 'public/assets/stage1/blue_tane.png',
+  green: 'public/assets/stage1/green_tane.png',
+  purple: 'public/assets/stage1/purple_tane.png'
+};
 
-    document.getElementById("badgeName").textContent = `${charName} | ${color} | tane`;
-    document.getElementById("badgeTurn").textContent = `turn: ${turnCount}/3`;
-    document.getElementById("nameDisplay").textContent = `キャラ: ${charName}`;
+const color = (localStorage.getItem('macaronColor') || 'pink').toLowerCase();
+document.getElementById('chipColor').textContent = color;
 
-    const img = document.getElementById("charImg");
-    img.src = `public/assets/stage1/tane_${color}.png`;
+// 名前（キャラの名前のみ使う）
+const assistantName = localStorage.getItem('whoai_character_name') || 'キャラ';
 
-    const input = document.getElementById("userInput");
-    input.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") send();
+// 状態管理
+const getOrCreate=(k)=>{let v=localStorage.getItem(k); if(v) return v; v=crypto.randomUUID(); localStorage.setItem(k,v); return v;};
+const userId=getOrCreate('whoai_userId');
+const convoId=getOrCreate('whoai_conversationId');
+const key=(s)=>`whoai:tane:${userId}:${convoId}:${s}`;
+const readLog=()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
+const writeLog=(log)=>localStorage.setItem(key('chatLog'), JSON.stringify(log));
+const readTurn=()=>parseInt(localStorage.getItem(key('turn'))||'0',10);
+const writeTurn=(n)=>localStorage.setItem(key('turn'), String(n));
+
+// キャラ画像 & 名前
+const charImg=document.getElementById('charImg');
+charImg.src=TANE_SRC[color]||TANE_SRC.pink;
+document.getElementById('nameBadge').textContent = `キャラ：${assistantName}`;
+
+const chatArea=document.getElementById('chatArea');
+
+function render(){
+  const log=readLog(); chatArea.innerHTML='';
+  for(const m of log){
+    const row=document.createElement('div'); row.className=`msg ${m.role}`;
+    const b=document.createElement('div'); b.className='bubble';
+    const r=document.createElement('span'); r.className='role';
+    r.textContent=(m.role==='user'?'あなた':assistantName)+'：';
+    b.appendChild(r); b.appendChild(document.createTextNode(m.content||'')); row.appendChild(b);
+    chatArea.appendChild(row);
+  }
+  chatArea.scrollTop=chatArea.scrollHeight;
+  document.getElementById('turnChip').textContent = String(readTurn());
+}
+render();
+
+async function talk(userText){
+  if(!userText.trim()) return;
+  if(readTurn()>=TURN_LIMIT){ location.href='macaron_select.html'; return; }
+
+  let log=readLog();
+  log.push({role:'user',content:userText,ts:Date.now()}); writeLog(log); render();
+
+  const selectedLang = document.getElementById('langSelect').value;
+  const langHints = {
+    'ja-JP': '日本語で丁寧に答えてください。',
+    'en-US': 'Please respond in polite English.',
+    'zh-CN': '请用简体中文回答。',
+    'zh-TW': '請用繁體中文回答。',
+    'ko-KR': '공손한 한국어로 대답해 주세요。'
+  };
+  const systemPrompt = `You are ${assistantName}, a kind partner AI. ${langHints[selectedLang] || ''}`;
+  const history=log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
+  const messages=[{role:'system',content:systemPrompt}, ...history, {role:'user',content:userText}];
+
+  let reply='…';
+  try{
+    const res=await fetch(TALK_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'gpt-4o-mini',temperature:0.7,max_tokens:220,messages})
     });
+    const data=await res.json().catch(()=>({}));
+    reply = data.reply || reply;
+  }catch(e){ reply='（通信エラー）'; console.error(e); }
 
-    async function send() {
-      const text = input.value.trim();
-      if (!text) return;
-      appendChat("user", text);
-      input.value = "";
+  log=readLog(); log.push({role:'assistant',content:reply,ts:Date.now()}); writeLog(log); render();
+  speakCute(reply, selectedLang);
 
-      try {
-        const res = await fetch(TALK_ENDPOINT, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text })
-        });
-        const data = await res.json();
-        const reply = data.reply || "...";
-        appendChat("ai", reply);
-      } catch (err) {
-        appendChat("ai", "通信エラーが発生しました。");
-      }
+  const t=readTurn()+1; writeTurn(t); document.getElementById('turnChip').textContent=String(t);
+  if(t>=TURN_LIMIT){ setTimeout(()=>location.href='macaron_select.html', 900); }
+}
 
-      turnCount++;
-      localStorage.setItem("whoai_turn", turnCount);
-      document.getElementById("badgeTurn").textContent = `turn: ${turnCount}/3`;
+// 入力と送信
+const userInput=document.getElementById('userInput');
+document.getElementById('btnSend').onclick=()=>{ const t=userInput.value.trim(); if(!t) return; userInput.value=''; talk(t); };
+userInput.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); document.getElementById('btnSend').click(); } });
 
-      if (turnCount >= 3) {
-        setTimeout(() => {
-          window.location.href = "macaron_select.html";
-        }, 1000);
-      }
-    }
+// 音声認識（同じ）
+const btnMic=document.getElementById('btnMic');
+const autoSend=document.getElementById('autoSend');
+let recognition=null,recognizing=false;
+function ensureRec(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return null;
+  if(recognition) return recognition;
+  recognition=new SR();
+  recognition.interimResults=false; recognition.continuous=false; recognition.maxAlternatives=1;
+  recognition.onresult=(e)=>{
+    const text=e.results[0][0].transcript || '';
+    if(autoSend.checked){ talk(text); }
+    else { userInput.value=text; userInput.focus(); }
+  };
+  recognition.onend=()=>{recognizing=false;btnMic.textContent='🎙️';};
+  recognition.onerror=()=>{recognizing=false;btnMic.textContent='🎙️';};
+  return recognition;
+}
+btnMic.onclick=()=>{
+  const rec=ensureRec(); if(!rec){ alert('このブラウザは音声入力に未対応です'); return; }
+  rec.lang=document.getElementById('langSelect').value || (navigator.language||'ja-JP');
+  if(recognizing){ rec.stop(); return; }
+  recognizing=true; btnMic.textContent='🛑'; try{ rec.start(); }catch{}
+};
 
-    function appendChat(sender, text) {
-      const div = document.createElement("div");
-      div.className = `message ${sender}`;
-      div.textContent = (sender === "user" ? "あなた: " : `${charName}: `) + text;
-      document.getElementById("chatArea").appendChild(div);
-      document.getElementById("chatArea").scrollTop = 999999;
-    }
-  </script>
+// TTS（同じ）
+document.getElementById('btnTTS').onclick=()=>{
+  const last=[...readLog()].reverse().find(m=>m.role==='assistant');
+  if(last) speakCute(last.content, document.getElementById('langSelect').value);
+};
+function speakCute(text,lang){
+  if(!('speechSynthesis' in window)) return;
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=lang; u.rate=1.15; u.pitch=1.7; u.volume=1;
+  const voices=speechSynthesis.getVoices();
+  const cute=voices.find(v=>v.lang===lang && /(girl|child|female|Kyoko|Google 日本語)/i.test(v.name))
+            || voices.find(v=>v.lang.startsWith(lang.split('-')[0]));
+  if(cute) u.voice=cute;
+  try{ window.speechSynthesis.cancel(); }catch{}
+  window.speechSynthesis.speak(u);
+}
+if('speechSynthesis' in window){ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=()=>{}; }
+</script>
 </body>
 </html>
