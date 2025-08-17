@@ -194,9 +194,10 @@
     // かわいい声でTTS
     speakCute(reply, document.getElementById('langSelect').value);
 
-    // ターン加算＆終了
-    const t=readTurn()+1; writeTurn(t); document.getElementById('turnChip').textContent=String(t);
-    if(t>=TURN_LIMIT){ setTimeout(()=>location.href='identity_check.html', 900); }
+   // ターン加算＆終了
+　　const t=readTurn()+1; writeTurn(t); document.getElementById('turnChip').textContent=String(t);
+　　if(t>=TURN_LIMIT){ setTimeout(()=>location.href='rebirth.html', 900); }
+
   }
 
   // ===== 入力UI =====
