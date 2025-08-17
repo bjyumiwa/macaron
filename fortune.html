@@ -1,86 +1,175 @@
+<!-- FILE: /macaron/fortune.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>今日の占い ✨</title>
+  <title>マカロンを選んで占う ✨</title>
   <style>
     html,body{height:100%;margin:0}
     body{
-      font-family:"Noto Sans JP",sans-serif; color:#fff;
+      font-family:"Noto Sans JP",sans-serif;color:#fff;
       background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      display:flex; align-items:center; justify-content:center; text-align:center; padding:24px;
+      display:flex;align-items:center;justify-content:center;text-align:center;padding:20px
     }
-    .panel{ width:min(780px,96vw); background:rgba(0,0,0,.45); backdrop-filter:blur(4px);
-            border-radius:24px; padding:28px 24px; box-shadow:0 10px 40px rgba(0,0,0,.35)}
-    h1{font-size:32px;margin:6px 0 10px;text-shadow:0 2px 12px rgba(0,0,0,.4)}
-    p{font-size:18px;margin:0 0 18px;line-height:1.8;opacity:.95}
-    .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.14);font-weight:700}
-    .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
-    .actions{margin-top:18px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .panel{
+      width:min(900px,96vw);background:rgba(0,0,0,.45);backdrop-filter:blur(4px);
+      border-radius:24px;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.35)
+    }
+    h1{font-size:28px;margin:2px 0 6px;text-shadow:0 2px 12px rgba(0,0,0,.4)}
+    .sub{opacity:.95;margin:0 0 12px}
+    .grid{
+      display:grid;gap:12px;grid-template-columns:repeat(2,minmax(120px,1fr));
+      justify-items:center;margin:12px auto;max-width:520px
+    }
+    /* マカロンボタン（画像があれば画像、なければ色チップ） */
+    .macaron{
+      width:180px;max-width:42vw;aspect-ratio:1/1;border:0;border-radius:16px;cursor:pointer;
+      background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;
+      position:relative;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.35)
+    }
+    .macaron img{width:100%;height:100%;object-fit:contain;display:block}
+    .macaron .fallback{
+      width:70%;height:70%;border-radius:999px;filter:drop-shadow(0 6px 18px rgba(0,0,0,.35))
+    }
+    .macaron span{
+      position:absolute;bottom:6px;left:6px;right:6px;
+      background:rgba(0,0,0,.45);border-radius:999px;padding:6px 10px;font-weight:800
+    }
+    .actions{margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
     .btn{border:0;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer}
     .primary{background:#ffd1ec;color:#141217}
     .ghost{background:rgba(255,255,255,.16);color:#fff}
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;
+      background:rgba(255,255,255,.14);font-weight:700;margin:6px 0
+    }
+    .dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+    .fortune{font-size:18px;margin:8px 0 12px;line-height:1.8;opacity:.98}
+    .hidden{display:none}
+    @media (min-width:720px){ .grid{grid-template-columns:repeat(4,1fr);max-width:860px} }
   </style>
 </head>
 <body>
-  <div class="panel">
-    <h1>今日の占い ✨</h1>
-    <p id="fortuneText">結果を表示中…</p>
-    <div class="chip" id="colorChip">
-      <span class="dot" id="colorDot"></span>
-      <span id="colorName">—</span>
+  <div class="panel" aria-live="polite">
+    <h1>マカロンを選んで占う ✨</h1>
+    <p class="sub">好きなマカロンを選ぶと、その色の今日の運勢が出ます。</p>
+
+    <!-- ① 選択ビュー -->
+    <div id="selectView">
+      <div class="grid">
+        <!-- ピンク -->
+        <button class="macaron" data-color="pink" aria-label="ピンクを選ぶ">
+          <img data-img="pink" alt="" onerror="this.style.display='none'">
+          <div class="fallback" style="background:#ff77c8"></div>
+          <span>ピンク</span>
+        </button>
+        <!-- ブルー -->
+        <button class="macaron" data-color="blue" aria-label="ブルーを選ぶ">
+          <img data-img="blue" alt="" onerror="this.style.display='none'">
+          <div class="fallback" style="background:#7bb6ff"></div>
+          <span>ブルー</span>
+        </button>
+        <!-- グリーン -->
+        <button class="macaron" data-color="green" aria-label="グリーンを選ぶ">
+          <img data-img="green" alt="" onerror="this.style.display='none'">
+          <div class="fallback" style="background:#5ad269"></div>
+          <span>グリーン</span>
+        </button>
+        <!-- パープル -->
+        <button class="macaron" data-color="purple" aria-label="パープルを選ぶ">
+          <img data-img="purple" alt="" onerror="this.style.display='none'">
+          <div class="fallback" style="background:#b388ff"></div>
+          <span>パープル</span>
+        </button>
+      </div>
+      <div class="actions">
+        <button id="btnRandom" class="btn ghost">おまかせ（ランダム）</button>
+      </div>
     </div>
-    <div class="actions">
-      <button id="nextBtn" class="btn primary">次へ</button>
-      <button id="rerollBtn" class="btn ghost">引き直し</button>
+
+    <!-- ② 結果ビュー -->
+    <div id="resultView" class="hidden">
+      <div class="chip">
+        <span class="dot" id="colorDot"></span>
+        <span id="colorName">—</span>
+      </div>
+      <div id="fortuneText" class="fortune">結果を表示中…</div>
+      <div class="actions">
+        <button id="btnChange" class="btn ghost">色を変える</button>
+        <button id="btnNext" class="btn primary">次へ（名前をつける）</button>
+      </div>
     </div>
   </div>
 
-  <script>
-    const $ = (id)=>document.getElementById(id);
-    const params = new URLSearchParams(location.search);
+<script>
+  // ===== データ定義 =====
+  const TABLE = {
+    pink:   { jp:'ピンク（情熱）',   msg:'あなたはとても情熱的。ワクワクする挑戦が、きょうのあなたを前に進めます。' },
+    blue:   { jp:'ブルー（静寂）',   msg:'心が澄み、集中の波が来ています。静かな一歩が大きな前進に。' },
+    green:  { jp:'グリーン（元気）', msg:'エネルギー満タン！体を動かすほど、良いひらめきが生まれます。' },
+    purple: { jp:'パープル（創造）', msg:'あなたはとても創造的で、みんなにインスピレーションを与えるでしょう。' }
+  };
+  const DOT_COLOR = {pink:'#ff77c8', blue:'#7bb6ff', green:'#5ad269', purple:'#b388ff'};
+  const ORDER = ['pink','blue','green','purple'];
 
-    const TABLE = {
-      pink:   { jp:'ピンク（情熱）',   msg:'あなたはとても情熱的。ワクワクする挑戦が、きょうのあなたを前に進めます。' },
-      blue:   { jp:'ブルー（静寂）',   msg:'心が澄み、集中の波が来ています。静かな一歩が大きな前進に。' },
-      green:  { jp:'グリーン（元気）', msg:'エネルギー満タン！体を動かすほど、良いひらめきが生まれます。' },
-      purple: { jp:'パープル（創造）', msg:'あなたはとても創造的で、みんなにインスピレーションを与えるでしょう。' }
-    };
-    const DOT_COLOR = {pink:'#ff77c8', blue:'#7bb6ff', green:'#5ad269', purple:'#b388ff'};
-    const ALLOWED = Object.keys(TABLE);
+  // 画像（持っていれば自動表示、無ければ色チップのまま）
+  const MACARON_IMG = {
+    pink:   'public/assets/stage1/macaron_pink.png',
+    blue:   'public/assets/stage1/macaron_blue.png',
+    green:  'public/assets/stage1/macaron_green.png',
+    purple: 'public/assets/stage1/macaron_purple.png'
+  };
+  ORDER.forEach(c=>{
+    const img = document.querySelector(`img[data-img="${c}"]`);
+    if(img){ img.src = MACARON_IMG[c]; }
+  });
 
-    function todaySeed(){ const d=new Date(); return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate(); }
-    function seededPick(seed){ let x=(seed*1664525+1013904223)%4294967296; return ALLOWED[x%4]; }
-    function safeColor(c){ return ALLOWED.includes(c)?c:'green'; }
+  const $ = (id)=>document.getElementById(id);
+  const selectView = $('selectView');
+  const resultView = $('resultView');
 
-    function chooseColor(){
-      const override=params.get('color');
-      if(override) return safeColor(override);
-      return seededPick(todaySeed());
-    }
+  function showResult(color){
+    const t = TABLE[color];
+    // 保存（ここで色を確定）
+    localStorage.setItem('macaronColor', color);
+    // 表示
+    $('colorDot').style.background = DOT_COLOR[color];
+    $('colorName').textContent = `選んだ色：${t.jp}`;
+    $('fortuneText').textContent = t.msg;
+    // ステージ
+    localStorage.setItem('whoai_stage','tane');
+    localStorage.setItem('whoai_turn','0');
+    // 切り替え
+    selectView.classList.add('hidden');
+    resultView.classList.remove('hidden');
+  }
 
-    function applyFortune(color){
-      const t=TABLE[color];
-      $('fortuneText').textContent=t.msg;
-      $('colorName').textContent=`今日の色：${t.jp}`;
-      $('colorDot').style.background=DOT_COLOR[color];
-      localStorage.setItem('macaronColor', color);
-    }
+  // クリックで色を選ぶ
+  document.querySelectorAll('.macaron').forEach(btn=>{
+    btn.addEventListener('click', ()=> showResult(btn.dataset.color));
+  });
 
-    let currentColor=chooseColor(); applyFortune(currentColor);
+  // おまかせ（ランダム）
+  $('btnRandom').addEventListener('click', ()=>{
+    const c = ORDER[Math.floor(Math.random()*ORDER.length)];
+    showResult(c);
+  });
 
-    $('rerollBtn').onclick=()=>{
-      const list=ALLOWED.filter(c=>c!==currentColor);
-      currentColor=list[Math.floor(Math.random()*list.length)];
-      applyFortune(currentColor);
-    };
+  // 色を変える → 選択に戻る
+  $('btnChange').addEventListener('click', ()=>{
+    resultView.classList.add('hidden');
+    selectView.classList.remove('hidden');
+  });
 
-    $('nextBtn').onclick=()=>{
-      localStorage.setItem('whoai_stage','tane');
-      localStorage.setItem('whoai_turn','0');
-      location.href='naming.html';
-    };
-  </script>
+  // 次へ → 命名ページへ
+  $('btnNext').addEventListener('click', ()=>{
+    location.href = 'naming.html';
+  });
+
+  // URLパラメータ ?color=blue でも直接表示可（テスト用）
+  const p = new URLSearchParams(location.search).get('color');
+  if (p && ORDER.includes(p)) showResult(p);
+</script>
 </body>
 </html>
