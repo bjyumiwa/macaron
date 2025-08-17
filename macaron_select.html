@@ -106,34 +106,31 @@
   <div class="file-label">/macaron/macaron_select.html</div>
 
   <script>
-    const allowedColors = ['pink', 'blue', 'green', 'purple'];
     const colorToPersonality = {
-  pink: '情熱',
-  blue: '静寂',
-  green: '元気',
-  purple: '創造'
-};
+      pink: '情熱',
+      blue: '静寂',
+      green: '元気',
+      purple: '創造'
+    };
 
-function saveColorAndGo(c) {
-  const chosen = (c || '').toLowerCase().trim();
-  const color = ['pink', 'blue', 'green', 'purple'].includes(chosen) ? chosen : 'green';
-  localStorage.setItem('macaronColor', color);
-  localStorage.setItem('macaronPersonality', colorToPersonality[color]); // ★性格も保存
-  location.href = 'evolution.html';
-}
+    function saveColorAndGo(color) {
+      const chosen = (color || '').toLowerCase().trim();
+      const valid = ['pink', 'blue', 'green', 'purple'].includes(chosen) ? chosen : 'green';
+      localStorage.setItem('macaronColor', valid);
+      localStorage.setItem('macaronPersonality', colorToPersonality[valid]);
+      // 進化演出へ
+      location.href = 'evolution.html';
+    }
 
-
-  
     document.querySelectorAll('.card').forEach(card => {
       const color = card.dataset.color;
-      const personality = card.dataset.personality;
       card.addEventListener('click', () => {
-        saveColorAndProceed(color, personality);
+        saveColorAndGo(color);
       });
       card.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          saveColorAndProceed(color, personality);
+          saveColorAndGo(color);
         }
       });
     });
