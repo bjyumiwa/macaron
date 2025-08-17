@@ -1,4 +1,3 @@
-<!-- FILE: /macaron/naming.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,52 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>名前をつけよう</title>
   <style>
-    html,body{height:100%;margin:0;padding:0}
-    body{
-      font-family:"Noto Sans JP",sans-serif;
-      background:url("public/assets/stage1/space_background.png") center/cover fixed no-repeat;
-      color:#fff;
-      display:flex;align-items:center;justify-content:center;
-      padding:20px;
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    body {
+      font-family: "Noto Sans JP", sans-serif;
+      background: #000;
+      background-image: url("public/assets/stage1/space_background.png");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
-    .wrap{
-      width:min(920px,96vw);display:grid;gap:20px;
-      grid-template-columns: 1fr 1fr; align-items:center;
-      background:rgba(0,0,0,0.4);border-radius:24px;padding:20px
+    .wrap {
+      width: min(920px, 96vw);
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
     }
 
     .card, .hero {
-      background:rgba(255,255,255,0.1);border-radius:18px;
-      box-shadow:0 12px 40px rgba(0,0,0,.2);
-      padding:22px 20px;color:#fff
+      background: #fff;
+      color: #000;
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.07);
+      padding: 22px 20px;
     }
 
-    .hero img{
-      width:220px;max-width:60%;aspect-ratio:1/1;object-fit:contain;
-      filter:drop-shadow(0 8px 26px rgba(0,0,0,.15));
+    .hero img {
+      width: 220px;
+      max-width: 60%;
+      aspect-ratio: 1/1;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 26px rgba(0, 0, 0, 0.15));
     }
 
-    h2{margin:0 0 8px;font-size:20px}
-    p.sub{margin:0 0 14px;opacity:.85}
-    input{
-      width:100%;padding:12px 14px;border-radius:12px;border:none;
-      font-size:16px;background:#fff;color:#000
+    h2 {
+      margin: 0 0 8px;
     }
 
-    button{
-      margin-top:12px;padding:12px 16px;border-radius:12px;border:0;cursor:pointer;
-      background:#ffd1ec;color:#111;font-weight:800;width:100%;
+    p.sub {
+      margin: 0 0 14px;
+      opacity: 0.8;
     }
 
-    .hint{font-size:12px;opacity:.8;margin-top:8px}
-
-    @media (max-width: 760px){
-      .wrap{grid-template-columns:1fr}
-      .hero img{width:180px}
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 16px;
     }
 
-    /* 言語切り替えチップ */
+    button {
+      margin-top: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 0;
+      cursor: pointer;
+      background: #6f4cff;
+      color: #fff;
+      font-weight: 800;
+      width: 100%;
+    }
+
+    .hint {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+      .hero img {
+        width: 180px;
+      }
+    }
+
     #langSwitcher {
       position: fixed;
       top: 12px;
@@ -60,16 +99,21 @@
       display: flex;
       gap: 6px;
     }
+
     .lang-chip {
       border: 0;
       border-radius: 999px;
       padding: 6px 10px;
       font-size: 12px;
-      background: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.15);
       color: #fff;
       font-weight: 800;
       cursor: pointer;
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.4);
     }
+
     .lang-chip[aria-pressed="true"] {
       outline: 2px solid #ffd1ec;
       background: rgba(255, 209, 236, 0.4);
@@ -77,7 +121,6 @@
   </style>
 </head>
 <body>
-
   <!-- 言語切り替え -->
   <div id="langSwitcher">
     <button class="lang-chip" data-lang="ja-JP">日本語</button>
@@ -89,98 +132,25 @@
   <div class="wrap">
     <!-- キャラプレビュー -->
     <section class="hero" aria-live="polite">
-      <h2 id="previewTitle">いまの姿</h2>
-      <p class="sub" id="previewSub">占いで決まった色の「たねキャラ」です</p>
+      <h2 id="heroTitle">いまの姿</h2>
+      <p class="sub" id="heroDesc">占いで決まった色の「たねキャラ」です</p>
       <img id="charImg" alt="キャラプレビュー" src="">
-      <div id="colorNote" class="hint"></div>
+      <div id="colorNote" class="hint">色：</div>
     </section>
 
     <!-- 命名フォーム -->
     <section class="card">
-      <h2 id="nameTitle">キャラクターに名前をつけてね</h2>
-      <p class="sub" id="nameSub">後から変更できます</p>
+      <h2 id="formTitle">キャラクターに名前をつけてね</h2>
+      <p class="sub" id="formDesc">後から変更できます</p>
       <form id="nameForm">
         <input id="nameInput" type="text" placeholder="名前を入力" autocomplete="off" required>
         <button type="submit" id="submitBtn">決定して会話へ</button>
-        <div class="hint" id="nameHint">※ まだ色を決めていない場合は、占いからやり直します</div>
+        <div class="hint" id="noteHint">※ まだ色を決めていない場合は、占いからやり直します</div>
       </form>
     </section>
   </div>
 
   <script>
-    // --------- 言語設定 ---------
-    const UI_LANG_KEY = 'whoai_ui_lang';
-    const APP_LANG_KEY = 'whoai_lang';
-    const DEFAULT_LANG = 'ja-JP';
-    let currentLang = localStorage.getItem(APP_LANG_KEY) || DEFAULT_LANG;
-
-    const texts = {
-      "ja-JP": {
-        previewTitle: "いまの姿",
-        previewSub: "占いで決まった色の「たねキャラ」です",
-        nameTitle: "キャラクターに名前をつけてね",
-        nameSub: "後から変更できます",
-        submitBtn: "決定して会話へ",
-        nameHint: "※ まだ色を決めていない場合は、占いからやり直します",
-        placeholder: "名前を入力"
-      },
-      "en-US": {
-        previewTitle: "Current Form",
-        previewSub: "This is your 'seed character' determined by fortune",
-        nameTitle: "Give your character a name",
-        nameSub: "You can change it later",
-        submitBtn: "Confirm & Talk",
-        nameHint: "* If you haven't selected a color, please restart from the fortune page.",
-        placeholder: "Enter a name"
-      },
-      "zh-CN": {
-        previewTitle: "当前的形象",
-        previewSub: "这是通过占卜决定的“种子角色”",
-        nameTitle: "请为角色命名",
-        nameSub: "之后可以更改",
-        submitBtn: "确定并开始对话",
-        nameHint: "* 如果尚未选择颜色，请从占卜页面重新开始",
-        placeholder: "请输入名字"
-      },
-      "ko-KR": {
-        previewTitle: "현재 모습",
-        previewSub: "운세로 결정된 '씨앗 캐릭터'입니다",
-        nameTitle: "캐릭터에게 이름을 지어주세요",
-        nameSub: "나중에 변경할 수 있어요",
-        submitBtn: "확정하고 대화 시작",
-        nameHint: "* 색상을 아직 선택하지 않았다면, 운세 페이지로 돌아가세요",
-        placeholder: "이름을 입력하세요"
-      }
-    };
-
-    function applyI18n(lang) {
-      const t = texts[lang] || texts[DEFAULT_LANG];
-      document.getElementById('previewTitle').textContent = t.previewTitle;
-      document.getElementById('previewSub').textContent = t.previewSub;
-      document.getElementById('nameTitle').textContent = t.nameTitle;
-      document.getElementById('nameSub').textContent = t.nameSub;
-      document.getElementById('submitBtn').textContent = t.submitBtn;
-      document.getElementById('nameHint').textContent = t.nameHint;
-      document.getElementById('nameInput').placeholder = t.placeholder;
-
-      // チップ状態
-      document.querySelectorAll('.lang-chip').forEach(btn => {
-        btn.setAttribute('aria-pressed', btn.dataset.lang === lang ? 'true' : 'false');
-      });
-    }
-
-    document.getElementById('langSwitcher').addEventListener('click', e => {
-      const btn = e.target.closest('.lang-chip');
-      if (!btn) return;
-      currentLang = btn.dataset.lang;
-      localStorage.setItem(APP_LANG_KEY, currentLang);
-      localStorage.setItem(UI_LANG_KEY, currentLang);
-      applyI18n(currentLang);
-    });
-
-    applyI18n(currentLang);
-
-    // --------- キャラ画像処理など ---------
     const img = document.getElementById('charImg');
     const note = document.getElementById('colorNote');
     const form = document.getElementById('nameForm');
@@ -188,9 +158,7 @@
     const allowed = ['pink','blue','green','purple'];
 
     let color = (localStorage.getItem('macaronColor') || '').toLowerCase().trim();
-    if (!allowed.includes(color)) {
-      location.replace('fortune.html');
-    }
+    if (!allowed.includes(color)) location.replace('fortune.html');
 
     if (!localStorage.getItem('whoai_stage')) localStorage.setItem('whoai_stage','tane');
     localStorage.setItem('whoai_turn','0');
@@ -200,7 +168,7 @@
       const base = 'public/assets/stage1';
       img.onerror = () => { img.onerror = null; img.src = `${base}/tane_green.png`; };
       img.src = `${base}/tane_${c}.png`;
-      note.textContent = `色: ${c}`;
+      note.textContent = `色：${c}`;
     }
     setPreview(color);
 
@@ -208,11 +176,76 @@
       e.preventDefault();
       const name = (input.value || '').trim();
       if (!name) { alert('名前を入力してください'); return; }
-
       const clean = name.replace(/\s+/g, ' ').replace(/^[\s　]+|[\s　]+$/g, '');
       localStorage.setItem('whoai_name', clean);
       location.href = 'whoai_talk.html';
     });
+
+    // --- 多言語対応 ---
+    const APP_LANG_KEY = 'whoai_lang';
+    let currentLang = localStorage.getItem(APP_LANG_KEY) || 'ja-JP';
+
+    const I18N = {
+      'heroTitle': {
+        'ja-JP': "いまの姿",
+        'en-US': "Current Form",
+        'zh-CN': "现在的样子",
+        'ko-KR': "현재의 모습"
+      },
+      'heroDesc': {
+        'ja-JP': "占いで決まった色の「たねキャラ」です",
+        'en-US': "A seed character based on your fortune color",
+        'zh-CN': "通过占卜决定的颜色的“种子角色”",
+        'ko-KR': "운세로 결정된 색상의 ‘씨앗 캐릭터’입니다"
+      },
+      'formTitle': {
+        'ja-JP': "キャラクターに名前をつけてね",
+        'en-US': "Give your character a name",
+        'zh-CN': "请给你的角色命名",
+        'ko-KR': "캐릭터에 이름을 지어주세요"
+      },
+      'formDesc': {
+        'ja-JP': "後から変更できます",
+        'en-US': "You can change it later",
+        'zh-CN': "之后可以更改",
+        'ko-KR': "나중에 변경할 수 있어요"
+      },
+      'submitBtn': {
+        'ja-JP': "決定して会話へ",
+        'en-US': "Confirm and talk",
+        'zh-CN': "确认并开始对话",
+        'ko-KR': "확정하고 대화로"
+      },
+      'noteHint': {
+        'ja-JP': "※ まだ色を決めていない場合は、占いからやり直します",
+        'en-US': "* If you haven’t selected a color, please start again from fortune.",
+        'zh-CN': "* 如果还没选择颜色，请重新开始占卜",
+        'ko-KR': "* 색상을 아직 선택하지 않았다면, 운세부터 다시 시작하세요"
+      }
+    };
+
+    function applyI18n(lang){
+      currentLang = lang;
+      localStorage.setItem(APP_LANG_KEY, lang);
+      for (const key in I18N) {
+        const el = document.getElementById(key);
+        if (el && I18N[key][lang]) {
+          el.textContent = I18N[key][lang];
+        }
+      }
+      document.querySelectorAll('.lang-chip').forEach(btn => {
+        btn.setAttribute('aria-pressed', btn.dataset.lang === lang);
+      });
+    }
+
+    document.getElementById('langSwitcher').addEventListener('click', e => {
+      const btn = e.target.closest('.lang-chip');
+      if (!btn) return;
+      applyI18n(btn.dataset.lang);
+    });
+
+    // 初期表示
+    applyI18n(currentLang);
   </script>
 </body>
 </html>
