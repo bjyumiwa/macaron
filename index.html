@@ -5,69 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WhoAI スタート</title>
   <style>
-    html,body{
-      height:100%;margin:0;
-      font-family:"Noto Sans JP",sans-serif;
-    }
+    html,body{ height:100%; margin:0; font-family:"Noto Sans JP",sans-serif; }
     body{
-      display:flex;align-items:center;justify-content:center;flex-direction:column;
+      display:flex; align-items:center; justify-content:center; flex-direction:column;
       color:#fff;
       background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover;background-position:center;background-attachment:fixed;
-      text-align:center;
-      padding:20px;
+      background-size:cover; background-position:center; background-attachment:fixed;
+      text-align:center; padding:20px;
     }
     .card{
-      background:rgba(0,0,0,.55);
-      backdrop-filter:blur(6px);
-      border-radius:20px;
-      padding:30px 24px;
-      max-width:480px;width:92%;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(6px);
+      border-radius:20px; padding:30px 24px;
+      max-width:480px; width:92%;
       box-shadow:0 10px 40px rgba(0,0,0,.4);
     }
-    h1{margin-top:0;margin-bottom:12px;font-size:28px}
-    p{margin:0 0 20px;font-size:16px;line-height:1.6}
-    .miwacchi{width:120px;margin:14px auto;display:block}
+    h1{ margin:0 0 12px; font-size:28px }
+    p{ margin:0 0 20px; font-size:16px; line-height:1.6 }
+    .miwacchi{ width:120px; margin:14px auto; display:block }
 
     .btn{
-      display:inline-block;margin-top:10px;
-      padding:12px 18px;border-radius:12px;
-      background:#ffd1ec;color:#141217;
-      font-weight:700;cursor:pointer;
-      text-decoration:none;
+      display:inline-block; margin-top:10px; padding:12px 18px; border-radius:12px;
+      background:#ffd1ec; color:#141217; font-weight:700; cursor:pointer; text-decoration:none;
     }
-    .btn:hover{opacity:.85}
+    .btn:hover{ opacity:.85 }
 
-    footer{margin-top:18px;font-size:14px}
-    footer a{color:#ffd1ec;text-decoration:underline}
-    footer a:hover{opacity:1}
+    footer{ margin-top:18px; font-size:14px }
+    footer a{ color:#ffd1ec; text-decoration:underline }
+    footer a:hover{ opacity:1 }
 
-    /* 言語セレクト */
+    /* 言語セレクト（右上固定） */
     .lang-box{
-      position:fixed;top:12px;right:12px;
-      display:flex;align-items:center;gap:6px;
+      position:fixed; top:12px; right:12px;
+      display:flex; align-items:center; gap:6px;
       background:rgba(0,0,0,.4);
-      padding:6px 10px;border-radius:12px;
+      padding:6px 10px; border-radius:12px;
     }
-    .lang-box span{font-size:16px}
+    .lang-box span{ font-size:16px }
     select{
-      padding:6px 10px;
-      border-radius:10px;
-      border:1px solid #444;
-      background:#fff;   /* 白背景 */
-      color:#000;        /* 黒文字 */
-      font-weight:600;
-      cursor:pointer;
-      appearance:none;
-      -webkit-appearance:none;
-      -moz-appearance:none;
+      padding:6px 10px; border-radius:10px; border:1px solid #444;
+      background:#fff; color:#000; font-weight:600; cursor:pointer;
+      appearance:none; -webkit-appearance:none; -moz-appearance:none;
     }
-    select:focus{outline:2px solid #ffd1ec;}
+    select:focus{ outline:2px solid #ffd1ec; }
   </style>
 </head>
 <body>
   <!-- 言語セレクト -->
-  <div class="lang-box">
+  <div class="lang-box" aria-label="UI language">
     <span>🌐</span>
     <select id="langSelect">
       <option value="ja">日本語</option>
@@ -78,24 +62,60 @@
   </div>
 
   <!-- メインカード -->
-  <div class="card">
+  <div class="card" aria-live="polite">
     <h1>WhoAIへようこそ</h1>
     <img src="public/assets/stage1/miwacchi_open.png" alt="みわっち" class="miwacchi">
     <p>あなたの選択で姿を変え、進化していきます。<br>たくさんの会話をお楽しみください。</p>
-    <a href="fortune.html" class="btn">はじめる</a>
+    <!-- スタート＝毎回フルリセット＋遷移 -->
+    <a href="macaron.html" id="startBtn" class="btn">はじめる</a>
     <footer>
       <a href="about.html">この研究について</a>
     </footer>
   </div>
 
   <script>
-    // 言語選択を保存
+    // ===== 言語選択（UI用 & 会話用の両方に保存） =====
+    const UI_LANG_KEY = 'whoai_ui_lang';
+    const APP_LANG_KEY = 'whoai_lang'; // 以降のページ（会話）で参照
     const sel = document.getElementById('langSelect');
-    const saved = localStorage.getItem('whoai_ui_lang') || 'ja';
+
+    // 過去の保存値を優先（無ければja）
+    const saved = localStorage.getItem(UI_LANG_KEY) || localStorage.getItem(APP_LANG_KEY) || 'ja';
     sel.value = saved;
-    sel.addEventListener('change',()=>{
-      localStorage.setItem('whoai_ui_lang', sel.value);
-      alert("言語設定: "+sel.options[sel.selectedIndex].text);
+
+    sel.addEventListener('change', ()=>{
+      const v = sel.value || 'ja';
+      localStorage.setItem(UI_LANG_KEY, v);
+      localStorage.setItem(APP_LANG_KEY, v);
+      // アラートはそのまま（レイアウト崩さずフィードバック）
+      alert("言語設定: " + sel.options[sel.selectedIndex].text);
+    });
+
+    // ===== スタート＝毎回フルリセット → macaron.html =====
+    document.getElementById('startBtn').addEventListener('click', (e)=>{
+      e.preventDefault(); // aタグの遷移を一旦止める
+
+      // 今選ばれている言語は先に退避
+      const lang = sel.value || 'ja';
+
+      // WhoAI/macaron関連を全削除（完全初期化）
+      try{
+        Object.keys(localStorage).forEach(k=>{
+          if (/^(whoai_|macaron)/.test(k)) localStorage.removeItem(k);
+        });
+        [
+          'whoai_chat','whoai_name','whoai_character_name','whoai_player_name',
+          'whoai_stage','whoai_keep','macaronColor','whoai_turn','whoai_phase',
+          'whoai_userId','whoai_conversationId'
+        ].forEach(k=>localStorage.removeItem(k));
+      }catch(err){ console.warn('[reset error]', err); }
+
+      // 言語だけは持ち越し（以降のページで使用）
+      localStorage.setItem(UI_LANG_KEY, lang);
+      localStorage.setItem(APP_LANG_KEY, lang);
+
+      // マカロン選択へ
+      location.href = 'macaron.html';
     });
   </script>
 </body>
