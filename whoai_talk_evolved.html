@@ -26,9 +26,7 @@
     .title { text-align:center; font-size:22px; margin-top:60px; }
     .subtitle { text-align:center; font-size:14px; opacity:.8; margin-bottom:10px; }
 
-    .hero {
-      text-align:center; margin:10px auto 6px;
-    }
+    .hero { text-align:center; margin:10px auto 6px; }
     .hero img {
       width:180px; height:180px; object-fit:contain;
       filter: drop-shadow(0 8px 26px rgba(0,0,0,.5));
@@ -102,9 +100,16 @@
     document.getElementById("chipColor").textContent = color;
     document.getElementById("turnChip").textContent = turn;
 
-    // 進化後キャラ画像設定
+    // キャラ画像（open/closed 交互アニメ）
     const img = document.getElementById("charImg");
-    img.src = `public/assets/stage1/${color}_evolved.png`;
+    let isOpen = false;
+    function updateCharImage() {
+      img.src = `public/assets/stage1/${color}_${isOpen ? "open" : "closed"}.png`;
+      isOpen = !isOpen;
+    }
+    // 口パクアニメーション開始
+    setInterval(updateCharImage, 800);
+
     document.getElementById("charLabel").innerHTML = `<small>${charName} の進化後の姿</small>`;
 
     const chatArea = document.getElementById("chatArea");
@@ -141,7 +146,6 @@
         addBubble("（通信エラー）", "ai");
       }
 
-      // 10ターンで儀式へ
       if (turn >= 10) {
         setTimeout(()=>location.href="rebirth.html",1200);
       }
