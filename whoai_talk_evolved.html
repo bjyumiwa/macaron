@@ -4,226 +4,247 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>WhoAI - 進化後</title>
+  <title>会話 | WhoAI（進化後）</title>
   <style>
-    html, body { height:100%; margin:0; }
-    body {
+    html,body{height:100%;margin:0}
+    body{
       font-family:"Noto Sans JP",system-ui,sans-serif;
-      color:#fff; background:#000;
+      color:#fff;background:#000;
       background-image:url("public/assets/stage1/space_background.png");
-      background-size:cover; background-position:center; background-attachment:fixed;
-      display:flex; flex-direction:column; align-items:center; padding:16px; gap:12px;
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px
+    }
+    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .chip{
+      background:rgba(0,0,0,.35);backdrop-filter:blur(3px);
+      padding:6px 10px;border-radius:999px;font-size:12px
+    }
+    .title{font-size:28px;font-weight:800;letter-spacing:.06em;margin-top:2px}
+    .subtitle{font-size:12px;opacity:.9;margin-top:-4px}
+
+    .hero{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0 4px}
+    .hero img{width:180px;max-width:52vw;height:auto;filter:drop-shadow(0 8px 22px rgba(0,0,0,.5))}
+    .hero small{opacity:.85}
+
+    .card{
+      width:min(920px,96vw);
+      background:rgba(0,0,0,.35);backdrop-filter:blur(4px);
+      border-radius:18px;padding:12px
     }
 
-    .topbar {
-      width:100%; max-width:880px;
-      display:flex; gap:8px; padding:8px 10px;
-      border-radius:14px; background:rgba(0,0,0,.35); backdrop-filter:blur(3px);
-      font-size:12px;
+    #chatArea{
+      height:48vh;max-height:520px;min-height:280px;
+      overflow-y:auto;scroll-behavior:smooth;
+      background:rgba(255,255,255,.10);
+      border-radius:14px;padding:12px
     }
-    .badge { padding:2px 8px; border-radius:999px; background:rgba(255,255,255,.12); }
-
-    /* ===== ステージを横並びに修正 ===== */
-    .stage {
-      width:100%; max-width:880px;
-      border-radius:16px; padding:14px;
-      background:rgba(0,0,0,.35); backdrop-filter:blur(4px);
-      display:grid; grid-template-columns:160px 1fr; gap:14px;
+    .msg{display:flex;margin:10px 0}
+    .msg.user{justify-content:flex-end}
+    .msg.assistant{justify-content:flex-start}
+    .bubble{
+      max-width:82%;padding:12px 14px;border-radius:16px;line-height:1.7;
+      white-space:pre-wrap;word-wrap:break-word;background:rgba(255,255,255,.12)
     }
-    .avatar-zone { display:flex; justify-content:center; align-items:flex-start; }
-    .avatar-zone img { width:140px; filter:drop-shadow(0 6px 16px rgba(0,0,0,.45)); }
+    .msg.user .bubble{background:rgba(61,180,255,.20)}
+    .msg.assistant .bubble{background:rgba(255,97,200,.20)}
+    .role{display:block;font-size:12px;opacity:.8;margin-bottom:4px}
 
-    .chat-zone { display:flex; flex-direction:column; gap:10px; }
-    .name-row { font-weight:700; opacity:.95; }
-
-    #chatArea {
-      background:rgba(255,255,255,.1);
-      border-radius:12px; padding:12px;
-      height:400px; overflow-y:auto; scroll-behavior:smooth;
+    .controls{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+    input[type=text]{
+      flex:1;min-width:200px;padding:12px 14px;border:none;border-radius:12px;
+      background:rgba(255,255,255,.92);color:#111;outline:none
     }
-    .msg { margin:8px 0; display:flex; }
-    .msg.user { justify-content:flex-end; }
-    .msg.assistant { justify-content:flex-start; }
-    .bubble {
-      max-width:75%; padding:10px 12px;
-      border-radius:12px; line-height:1.6;
-      white-space:pre-wrap; word-wrap:break-word;
-      background:rgba(255,255,255,.12);
+    button,select,label.switch{
+      padding:10px 12px;border:none;border-radius:12px;
+      background:#ffd1ec;color:#111;font-weight:700;cursor:pointer
     }
-    .msg.user .bubble { background:rgba(61,180,255,.2); }
-    .msg.assistant .bubble { background:rgba(255,97,200,.2); }
-    .role { display:block; font-size:12px; opacity:.8; margin-bottom:4px; }
+    button:disabled{opacity:.6;cursor:not-allowed}
+    select{padding:10px;font-weight:600}
+    .switch{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,.2)}
+    .switch input{accent-color:#6f4cff}
+    .hint{font-size:12px;opacity:.85;margin:4px 2px 0}
 
-    .controls { display:flex; gap:6px; align-items:center; }
-    input[type="text"] {
-      flex:1; padding:10px 12px; border-radius:10px; border:none;
-      background:rgba(255,255,255,.9); color:#111; outline:none;
-    }
-    button {
-      padding:10px 14px; border-radius:10px; border:none; cursor:pointer; font-weight:700;
-      background:#ffd1ec; color:#111;
-    }
-    button:disabled { opacity:.6; cursor:not-allowed; }
-    select { padding:8px; border-radius:8px; }
-
-    .hint { font-size:12px; opacity:.85; margin-top:6px; }
-
-    /* スマホでは縦並びに */
-    @media (max-width:680px){
-      .stage{ grid-template-columns:1fr; }
-      .avatar-zone{ order:2; margin-top:8px; }
-      .chat-zone{ order:1; }
+    @media (min-width:900px){
+      #chatArea{height:56vh}
+      .hero img{width:200px}
     }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <span class="badge">FILE: /macaron/whoai_talk_evolved.html</span>
-    <span class="badge" id="userBadge">user:-</span>
-    <span class="badge" id="convoBadge">convo:-</span>
-    <span class="badge" id="turnBadge">turn:0/10</span>
+  <!-- 上部チップ -->
+  <div class="chips">
+    <span class="chip">もち | <span id="chipColor">-</span> | evolved</span>
+    <span class="chip">turn: <span id="turnChip">0</span>/10</span>
+  </div>
+  <div class="title">会話</div>
+  <div class="subtitle">進化キャラで10回会話すると、復活の儀式へ</div>
+
+  <!-- キャラ（中央上） -->
+  <div class="hero">
+    <img id="charImg" alt="進化後の姿">
+    <small>進化後の姿</small>
   </div>
 
-  <div class="stage">
-    <div class="avatar-zone">
-      <img id="charImg" alt="character"/>
-    </div>
-    <div class="chat-zone">
-      <div class="name-row">会話相手：<span id="assistantName">WhoAI</span>（進化後）</div>
-      <div id="chatArea"></div>
+  <!-- チャットカード -->
+  <div class="card" style="padding:12px">
+    <div id="chatArea"></div>
 
-      <div class="controls">
-        <input id="userInput" type="text" placeholder="メッセージを入力…" />
-        <button id="btnSend">送信</button>
-        <button id="btnMic">🎙️</button>
-        <button id="btnTTS">🔊</button>
-        <select id="langSelect">
-          <option value="ja-JP">日本語</option>
-          <option value="en-US">English</option>
-          <option value="zh-CN">中文(简体)</option>
-          <option value="zh-TW">中文(繁體)</option>
-          <option value="ko-KR">한국어</option>
-        </select>
-      </div>
-
-      <div class="hint">※ 会話はlocalStorageに保存され、直近12発言をAPIに送信。10ターンで終了。</div>
+    <!-- 入力と操作 -->
+    <div class="controls">
+      <input id="userInput" type="text" placeholder="メッセージを入力（音声でもOK）">
+      <button id="btnSend">送信</button>
+      <button id="btnMic" title="音声入力">🎙️</button>
+      <button id="btnTTS" title="読み上げ">🔊</button>
+      <select id="langSelect" title="言語">
+        <option value="ja-JP">日本語</option>
+        <option value="en-US">English</option>
+        <option value="zh-CN">中文(简体)</option>
+        <option value="zh-TW">中文(繁體)</option>
+        <option value="ko-KR">한국어</option>
+      </select>
+      <label class="switch" title="音声認識の結果を自動送信">
+        <input type="checkbox" id="autoSend" checked> 自動送信
+      </label>
     </div>
+
+    <div class="hint">※ 会話は localStorage に保存／直近12発言をAPIに同封。10ターン到達でアンケートへ。</div>
   </div>
 
 <script>
-  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk';
+  // ===== 設定 =====
+  const TALK_ENDPOINT = 'https://macaron-one.vercel.app/api/talk'; // ←VercelのAPI（GitHub PagesでもOK）
   const WINDOW_N = 12;
   const TURN_LIMIT = 10;
 
-  // キャラ画像（進化後 closed/open）
-  const COLOR_TO_IMG = {
-    pink:   { closed:'public/assets/stage1/pink_closed.png', open:'public/assets/stage1/pink_open.png' },
-    blue:   { closed:'public/assets/stage1/blue_closed.png', open:'public/assets/stage1/blue_open.png' },
-    green:  { closed:'public/assets/stage1/green_closed.png', open:'public/assets/stage1/green_open.png' },
-    purple: { closed:'public/assets/stage1/purple_closed.png', open:'public/assets/stage1/purple_open.png' }
+  // ===== 画像マッピング（進化後 open/closed）=====
+  const EVOLVED_SRC = {
+    pink:{closed:'public/assets/stage1/pink_closed.png', open:'public/assets/stage1/pink_open.png'},
+    blue:{closed:'public/assets/stage1/blue_closed.png', open:'public/assets/stage1/blue_open.png'},
+    green:{closed:'public/assets/stage1/green_closed.png', open:'public/assets/stage1/green_open.png'},
+    purple:{closed:'public/assets/stage1/purple_closed.png', open:'public/assets/stage1/purple_open.png'}
   };
+  const color = (localStorage.getItem('macaronColor') || 'pink').toLowerCase();
+  document.getElementById('chipColor').textContent = color;
 
-  // localStorage
-  const getOrCreate = (k) => { let v=localStorage.getItem(k); if(v) return v; v=crypto.randomUUID(); localStorage.setItem(k,v); return v; };
-  const userId = getOrCreate('whoai_userId');
-  const convoId = getOrCreate('whoai_convoId');
-  const key = (s)=>`whoai:${userId}:${convoId}:${s}`;
-  const readLog = ()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
-  const writeLog = (log)=>localStorage.setItem(key('chatLog'),JSON.stringify(log));
+  // ===== ID & ログ =====
+  const getOrCreate=(k)=>{let v=localStorage.getItem(k); if(v) return v; v=crypto.randomUUID(); localStorage.setItem(k,v); return v;};
+  const userId=getOrCreate('whoai_userId');
+  const convoId=getOrCreate('whoai_conversationId');
+  const key=(s)=>`whoai:evolved:${userId}:${convoId}:${s}`;
+  const readLog=()=>JSON.parse(localStorage.getItem(key('chatLog'))||'[]');
+  const writeLog=(log)=>localStorage.setItem(key('chatLog'), JSON.stringify(log));
+  const readTurn=()=>parseInt(localStorage.getItem(key('turn'))||'0',10);
+  const writeTurn=(n)=>localStorage.setItem(key('turn'), String(n));
 
-  const color = (localStorage.getItem('whoai_color')||'pink').toLowerCase();
-  let turn = parseInt(localStorage.getItem(key('turn'))||'0');
-
-  // UI
-  document.getElementById('userBadge').textContent=`user:${userId.slice(0,6)}`;
-  document.getElementById('convoBadge').textContent=`convo:${convoId.slice(0,6)}`;
-  document.getElementById('turnBadge').textContent=`turn:${turn}/${TURN_LIMIT}`;
+  // ===== キャラ表示（口パク）=====
   const charImg=document.getElementById('charImg');
-  charImg.src=COLOR_TO_IMG[color]?.closed || '';
+  const setClosed=()=> charImg.src = EVOLVED_SRC[color]?.closed || EVOLVED_SRC.pink.closed;
+  const setOpen=()=>   charImg.src = EVOLVED_SRC[color]?.open   || EVOLVED_SRC.pink.open;
+  setClosed();
 
+  // ===== 描画 =====
   const chatArea=document.getElementById('chatArea');
-  const renderChat=()=>{
+  const playerName = localStorage.getItem('whoai_player_name') || 'あなた';
+  const assistantName = localStorage.getItem('whoai_character_name') || 'もち';
+  function render(){
     const log=readLog(); chatArea.innerHTML='';
     for(const m of log){
-      const div=document.createElement('div'); div.className=`msg ${m.role}`;
-      const bubble=document.createElement('div'); bubble.className='bubble';
-      const role=document.createElement('span'); role.className='role';
-      role.textContent=(m.role==='user'?'あなた':'WhoAI')+'：';
-      bubble.appendChild(role);
-      bubble.appendChild(document.createTextNode(m.content));
-      div.appendChild(bubble); chatArea.appendChild(div);
+      const row=document.createElement('div'); row.className=`msg ${m.role}`;
+      const b=document.createElement('div'); b.className='bubble';
+      const r=document.createElement('span'); r.className='role';
+      r.textContent=(m.role==='user'?playerName:assistantName)+'：';
+      b.appendChild(r); b.appendChild(document.createTextNode(m.content||'')); row.appendChild(b);
+      chatArea.appendChild(row);
     }
     chatArea.scrollTop=chatArea.scrollHeight;
-  };
-  renderChat();
+    document.getElementById('turnChip').textContent = String(readTurn());
+  }
+  render();
 
-  // 会話処理
+  // ===== 送信 =====
   async function talk(userText){
-    if(turn>=TURN_LIMIT){ alert("進化後の会話は終了しました。"); return; }
-    let log=readLog(); log.push({role:'user',content:userText,ts:Date.now()});
-    writeLog(log); renderChat();
+    if(!userText.trim()) return;
+    if(readTurn()>=TURN_LIMIT){ location.href='identity_check.html'; return; }
 
-    charImg.src=COLOR_TO_IMG[color].open;
+    let log=readLog();
+    log.push({role:'user',content:userText,ts:Date.now()}); writeLog(log); render();
 
-    const history=log.slice(-WINDOW_N);
-    let replyText='';
+    // 口パク
+    setOpen();
+
+    // Chat Completions互換で送る（サーバが messages を見るため安全）
+    const history=log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
+    const messages=[{role:'system',content:'You are a kind partner AI. Reply briefly in the user’s language.'}, ...history, {role:'user',content:userText}];
+
+    let reply='…';
     try{
-      const res=await fetch(TALK_ENDPOINT,{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({userMessage:userText,history})
-      });
-      const data=await res.json();
-      replyText=data.reply||'…';
-    }catch{ replyText='（通信エラー）'; }
+      const res=await fetch(TALK_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-4o-mini',temperature:0.7,max_tokens:220,messages})});
+      const data=await res.json().catch(()=>({}));
+      reply = data.reply || reply;
+    }catch(e){ reply='（通信エラー）'; console.error(e); }
 
-    log=readLog(); log.push({role:'assistant',content:replyText,ts:Date.now()});
-    writeLog(log); renderChat();
+    log=readLog(); log.push({role:'assistant',content:reply,ts:Date.now()}); writeLog(log); render();
 
-    setTimeout(()=>{ charImg.src=COLOR_TO_IMG[color].closed; },400);
+    // 口を閉じる
+    setTimeout(setClosed, 450);
 
-    const lang=document.getElementById('langSelect').value;
-    speakCute(replyText,lang);
+    // かわいい声でTTS
+    speakCute(reply, document.getElementById('langSelect').value);
 
-    turn++; localStorage.setItem(key('turn'),turn);
-    document.getElementById('turnBadge').textContent=`turn:${turn}/${TURN_LIMIT}`;
+    // ターン加算＆終了
+    const t=readTurn()+1; writeTurn(t); document.getElementById('turnChip').textContent=String(t);
+    if(t>=TURN_LIMIT){ setTimeout(()=>location.href='identity_check.html', 900); }
   }
 
-  // 入力・ボタン
+  // ===== 入力UI =====
   const userInput=document.getElementById('userInput');
-  document.getElementById('btnSend').onclick=()=>{
-    const t=userInput.value.trim(); if(!t) return;
-    userInput.value=''; talk(t);
-  };
-  userInput.addEventListener('keydown',e=>{
-    if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); document.getElementById('btnSend').click(); }
-  });
+  document.getElementById('btnSend').onclick=()=>{ const t=userInput.value.trim(); if(!t) return; userInput.value=''; talk(t); };
+  userInput.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.isComposing){ e.preventDefault(); document.getElementById('btnSend').click(); } });
 
-  // 音声入力
-  document.getElementById('btnMic').onclick=()=>{
-    const lang=document.getElementById('langSelect').value;
-    const rec=new(window.SpeechRecognition||window.webkitSpeechRecognition)();
-    rec.lang=lang; rec.onresult=(e)=>{
-      userInput.value=e.results[0][0].transcript;
-      document.getElementById('btnSend').click();
+  // ===== 音声入力（Web Speech API）=====
+  const btnMic=document.getElementById('btnMic');
+  const autoSend=document.getElementById('autoSend');
+  let recognition=null,recognizing=false;
+  function ensureRec(){
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR) return null;
+    if(recognition) return recognition;
+    recognition=new SR();
+    recognition.interimResults=false; recognition.continuous=false; recognition.maxAlternatives=1;
+    recognition.onresult=(e)=>{
+      const text=e.results[0][0].transcript || '';
+      if(autoSend.checked){ talk(text); }
+      else { userInput.value=text; userInput.focus(); }
     };
-    rec.start();
-  };
-
-  // 音声出力（直近AIの発話）
-  document.getElementById('btnTTS').onclick=()=>{
-    const log=readLog(); const last=log.slice().reverse().find(m=>m.role==='assistant');
-    if(last){ speakCute(last.content,document.getElementById('langSelect').value); }
-  };
-
-  // かわいらしい声
-  function speakCute(text,lang){
-    const utter=new SpeechSynthesisUtterance(text);
-    utter.lang=lang; utter.rate=1.05; utter.pitch=1.6; utter.volume=1;
-    const voices=speechSynthesis.getVoices();
-    const cute=voices.find(v=>v.lang.startsWith(lang)&&/(female|girl|child|Kyoko|Google 日本語)/i.test(v.name));
-    if(cute) utter.voice=cute;
-    speechSynthesis.speak(utter);
+    recognition.onend=()=>{recognizing=false;btnMic.textContent='🎙️';};
+    recognition.onerror=()=>{recognizing=false;btnMic.textContent='🎙️';};
+    return recognition;
   }
+  btnMic.onclick=()=>{
+    const rec=ensureRec(); if(!rec){ alert('このブラウザは音声入力に未対応です'); return; }
+    rec.lang=document.getElementById('langSelect').value || (navigator.language||'ja-JP');
+    if(recognizing){ rec.stop(); return; }
+    recognizing=true; btnMic.textContent='🛑'; try{ rec.start(); }catch{}
+  };
+
+  // ===== TTS（かわいらしい声）=====
+  document.getElementById('btnTTS').onclick=()=>{
+    const last=[...readLog()].reverse().find(m=>m.role==='assistant');
+    if(last) speakCute(last.content, document.getElementById('langSelect').value);
+  };
+  function speakCute(text,lang){
+    if(!('speechSynthesis' in window)) return;
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=lang; u.rate=1.05; u.pitch=1.6; u.volume=1;
+    const voices=speechSynthesis.getVoices();
+    const cute=voices.find(v=>v.lang===lang && /(girl|child|female|Kyoko|Google 日本語)/i.test(v.name))
+              || voices.find(v=>v.lang.startsWith(lang.split('-')[0]));
+    if(cute) u.voice=cute;
+    try{ window.speechSynthesis.cancel(); }catch{}
+    window.speechSynthesis.speak(u);
+  }
+  // iOS対策：voices 遅延読み込み
+  if('speechSynthesis' in window){ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=()=>{}; }
 </script>
 </body>
 </html>
