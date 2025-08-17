@@ -44,9 +44,42 @@
       font-size:12px;
       opacity:.7
     }
+
+    /* 言語切り替えチップ */
+    #langSwitcher {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      display: flex;
+      gap: 6px;
+    }
+    .lang-chip {
+      border: 0;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.14);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .lang-chip[aria-pressed="true"] {
+      outline: 2px solid #ffd1ec;
+      background: rgba(255, 209, 236, 0.18);
+    }
   </style>
 </head>
 <body>
+
+  <!-- 言語切り替え -->
+  <div id="langSwitcher">
+    <button class="lang-chip" data-lang="ja-JP">日本語</button>
+    <button class="lang-chip" data-lang="en-US">EN</button>
+    <button class="lang-chip" data-lang="zh-CN">中文</button>
+    <button class="lang-chip" data-lang="ko-KR">KO</button>
+  </div>
+
   <div class="wrap">
     <h1 id="title">好きなマカロンを選んでね</h1>
     <div class="grid">
@@ -56,9 +89,48 @@
       <div class="card" data-color="purple"><img src="public/assets/stage1/macaron_purple.png" alt="purple"></div>
     </div>
   </div>
+
   <div class="file-label">/macaron/macaron.html</div>
 
   <script>
+    // 多言語タイトルの辞書
+    const titleText = {
+      "ja-JP": "好きなマカロンを選んでね",
+      "en-US": "Choose your favorite macaron",
+      "zh-CN": "请选择你喜欢的马卡龙",
+      "ko-KR": "좋아하는 마카롱을 골라주세요"
+    };
+
+    const UI_LANG_KEY = 'whoai_ui_lang';
+    const APP_LANG_KEY = 'whoai_lang';
+    const DEFAULT_LANG = 'ja-JP';
+    let currentLang = localStorage.getItem(APP_LANG_KEY) || DEFAULT_LANG;
+
+    // 言語適用関数
+    function applyI18n(lang) {
+      currentLang = lang;
+      localStorage.setItem(APP_LANG_KEY, lang);
+      localStorage.setItem(UI_LANG_KEY, lang);
+      document.documentElement.setAttribute("lang", lang);
+      document.getElementById('title').textContent = titleText[lang] || titleText[DEFAULT_LANG];
+
+      // チップの選択状態
+      document.querySelectorAll('.lang-chip').forEach(btn => {
+        btn.setAttribute('aria-pressed', btn.dataset.lang === lang ? 'true' : 'false');
+      });
+    }
+
+    // 言語スイッチャーのイベント
+    document.getElementById('langSwitcher').addEventListener('click', e => {
+      const btn = e.target.closest('.lang-chip');
+      if (!btn) return;
+      applyI18n(btn.dataset.lang);
+    });
+
+    // 初期表示時に適用
+    applyI18n(currentLang);
+
+    // マカロン選択処理
     const allowed = ['pink','blue','green','purple'];
 
     function saveColorAndGo(c){
@@ -79,16 +151,6 @@
         }
       });
     });
-
-    // 多言語対応タイトル切り替え
-    const lang = localStorage.getItem('whoai_lang') || 'ja-JP';
-    const titleText = {
-      "ja-JP": "好きなマカロンを選んでね",
-      "en-US": "Choose your favorite macaron",
-      "zh-CN": "请选择你喜欢的马卡龙",
-      "ko-KR": "좋아하는 마카롱을 골라주세요"
-    };
-    document.getElementById('title').textContent = titleText[lang] || titleText["ja-JP"];
   </script>
 </body>
 </html>
