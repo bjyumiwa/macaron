@@ -31,7 +31,6 @@
       border-radius:18px;padding:12px
     }
 
-    /* チャットエリアを固定割合にし、1画面で完結させる */
     #chatArea{
       height:38vh;
       overflow-y:auto;scroll-behavior:smooth;
@@ -74,8 +73,8 @@
   <div class="subtitle">進化キャラで10回会話すると、復活の儀式へ</div>
 
   <div class="hero">
-    <img id="charImg" alt="進化後の姿">
-    <small>進化後の姿</small>
+    <img id="charImg" alt="進化後キャラ">
+    <small id="charLabel">キャラ</small>
   </div>
 
   <div class="card">
@@ -98,20 +97,16 @@
   </div>
 
 <script>
-  // ==== 設定 ====
-  const TALK_ENDPOINT = "https://macaron-one.vercel.app/api/talk";
-  const WINDOW_N = 12;
-  const TURN_LIMIT = 10;
+  const TALK_ENDPOINT="https://macaron-one.vercel.app/api/talk";
+  const WINDOW_N=12, TURN_LIMIT=10;
 
-  // ==== 復活モード判定（appearance / memory） ====
-  const keepMode = localStorage.getItem("whoai_keep");
-  if (keepMode === "appearance") {
-    // 見た目だけ残す → 会話・ターンをリセット
+  // ==== 復活モード判定 ====
+  const keepMode=localStorage.getItem("whoai_keep");
+  if(keepMode==="appearance"){
     localStorage.removeItem("whoai_keep");
     localStorage.removeItem(`whoai:evolved:${localStorage.getItem('whoai_userId')}:evolved_conversation:chatLog`);
     localStorage.removeItem(`whoai:evolved:${localStorage.getItem('whoai_userId')}:evolved_conversation:turn`);
-  } else if (keepMode === "memory") {
-    // 記録を残す →なにもしない
+  }else if(keepMode==="memory"){
     localStorage.removeItem("whoai_keep");
   }
 
@@ -126,7 +121,7 @@
   document.getElementById('chipColor').textContent=color;
 
   // ==== ID & ログ ====
-  const getOrCreate=(k)=>{let v=localStorage.getItem(k);if(v) return v;v=crypto.randomUUID();localStorage.setItem(k,v);return v;};
+  const getOrCreate=(k)=>{let v=localStorage.getItem(k);if(v)return v;v=crypto.randomUUID();localStorage.setItem(k,v);return v;};
   const userId=getOrCreate('whoai_userId');
   const convoId='evolved_conversation';
   const key=(s)=>`whoai:evolved:${userId}:${convoId}:${s}`;
@@ -137,14 +132,16 @@
 
   // ==== キャラ表示 ====
   const charImg=document.getElementById('charImg');
-  const setClosed=()=>charImg.src=EVOLVED_SRC[color]?.closed || EVOLVED_SRC.pink.closed;
-  const setOpen=()=>charImg.src=EVOLVED_SRC[color]?.open || EVOLVED_SRC.pink.open;
+  const charName=localStorage.getItem("whoai_name")||"キャラ";
+  document.getElementById("charLabel").textContent=charName;
+  const setClosed=()=>charImg.src=EVOLVED_SRC[color]?.closed||EVOLVED_SRC.pink.closed;
+  const setOpen=()=>charImg.src=EVOLVED_SRC[color]?.open||EVOLVED_SRC.pink.open;
   setClosed();
 
   // ==== 描画 ====
   const chatArea=document.getElementById('chatArea');
   const playerName=localStorage.getItem('whoai_player_name')||'あなた';
-  const assistantName=localStorage.getItem('whoai_name')||'キャラ';
+  const assistantName=charName;
   function render(){
     const log=readLog();chatArea.innerHTML='';
     for(const m of log){
@@ -162,7 +159,7 @@
 
   // ==== 会話送信 ====
   async function talk(text){
-    if(!text.trim()) return;
+    if(!text.trim())return;
     if(readTurn()>=TURN_LIMIT){location.href='identity_check.html';return;}
     let log=readLog();log.push({role:'user',content:text,ts:Date.now()});writeLog(log);render();
     setOpen();
@@ -192,8 +189,8 @@
   const autoSend=document.getElementById('autoSend');
   function ensureRec(){
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SR) return null;
-    if(recognition) return recognition;
+    if(!SR)return null;
+    if(recognition)return recognition;
     recognition=new SR();recognition.interimResults=false;recognition.continuous=false;
     recognition.maxAlternatives=1;
     recognition.onresult=(e)=>{
@@ -212,16 +209,16 @@
   // ==== TTS ====
   document.getElementById('btnTTS').onclick=()=>{
     const last=[...readLog()].reverse().find(m=>m.role==='assistant');
-    if(last) speakCute(last.content,document.getElementById('langSelect').value);
+    if(last)speakCute(last.content,document.getElementById('langSelect').value);
   };
   function speakCute(text,lang){
-    if(!('speechSynthesis' in window)) return;
+    if(!('speechSynthesis' in window))return;
     const u=new SpeechSynthesisUtterance(text);
     u.lang=lang;u.rate=1.05;u.pitch=1.6;u.volume=1;
     const voices=speechSynthesis.getVoices();
     const cute=voices.find(v=>v.lang===lang && /(girl|child|female|Kyoko|Google 日本語)/i.test(v.name))
                || voices.find(v=>v.lang.startsWith(lang.split('-')[0]));
-    if(cute) u.voice=cute;
+    if(cute)u.voice=cute;
     try{window.speechSynthesis.cancel();}catch{}
     window.speechSynthesis.speak(u);
   }
