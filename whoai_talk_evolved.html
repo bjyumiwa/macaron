@@ -70,7 +70,7 @@
     <span class="chip">turn: <span id="turnChip">0</span>/10</span>
   </div>
   <div class="title">会話</div>
-  <div class="subtitle">進化キャラで10回会話すると、復活の儀式へ</div>
+  <div class="subtitle">進化キャラで10回会話すると、復活の儀式 or アンケートへ</div>
 
   <div class="hero">
     <img id="charImg" alt="進化後キャラ">
@@ -93,7 +93,7 @@
       </select>
       <label class="switch"><input type="checkbox" id="autoSend" checked> 自動送信</label>
     </div>
-    <div class="hint">※ 会話は localStorage に保存／直近12発言をAPIに同封。10ターン到達でアンケートへ。</div>
+    <div class="hint">※ 会話は localStorage に保存。10ターン到達で「復活の儀式」または「アンケート」へ。</div>
   </div>
 
 <script>
@@ -160,7 +160,18 @@
   // ==== 会話送信 ====
   async function talk(text){
     if(!text.trim())return;
-    if(readTurn()>=TURN_LIMIT){location.href='identity_check.html';return;}
+    if(readTurn()>=TURN_LIMIT){
+      const phase = localStorage.getItem("whoai_phase") || "pre";
+      if(phase === "pre"){
+        // 最初の10回 → 復活の儀式へ
+        setTimeout(()=>location.href='rebirth.html',900);
+      }else{
+        // 復活後の10回 → アンケートへ
+        setTimeout(()=>location.href='identity_check.html',900);
+      }
+      return;
+    }
+
     let log=readLog();log.push({role:'user',content:text,ts:Date.now()});writeLog(log);render();
     setOpen();
     const history=log.slice(-WINDOW_N).map(({role,content})=>({role,content}));
@@ -175,7 +186,6 @@
     speakCute(reply,document.getElementById('langSelect').value);
     const t=readTurn()+1;writeTurn(t);
     document.getElementById('turnChip').textContent=String(t);
-    if(t>=TURN_LIMIT){setTimeout(()=>location.href='rebirth.html',900);}
   }
 
   // ==== 入力UI ====
